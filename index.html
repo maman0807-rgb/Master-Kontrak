@@ -112,6 +112,21 @@
   <p id="load-msg" class="text-gray-500 text-sm">Memuat data...</p>
 </div>
 
+<!-- Update Banner -->
+<div id="update-banner" class="hidden md:ml-56 px-4 pt-3 no-print">
+  <div class="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 flex items-start gap-3">
+    <span class="text-lg mt-0.5">🚀</span>
+    <div class="flex-1 min-w-0">
+      <p class="text-sm font-semibold text-blue-800 mb-1">Update Terbaru — v2.1</p>
+      <ul class="text-xs text-blue-700 list-disc list-inside space-y-0.5">
+        <li><strong>Multi-item Part</strong> — Entry Direct Charge &amp; Reservasi kini bisa lebih dari 1 baris material per permintaan</li>
+        <li><strong>Auto ID</strong> — Custom ID untuk CoO SPK, PR, dan SA di-generate otomatis oleh sistem (format: COO-26-001)</li>
+      </ul>
+    </div>
+    <button onclick="closeBanner()" class="text-blue-400 hover:text-blue-700 text-lg leading-none flex-shrink-0" title="Tutup">✕</button>
+  </div>
+</div>
+
 <main id="app" class="md:ml-56 pt-14 md:pt-0 px-4 py-5 max-w-full"></main>
 
 <!-- Modal -->
@@ -183,6 +198,12 @@ const sisaHari = d => {
 };
 const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const dn  = v => v||null;
+const genCustomID = (prefix, arr, field='customID') => {
+  const yy = String(new Date().getFullYear()).slice(-2);
+  const pat = new RegExp(`^${prefix}-${yy}-(\\d+)$`);
+  const max = arr.reduce((m,x) => { const n=((x[field]||'').match(pat)||[])[1]; return n?Math.max(m,+n):m; }, 0);
+  return `${prefix}-${yy}-${String(max+1).padStart(3,'0')}`;
+};
 
 const BC = {
   'Aktif':'bg-sky-100 text-sky-700','Closed':'bg-gray-100 text-gray-600','Selesai':'bg-blue-100 text-blue-700',
@@ -218,7 +239,7 @@ const F = {
   // Supabase → JS
   from: {
     spk:  r => ({id:r.id,noSPK:r.no_spk,tanggal:r.tanggal,vendor:r.vendor,uraian:r.uraian,nilaiKontrak:r.nilai_kontrak,realisasi:r.realisasi,progress:r.progress,status:r.status,keterangan:r.keterangan,createdBy:r.created_by,updatedBy:r.updated_by}),
-    dc:   r => ({id:r.id,jenis:r.jenis||'Direct Charge',noPerm:r.no_perm,tanggal:r.tanggal,namaPart:r.nama_part,jumlah:r.jumlah,satuan:r.satuan,hargaSatuan:r.harga_satuan,total:r.total,kimap:r.kimap,nomorPR:r.nomor_pr,nomorPO:r.nomor_po,nomorMemo:r.nomor_memo,nomorMR:r.nomor_mr,nomorReservasi:r.nomor_reservasi,nomorGR:r.nomor_gr,tglGR:r.tgl_gr,diambilOleh:r.diambil_oleh,status:r.status,keterangan:r.keterangan,createdBy:r.created_by,updatedBy:r.updated_by}),
+    dc:   r => ({id:r.id,jenis:r.jenis||'Direct Charge',noPerm:r.no_perm,tanggal:r.tanggal,namaPart:r.nama_part,jumlah:r.jumlah,satuan:r.satuan,hargaSatuan:r.harga_satuan,total:r.total,kimap:r.kimap,nomorPR:r.nomor_pr,nomorPO:r.nomor_po,nomorMemo:r.nomor_memo,nomorMR:r.nomor_mr,nomorReservasi:r.nomor_reservasi,nomorGR:r.nomor_gr,tglGR:r.tgl_gr,diambilOleh:r.diambil_oleh,status:r.status,keterangan:r.keterangan,items:r.items||[],createdBy:r.created_by,updatedBy:r.updated_by}),
     mk:   r => ({id:r.id,customID:r.custom_id,nomorSPB:r.nomor_spb,vendor:r.vendor,judulKontrak:r.judul_kontrak,nilaiKontrak:r.nilai_kontrak,tglMulai:r.tgl_mulai,tglBerakhir:r.tgl_berakhir,pic:r.pic,status:r.status,createdBy:r.created_by,updatedBy:r.updated_by}),
     coo:  r => ({id:r.id,idKontrak:r.id_kontrak,customID:r.custom_id,nomorSPK:r.nomor_spk,deskripsi:r.deskripsi,nilaiSPK:r.nilai_spk,tglTerbit:r.tgl_terbit,tglMulai:r.tgl_mulai,tglSelesai:r.tgl_selesai,status:r.status,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
     pr:   r => ({id:r.id,idCoO:r.id_coo,customID:r.custom_id,nomorPR:r.nomor_pr,tglPR:r.tgl_pr,deskripsi:r.deskripsi,estimasiNilai:r.estimasi_nilai,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
@@ -228,7 +249,7 @@ const F = {
   // JS → Supabase
   to: {
     spk:  o => ({id:o.id,no_spk:o.noSPK,tanggal:dn(o.tanggal),vendor:o.vendor,uraian:o.uraian,nilai_kontrak:rpN(o.nilaiKontrak),realisasi:rpN(o.realisasi),progress:+o.progress||0,status:o.status,keterangan:o.keterangan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
-    dc:   o => ({id:o.id,jenis:o.jenis||'Direct Charge',no_perm:o.noPerm,tanggal:dn(o.tanggal),nama_part:o.namaPart,jumlah:rpN(o.jumlah),satuan:o.satuan,harga_satuan:rpN(o.hargaSatuan),total:rpN(o.total),kimap:o.kimap||null,nomor_pr:o.nomorPR||null,nomor_po:o.nomorPO||null,nomor_memo:o.nomorMemo||null,nomor_mr:o.nomorMR||null,nomor_reservasi:o.nomorReservasi||null,nomor_gr:o.nomorGR||null,tgl_gr:dn(o.tglGR),diambil_oleh:o.diambilOleh||null,status:o.status,keterangan:o.keterangan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
+    dc:   o => ({id:o.id,jenis:o.jenis||'Direct Charge',no_perm:o.noPerm,tanggal:dn(o.tanggal),nama_part:o.namaPart,jumlah:rpN(o.jumlah),satuan:o.satuan,harga_satuan:rpN(o.hargaSatuan),total:rpN(o.total),kimap:o.kimap||null,nomor_pr:o.nomorPR||null,nomor_po:o.nomorPO||null,nomor_memo:o.nomorMemo||null,nomor_mr:o.nomorMR||null,nomor_reservasi:o.nomorReservasi||null,nomor_gr:o.nomorGR||null,tgl_gr:dn(o.tglGR),diambil_oleh:o.diambilOleh||null,status:o.status,keterangan:o.keterangan,items:o.items||[],created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     mk:   o => ({id:o.id,custom_id:o.customID,nomor_spb:o.nomorSPB,vendor:o.vendor,judul_kontrak:o.judulKontrak,nilai_kontrak:rpN(o.nilaiKontrak),tgl_mulai:dn(o.tglMulai),tgl_berakhir:dn(o.tglBerakhir),pic:o.pic,status:o.status,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     coo:  o => ({id:o.id,id_kontrak:o.idKontrak,custom_id:o.customID,nomor_spk:o.nomorSPK,deskripsi:o.deskripsi,nilai_spk:rpN(o.nilaiSPK),tgl_terbit:dn(o.tglTerbit),tgl_mulai:dn(o.tglMulai),tgl_selesai:dn(o.tglSelesai),status:o.status,catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     pr:   o => ({id:o.id,id_coo:o.idCoO,custom_id:o.customID,nomor_pr:o.nomorPR,tgl_pr:dn(o.tglPR),deskripsi:o.deskripsi,estimasi_nilai:rpN(o.estimasiNilai),catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
@@ -262,6 +283,7 @@ const loadAll = async () => {
   S.currentNama = myProfile?.nama || '';
   document.getElementById('nav-user').textContent = S.currentNama || S.currentUser;
   setLoad(false);
+  initBanner();
   render();
 };
 
@@ -559,16 +581,22 @@ const rDC = () => {
   const th = isDC ? thDC : thRes;
   const ncols = th.length;
 
-  const rowDC = d => `
-    <tr class="hover:bg-gray-50">
-      <td class="px-4 py-3 font-semibold text-rose-700 whitespace-nowrap">${esc(d.noPerm)}</td>
+  const rowDC = d => {
+    const items=d.items?.length?d.items:[{namaPart:d.namaPart,jumlah:d.jumlah,satuan:d.satuan,kimap:d.kimap,hargaSatuan:d.hargaSatuan}];
+    const totalVal=d.items?.length?d.items.reduce((a,x)=>a+(+x.jumlah||0)*(+x.hargaSatuan||0),0):rpN(d.total);
+    const first=items[0], multi=items.length>1;
+    return `<tr class="hover:bg-gray-50">
+      <td class="px-4 py-3 font-semibold text-rose-700 whitespace-nowrap">${esc(d.noPerm||'-')}</td>
       <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(d.tanggal)}</td>
-      <td class="px-4 py-3 max-w-xs"><div class="clamp2" title="${esc(d.namaPart)}">${esc(d.namaPart||'-')}</div></td>
-      <td class="px-4 py-3 text-center">${esc(d.jumlah||'-')}</td>
-      <td class="px-4 py-3 text-gray-500">${esc(d.satuan||'-')}</td>
-      <td class="px-4 py-3 text-right font-mono whitespace-nowrap">${rp(d.hargaSatuan)}</td>
-      <td class="px-4 py-3 text-right font-mono font-semibold whitespace-nowrap">${rp(d.total)}</td>
-      <td class="px-4 py-3 text-gray-500 whitespace-nowrap">${esc(d.kimap||'-')}</td>
+      <td class="px-4 py-3 max-w-xs">
+        <div class="clamp2" title="${esc(first.namaPart)}">${esc(first.namaPart||'-')}</div>
+        ${multi?`<div class="text-xs text-blue-500 mt-0.5">+${items.length-1} item lagi</div>`:''}
+      </td>
+      <td class="px-4 py-3 text-center">${multi?`<span class="text-xs font-semibold text-blue-600">${items.length} item</span>`:esc(first.jumlah||'-')}</td>
+      <td class="px-4 py-3 text-gray-500">${multi?'-':esc(first.satuan||'-')}</td>
+      <td class="px-4 py-3 text-right font-mono whitespace-nowrap">${multi?'-':rp(first.hargaSatuan)}</td>
+      <td class="px-4 py-3 text-right font-mono font-semibold whitespace-nowrap">${rp(totalVal)}</td>
+      <td class="px-4 py-3 text-gray-500 whitespace-nowrap">${multi?'-':esc(first.kimap||'-')}</td>
       <td class="px-4 py-3 text-gray-500 whitespace-nowrap">${esc(d.nomorPR||'-')}</td>
       <td class="px-4 py-3 text-gray-500 whitespace-nowrap">${esc(d.nomorMemo||'-')}</td>
       <td class="px-4 py-3 text-gray-500 whitespace-nowrap">${esc(d.nomorPO||'-')}</td>
@@ -580,16 +608,22 @@ const rDC = () => {
         ${byLine(d)}
       </td>
     </tr>`;
+  };
 
-  const rowRes = d => `
-    <tr class="hover:bg-gray-50">
+  const rowRes = d => {
+    const items=d.items?.length?d.items:[{namaPart:d.namaPart,jumlah:d.jumlah,satuan:d.satuan,kimap:d.kimap}];
+    const first=items[0], multi=items.length>1;
+    return `<tr class="hover:bg-gray-50">
       <td class="px-4 py-3 font-semibold text-violet-700 whitespace-nowrap">${esc(d.nomorReservasi||'-')}</td>
       <td class="px-4 py-3 text-gray-500 whitespace-nowrap">${esc(d.nomorMR||'-')}</td>
       <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(d.tanggal)}</td>
-      <td class="px-4 py-3 max-w-xs"><div class="clamp2" title="${esc(d.namaPart)}">${esc(d.namaPart||'-')}</div></td>
-      <td class="px-4 py-3 text-center">${esc(d.jumlah||'-')}</td>
-      <td class="px-4 py-3 text-gray-500">${esc(d.satuan||'-')}</td>
-      <td class="px-4 py-3 text-gray-500 whitespace-nowrap">${esc(d.kimap||'-')}</td>
+      <td class="px-4 py-3 max-w-xs">
+        <div class="clamp2" title="${esc(first.namaPart)}">${esc(first.namaPart||'-')}</div>
+        ${multi?`<div class="text-xs text-blue-500 mt-0.5">+${items.length-1} item lagi</div>`:''}
+      </td>
+      <td class="px-4 py-3 text-center">${multi?`<span class="text-xs font-semibold text-blue-600">${items.length} item</span>`:esc(first.jumlah||'-')}</td>
+      <td class="px-4 py-3 text-gray-500">${multi?'-':esc(first.satuan||'-')}</td>
+      <td class="px-4 py-3 text-gray-500 whitespace-nowrap">${multi?'-':esc(first.kimap||'-')}</td>
       <td class="px-4 py-3 text-gray-500 whitespace-nowrap">${esc(d.nomorGR||'-')}</td>
       <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(d.tglGR)}</td>
       <td class="px-4 py-3 text-gray-600 whitespace-nowrap">${esc(d.diambilOleh||'-')}</td>
@@ -600,6 +634,7 @@ const rDC = () => {
         ${byLine(d)}
       </td>
     </tr>`;
+  };
 
   return `<div class="fade-in">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
@@ -623,9 +658,10 @@ const rDC = () => {
           ${data.length===0 ? emptyRow(isDC?'🔧':'📋',`Belum ada data ${jenis}.`,ncols) : data.map(isDC ? rowDC : rowRes).join('')}
         </tbody>
         <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
-          <tr><td colspan="6" class="px-4 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
-          <td class="px-4 py-3 text-right font-mono">${rp(total)}</td>
-          <td colspan="${ncols-7}"></td></tr>
+          <tr>
+            <td colspan="${isDC?6:ncols}" class="px-4 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
+            ${isDC?`<td class="px-4 py-3 text-right font-mono">${rp(total)}</td><td colspan="${ncols-7}"></td>`:''}
+          </tr>
         </tfoot>
       </table>
     </div></div>
@@ -843,6 +879,112 @@ const mFoot = () => `<div class="flex justify-end gap-2 mt-5 pt-4 border-t">
   <button type="submit" class="px-4 py-2 bg-blue-800 text-white rounded-lg text-sm hover:bg-blue-900">Simpan</button>
 </div>`;
 
+// ===== DC ITEMS HELPERS =====
+let _dcItems = [], _dcIsRes = false;
+
+const dcItemRow = (item) => `
+  <tr>
+    <td class="p-1.5"><input data-f="namaPart" value="${esc(item.namaPart||'')}" placeholder="Nama part / material" class="border rounded px-2 py-1.5 text-xs w-full" required></td>
+    <td class="p-1.5"><input data-f="jumlah" type="number" value="${+item.jumlah||1}" min="0.01" step="0.01" onchange="dcUpdateGrand()" class="border rounded px-2 py-1.5 text-xs w-16 text-center"></td>
+    <td class="p-1.5"><input data-f="satuan" value="${esc(item.satuan||'pcs')}" class="border rounded px-2 py-1.5 text-xs w-14"></td>
+    <td class="p-1.5"><input data-f="kimap" value="${esc(item.kimap||'')}" placeholder="Kode" class="border rounded px-2 py-1.5 text-xs w-20"></td>
+    ${!_dcIsRes?`<td class="p-1.5"><input data-f="hargaSatuan" type="number" value="${+item.hargaSatuan||0}" min="0" onchange="dcUpdateGrand()" class="border rounded px-2 py-1.5 text-xs w-28 text-right font-mono"></td><td class="p-1.5 text-right font-mono text-xs whitespace-nowrap dc-row-total">${rp((+item.jumlah||0)*(+item.hargaSatuan||0))}</td>`:''}
+    <td class="p-1.5 text-center"><button type="button" onclick="dcRemoveItem(this)" class="text-red-400 hover:text-red-600 text-sm px-1" title="Hapus baris">✕</button></td>
+  </tr>`;
+
+const dcItemsSectionInner = () => {
+  const isRes = _dcIsRes;
+  const total = _dcItems.reduce((a,x)=>a+(+x.jumlah||0)*(+x.hargaSatuan||0),0);
+  return `
+    <div class="flex items-center justify-between mb-1.5">
+      <label class="text-xs font-medium text-gray-600">Item Part / Material <span class="text-red-400">*</span></label>
+      <button type="button" onclick="dcAddItem()" class="text-xs text-blue-600 hover:underline font-medium">+ Tambah Baris</button>
+    </div>
+    <div class="border rounded-lg overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead class="bg-gray-50 text-gray-500 border-b">
+            <tr>
+              <th class="px-2 py-2 text-left">Nama Part / Material</th>
+              <th class="px-2 py-2 text-center w-14">Jml</th>
+              <th class="px-2 py-2 text-left w-14">Satuan</th>
+              <th class="px-2 py-2 text-left w-20">KIMAP</th>
+              ${!isRes?'<th class="px-2 py-2 text-right">Harga Sat. (Rp)</th><th class="px-2 py-2 text-right w-24">Total</th>':''}
+              <th class="px-2 py-2 w-6"></th>
+            </tr>
+          </thead>
+          <tbody id="dc-items-body">
+            ${_dcItems.map(item=>dcItemRow(item)).join('')}
+          </tbody>
+          ${!isRes?`<tfoot class="bg-gray-50 border-t"><tr>
+            <td colspan="4" class="px-2 py-1.5 text-right text-gray-500 font-semibold">TOTAL</td>
+            <td></td>
+            <td class="px-2 py-1.5 text-right font-mono font-semibold" id="dc-grand-total">${rp(total)}</td>
+            <td></td>
+          </tr></tfoot>`:''}
+        </table>
+      </div>
+    </div>`;
+};
+
+const dcSyncFromDOM = () => {
+  const rows = document.querySelectorAll('#dc-items-body tr');
+  _dcItems = [...rows].map(r => ({
+    namaPart: r.querySelector('[data-f=namaPart]')?.value?.trim()||'',
+    jumlah: +(r.querySelector('[data-f=jumlah]')?.value||1),
+    satuan: r.querySelector('[data-f=satuan]')?.value?.trim()||'pcs',
+    kimap: r.querySelector('[data-f=kimap]')?.value?.trim()||'',
+    hargaSatuan: +(r.querySelector('[data-f=hargaSatuan]')?.value||0)
+  }));
+};
+
+const dcRenderItems = () => {
+  const body = document.getElementById('dc-items-body');
+  if(body) body.innerHTML = _dcItems.map(item=>dcItemRow(item)).join('');
+  dcUpdateGrand();
+};
+
+const dcAddItem = () => {
+  dcSyncFromDOM();
+  _dcItems.push({namaPart:'',jumlah:1,satuan:'pcs',kimap:'',hargaSatuan:0});
+  dcRenderItems();
+  document.querySelector('#dc-items-body tr:last-child [data-f=namaPart]')?.focus();
+};
+
+const dcRemoveItem = btn => {
+  dcSyncFromDOM();
+  const row = btn.closest('tr');
+  const idx = [...document.querySelectorAll('#dc-items-body tr')].indexOf(row);
+  if(idx>=0) _dcItems.splice(idx,1);
+  if(!_dcItems.length) _dcItems.push({namaPart:'',jumlah:1,satuan:'pcs',kimap:'',hargaSatuan:0});
+  dcRenderItems();
+};
+
+const dcUpdateGrand = () => {
+  if(_dcIsRes) return;
+  let grand=0;
+  document.querySelectorAll('#dc-items-body tr').forEach(r=>{
+    const jml=+(r.querySelector('[data-f=jumlah]')?.value||0);
+    const hrg=+(r.querySelector('[data-f=hargaSatuan]')?.value||0);
+    const totCell=r.querySelector('.dc-row-total');
+    if(totCell) totCell.textContent=rp(jml*hrg);
+    grand+=jml*hrg;
+  });
+  const gt=document.getElementById('dc-grand-total');
+  if(gt) gt.textContent=rp(grand);
+};
+
+const getDCItemsFromDOM = () => {
+  return [...document.querySelectorAll('#dc-items-body tr')].map(r=>({
+    namaPart: r.querySelector('[data-f=namaPart]')?.value?.trim()||'',
+    jumlah: +(r.querySelector('[data-f=jumlah]')?.value||1),
+    satuan: r.querySelector('[data-f=satuan]')?.value?.trim()||'pcs',
+    kimap: r.querySelector('[data-f=kimap]')?.value?.trim()||'',
+    hargaSatuan: +(r.querySelector('[data-f=hargaSatuan]')?.value||0),
+    total: (+(r.querySelector('[data-f=jumlah]')?.value||1))*(+(r.querySelector('[data-f=hargaSatuan]')?.value||0))
+  }));
+};
+
 // ===== SPK STANDALONE CRUD =====
 const mSSPK = (id=null) => {
   const s=id?S.sspk.find(x=>x.id===id):null;
@@ -876,47 +1018,57 @@ const dSSPK = async id => {
 // ===== DIRECT CHARGE CRUD =====
 const mDC = (id=null) => {
   const d=id?S.dc.find(x=>x.id===id):null;
-  const jenisVal = d?.jenis || (S.dcTab==='reservasi'?'Reservasi':'Direct Charge');
-  const isDCForm = jenisVal === 'Direct Charge';
+  const jenisVal=d?.jenis||(S.dcTab==='reservasi'?'Reservasi':'Direct Charge');
+  _dcIsRes=jenisVal==='Reservasi';
+  if(d?.items?.length) _dcItems=d.items.map(x=>({...x}));
+  else if(d) _dcItems=[{namaPart:d.namaPart||'',jumlah:+d.jumlah||1,satuan:d.satuan||'pcs',kimap:d.kimap||'',hargaSatuan:+d.hargaSatuan||0}];
+  else _dcItems=[{namaPart:'',jumlah:1,satuan:'pcs',kimap:'',hargaSatuan:0}];
   showM(`<div class="p-6"><h2 class="text-base font-bold mb-4">${d?'Edit':'Tambah'} Permintaan Part</h2>
     <form onsubmit="svDC(event,'${id||''}')"><div class="grid grid-cols-2 gap-3">
       ${sel('Jenis','jenis',['Direct Charge','Reservasi'],jenisVal,true,false)}
       ${fld('Tanggal','tanggal','date',d?.tanggal,true)}
-      <div class="col-span-2">${fld('Nama Part / Material','namaPart','text',d?.namaPart,true)}</div>
-      ${fld('Jumlah','jumlah','number',d?.jumlah||1,'',false,'min="0" step="0.01"')}
-      ${fld('Satuan','satuan','text',d?.satuan||'pcs')}
-      ${fld('No. Reservasi','nomorReservasi','text',d?.nomorReservasi)} ${fld('KIMAP','kimap','text',d?.kimap,false,false,'placeholder="Kode part number material"')}
+      <div class="col-span-2" id="dc-items-wrap">${dcItemsSectionInner()}</div>
       <div id="dc-fields" class="contents">
-        ${fld('Harga Satuan (Rp)','hargaSatuan','number',d?.hargaSatuan||0,'',false,'min="0"')}
-        ${fld('Total (Rp)','total','number',d?.total||0,'',false,'min="0"')}
         ${fld('No. PR','nomorPR','text',d?.nomorPR)} ${fld('No. PO','nomorPO','text',d?.nomorPO)}
         <div class="col-span-2">${fld('No. Memo','nomorMemo','text',d?.nomorMemo)}</div>
         ${sel('Status','status',['Pengajuan','Proses Planner','Proses AstmenRAM','Proses Senior Manager','Proses SCM','PO Terbit','Diterima','Ditolak'],d?.status||'Pengajuan')}
         ${fld('Keterangan','keterangan','text',d?.keterangan)}
       </div>
       <div id="res-fields" class="contents">
-        ${fld('No. MR (Material Request)','nomorMR','text',d?.nomorMR)}
+        ${fld('No. Reservasi','nomorReservasi','text',d?.nomorReservasi)} ${fld('No. MR (Material Request)','nomorMR','text',d?.nomorMR)}
         ${sel('Status','statusRes',['MR Dibuat','Reservasi Dibuat','Diterima'],d?.status||'MR Dibuat')}
         ${fld('No. GR','nomorGR','text',d?.nomorGR)} ${fld('Tgl. GR','tglGR','date',d?.tglGR)}
         <div class="col-span-2">${fld('Diambil Oleh','diambilOleh','text',d?.diambilOleh)}</div>
       </div>
     </div>${mFoot()}</form></div>`);
-  dcToggleFields(jenisVal);
+  const dcF=document.getElementById('dc-fields'), resF=document.getElementById('res-fields');
+  if(dcF&&resF){[...dcF.children].forEach(el=>el.style.display=_dcIsRes?'none':'');[...resF.children].forEach(el=>el.style.display=_dcIsRes?'':'none');}
 };
 const dcToggleFields = jenis => {
+  _dcIsRes=jenis==='Reservasi';
   const dcF=document.getElementById('dc-fields'), resF=document.getElementById('res-fields');
-  if(!dcF||!resF) return;
-  const isDC = jenis==='Direct Charge';
-  [...dcF.children].forEach(el=>el.style.display=isDC?'':'none');
-  [...resF.children].forEach(el=>el.style.display=isDC?'none':'');
+  if(dcF&&resF){[...dcF.children].forEach(el=>el.style.display=_dcIsRes?'none':'');[...resF.children].forEach(el=>el.style.display=_dcIsRes?'':'none');}
+  const wrap=document.getElementById('dc-items-wrap');
+  if(wrap){dcSyncFromDOM();wrap.innerHTML=dcItemsSectionInner();}
 };
-const dcC = f => { if(f.hargaSatuan&&f.total) f.total.value=(+f.jumlah.value||0)*(+f.hargaSatuan.value||0); };
 const svDC = async (e,id) => {
   e.preventDefault(); const f=e.target;
   const jenis=f.jenis.value, isRes=jenis==='Reservasi';
+  const items=getDCItemsFromDOM().filter(x=>x.namaPart);
+  if(!items.length){alert('Tambahkan minimal 1 item part/material.');return;}
+  const grandTotal=isRes?0:items.reduce((a,x)=>a+x.total,0);
   const ex=id?S.dc.find(x=>x.id===id):null;
-  const o={id:id||uid(),jenis,noPerm:'',tanggal:f.tanggal.value,namaPart:f.namaPart.value.trim(),jumlah:f.jumlah.value,satuan:f.satuan.value.trim(),nomorReservasi:f.nomorReservasi.value.trim(),kimap:f.kimap.value.trim(),hargaSatuan:isRes?0:f.hargaSatuan.value,total:isRes?0:f.total.value,nomorPR:isRes?'':f.nomorPR.value.trim(),nomorPO:isRes?'':f.nomorPO.value.trim(),nomorMemo:isRes?'':f.nomorMemo.value.trim(),nomorMR:isRes?f.nomorMR.value.trim():'',status:isRes?f.statusRes.value:f.status.value,keterangan:isRes?'':f.keterangan.value.trim(),nomorGR:isRes?f.nomorGR.value.trim():'',tglGR:isRes?f.tglGR.value:'',diambilOleh:isRes?f.diambilOleh.value.trim():'',createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
-  S.dcTab = isRes?'reservasi':'dc';
+  const o={id:id||uid(),jenis,noPerm:'',tanggal:f.tanggal.value,items,
+    namaPart:items[0].namaPart,jumlah:items[0].jumlah,satuan:items[0].satuan,kimap:items[0].kimap,
+    hargaSatuan:isRes?0:items[0].hargaSatuan,total:grandTotal,
+    nomorReservasi:isRes?f.nomorReservasi.value.trim():'',
+    nomorPR:isRes?'':f.nomorPR.value.trim(),nomorPO:isRes?'':f.nomorPO.value.trim(),
+    nomorMemo:isRes?'':f.nomorMemo.value.trim(),nomorMR:isRes?f.nomorMR.value.trim():'',
+    status:isRes?f.statusRes.value:f.status.value,keterangan:isRes?'':f.keterangan.value.trim(),
+    nomorGR:isRes?f.nomorGR.value.trim():'',tglGR:isRes?f.tglGR.value:'',
+    diambilOleh:isRes?f.diambilOleh.value.trim():'',
+    createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
+  S.dcTab=isRes?'reservasi':'dc';
   setLoad(true,'Menyimpan...'); const {error}=await sb.from('direct_charge').upsert(F.to.dc(o));
   setLoad(false); if(dbErr(error)) return;
   if(id) S.dc[S.dc.findIndex(x=>x.id===id)]=o; else S.dc.unshift(o);
@@ -966,7 +1118,7 @@ const mSPK = (id=null) => {
   const s=id?S.spk.find(x=>x.id===id):null;
   showM(`<div class="p-6"><h2 class="text-base font-bold mb-4">${s?'Edit':'Tambah'} CoO SPK</h2>
     <form onsubmit="svSPK(event,'${id||''}')"><div class="grid grid-cols-2 gap-3">
-      ${fld('Custom ID','customID','text',s?.customID,true)} ${fld('Nomor SPK','nomorSPK','text',s?.nomorSPK)}
+      ${fld('Custom ID','customID','text',id?s?.customID:genCustomID('COO',S.spk),true)} ${fld('Nomor SPK','nomorSPK','text',s?.nomorSPK)}
       ${sel('Master Kontrak','idKontrak',S.mk.map(k=>({v:k.id,l:`${k.customID} – ${k.vendor}`})),s?.idKontrak,true,true)}
       ${fld('Tgl Terbit','tglTerbit','date',s?.tglTerbit)}
       ${tarea('Deskripsi','deskripsi',s?.deskripsi)}
@@ -997,7 +1149,7 @@ const mPR = (id=null) => {
   const p=id?S.pr.find(x=>x.id===id):null;
   showM(`<div class="p-6"><h2 class="text-base font-bold mb-4">${p?'Edit':'Tambah'} Purchase Request</h2>
     <form onsubmit="svPR(event,'${id||''}')"><div class="grid grid-cols-2 gap-3">
-      ${fld('Custom ID','customID','text',p?.customID,true)} ${fld('Nomor PR','nomorPR','text',p?.nomorPR)}
+      ${fld('Custom ID','customID','text',id?p?.customID:genCustomID('PR',S.pr),true)} ${fld('Nomor PR','nomorPR','text',p?.nomorPR)}
       ${sel('CoO SPK','idCoO',S.spk.map(s=>({v:s.id,l:`${s.customID} – ${(s.deskripsi||'').substring(0,35)}`})),p?.idCoO,true,true)}
       ${fld('Tgl PR','tglPR','date',p?.tglPR)}
       ${tarea('Deskripsi','deskripsi',p?.deskripsi)}
@@ -1026,7 +1178,7 @@ const mSA = (id=null) => {
   const s=id?S.sa.find(x=>x.id===id):null;
   showM(`<div class="p-6"><h2 class="text-base font-bold mb-4">${s?'Edit':'Tambah'} Penagihan SA</h2>
     <form onsubmit="svSA(event,'${id||''}')"><div class="grid grid-cols-2 gap-3">
-      ${fld('Custom ID','customID','text',s?.customID,true)} ${fld('Nomor SA','nomorSA','text',s?.nomorSA)}
+      ${fld('Custom ID','customID','text',id?s?.customID:genCustomID('SA',S.sa),true)} ${fld('Nomor SA','nomorSA','text',s?.nomorSA)}
       ${sel('CoO SPK','idCoO',S.spk.map(x=>({v:x.id,l:`${x.customID} – ${(x.deskripsi||'').substring(0,35)}`})),s?.idCoO,true,true)}
       ${fld('Tgl SA','tglSA','date',s?.tglSA)}
       ${tarea('Deskripsi','deskripsi',s?.deskripsi)}
@@ -1316,6 +1468,17 @@ const importExcel = input => {
   };
   reader.readAsArrayBuffer(file);
   input.value='';
+};
+
+// ===== UPDATE BANNER =====
+const BANNER_KEY = 'rekap_banner_v2_1';
+const closeBanner = () => {
+  document.getElementById('update-banner').classList.add('hidden');
+  localStorage.setItem(BANNER_KEY, '1');
+};
+const initBanner = () => {
+  if(!localStorage.getItem(BANNER_KEY))
+    document.getElementById('update-banner').classList.remove('hidden');
 };
 
 // ===== INIT =====
