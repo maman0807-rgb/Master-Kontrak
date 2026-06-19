@@ -181,7 +181,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 // ===== STATE =====
-let S = { page:'dashboard', mk:[], spk:[], pr:[], sa:[], sspk:[], dc:[], tvm:[], users:[], fy:'', fm:'', fkontrak:'', dcTab:'dc', tvmTab:'hhe', currentUser:'', currentNama:'', isAdmin:false };
+let S = { page:'dashboard', mk:[], spk:[], pr:[], sa:[], sspk:[], dc:[], tvm:[], users:[], fy:'', fm:'', fkontrak:'', dcTab:'dc', prTab:'list', saTab:'list', tvmTab:'hhe', currentUser:'', currentNama:'', isAdmin:false };
 
 // ===== UTILS =====
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'x'+Math.random().toString(36).slice(2,10)+Date.now().toString(36));
@@ -767,15 +767,25 @@ const rSPK = () => {
 // ===== PURCHASE REQUEST =====
 const rPR = () => {
   const data=byDate(byK(S.pr),'tglPR'), total=data.reduce((a,x)=>a+rpN(x.estimasiNilai),0);
+  const spkWithPR=new Set(S.pr.map(x=>x.idCoO));
+  let spkNoPR=S.spk.filter(x=>!spkWithPR.has(x.id));
+  if(S.fkontrak) spkNoPR=spkNoPR.filter(x=>x.idKontrak===S.fkontrak);
+  const isList=S.prTab==='list';
+  const tabBtn=(t,label)=>{const a=S.prTab===t;return `<button onclick="S.prTab='${t}';render()" class="px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition ${a?'border-blue-700 text-blue-700 bg-white':'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${label}</button>`;};
   return `<div class="fade-in">
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-      <h1 class="text-lg font-bold text-gray-800">Purchase Request <span class="text-sm font-normal text-gray-400">(${data.length})</span></h1>
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
+      <h1 class="text-lg font-bold text-gray-800">Purchase Request</h1>
       <div class="flex gap-2 flex-wrap no-print">
         ${fBar(true)}
         <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
         <button onclick="mPR()" class="px-3 py-1.5 bg-blue-800 text-white rounded-lg text-sm hover:bg-blue-900">+ Tambah PR</button>
       </div>
     </div>
+    <div class="flex gap-0 border-b border-gray-200 mb-4">
+      ${tabBtn('list','🛒 Purchase Request ('+data.length+')')}
+      ${tabBtn('missing',`${spkNoPR.length>0?'⚠ ':'✅ '}SPK Belum Ada PR (${spkNoPR.length})`)}
+    </div>
+    ${isList?`
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
         ${thead([['ID PR'],['No. PR'],['CoO SPK'],['Kontrak'],['Deskripsi'],['Est. Nilai','right'],['Tgl PR','center'],['Catatan'],['Aksi','center']])}
@@ -803,22 +813,52 @@ const rPR = () => {
           <td class="px-4 py-3 text-right font-mono">${rp(total)}</td><td colspan="3"></td></tr>
         </tfoot>
       </table>
-    </div></div>
+    </div></div>`:`
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        ${thead([['ID CoO'],['Kontrak'],['Deskripsi'],['Nilai SPK','right'],['Tgl Selesai','center'],['Status','center'],['','center']])}
+        <tbody class="divide-y divide-gray-100">
+          ${spkNoPR.length===0?emptyRow('✅','Semua CoO SPK sudah memiliki PR.',7):spkNoPR.map(s=>{
+            const k=S.mk.find(x=>x.id===s.idKontrak);
+            return `<tr class="hover:bg-gray-50">
+              <td class="px-4 py-3 font-semibold text-indigo-700 whitespace-nowrap">${esc(s.customID)}</td>
+              <td class="px-4 py-3 text-xs text-blue-600 whitespace-nowrap">${k?esc(k.customID):'-'}</td>
+              <td class="px-4 py-3 text-gray-600 max-w-sm"><div class="clamp2" title="${esc(s.deskripsi)}">${esc(s.deskripsi||'-')}</div></td>
+              <td class="px-4 py-3 text-right font-mono whitespace-nowrap">${rp(s.nilaiSPK)}</td>
+              <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(s.tglSelesai)}</td>
+              <td class="px-4 py-3 text-center">${badge(s.status)}</td>
+              <td class="px-4 py-3 text-center no-print">
+                <button onclick="mPR(null,'${s.id}')" class="px-3 py-1 bg-purple-600 text-white rounded-lg text-xs hover:bg-purple-700">+ Buat PR</button>
+              </td>
+            </tr>`;}).join('')}
+        </tbody>
+      </table>
+    </div></div>`}
   </div>`;
 };
 
 // ===== PENAGIHAN SA =====
 const rSA = () => {
   const data=byDate(byK(S.sa),'tglSA'), total=data.reduce((a,x)=>a+rpN(x.nilaiSA),0);
+  const spkWithSA=new Set(S.sa.map(x=>x.idCoO));
+  let spkNoSA=S.spk.filter(x=>!spkWithSA.has(x.id));
+  if(S.fkontrak) spkNoSA=spkNoSA.filter(x=>x.idKontrak===S.fkontrak);
+  const isList=S.saTab==='list';
+  const tabBtn=(t,label)=>{const a=S.saTab===t;return `<button onclick="S.saTab='${t}';render()" class="px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition ${a?'border-blue-700 text-blue-700 bg-white':'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${label}</button>`;};
   return `<div class="fade-in">
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-      <h1 class="text-lg font-bold text-gray-800">Penagihan SA — Realisasi <span class="text-sm font-normal text-gray-400">(${data.length})</span></h1>
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
+      <h1 class="text-lg font-bold text-gray-800">Penagihan SA — Realisasi</h1>
       <div class="flex gap-2 flex-wrap no-print">
         ${fBar(true)}
         <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
         <button onclick="mSA()" class="px-3 py-1.5 bg-blue-800 text-white rounded-lg text-sm hover:bg-blue-900">+ Tambah SA</button>
       </div>
     </div>
+    <div class="flex gap-0 border-b border-gray-200 mb-4">
+      ${tabBtn('list','💳 Penagihan SA ('+data.length+')')}
+      ${tabBtn('missing',`${spkNoSA.length>0?'⚠ ':'✅ '}SPK Belum Ditagih (${spkNoSA.length})`)}
+    </div>
+    ${isList?`
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
         ${thead([['ID SA'],['No. SA'],['CoO SPK'],['Kontrak'],['Deskripsi'],['Nilai SA','right'],['Tgl SA','center'],['No. Invoice'],['Catatan'],['Aksi','center']])}
@@ -847,7 +887,27 @@ const rSA = () => {
           <td class="px-4 py-3 text-right font-mono text-emerald-700">${rp(total)}</td><td colspan="4"></td></tr>
         </tfoot>
       </table>
-    </div></div>
+    </div></div>`:`
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        ${thead([['ID CoO'],['Kontrak'],['Deskripsi'],['Nilai SPK','right'],['Tgl Selesai','center'],['Status','center'],['','center']])}
+        <tbody class="divide-y divide-gray-100">
+          ${spkNoSA.length===0?emptyRow('✅','Semua CoO SPK sudah memiliki SA.',7):spkNoSA.map(s=>{
+            const k=S.mk.find(x=>x.id===s.idKontrak);
+            return `<tr class="hover:bg-gray-50">
+              <td class="px-4 py-3 font-semibold text-indigo-700 whitespace-nowrap">${esc(s.customID)}</td>
+              <td class="px-4 py-3 text-xs text-blue-600 whitespace-nowrap">${k?esc(k.customID):'-'}</td>
+              <td class="px-4 py-3 text-gray-600 max-w-sm"><div class="clamp2" title="${esc(s.deskripsi)}">${esc(s.deskripsi||'-')}</div></td>
+              <td class="px-4 py-3 text-right font-mono whitespace-nowrap">${rp(s.nilaiSPK)}</td>
+              <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(s.tglSelesai)}</td>
+              <td class="px-4 py-3 text-center">${badge(s.status)}</td>
+              <td class="px-4 py-3 text-center no-print">
+                <button onclick="mSA(null,'${s.id}')" class="px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs hover:bg-emerald-700">+ Buat SA</button>
+              </td>
+            </tr>`;}).join('')}
+        </tbody>
+      </table>
+    </div></div>`}
   </div>`;
 };
 
@@ -1145,12 +1205,12 @@ const dSPK = async id => {
 };
 
 // ===== PURCHASE REQUEST CRUD =====
-const mPR = (id=null) => {
+const mPR = (id=null, preCoO=null) => {
   const p=id?S.pr.find(x=>x.id===id):null;
   showM(`<div class="p-6"><h2 class="text-base font-bold mb-4">${p?'Edit':'Tambah'} Purchase Request</h2>
     <form onsubmit="svPR(event,'${id||''}')"><div class="grid grid-cols-2 gap-3">
       ${fld('Custom ID','customID','text',id?p?.customID:genCustomID('PR',S.pr),true)} ${fld('Nomor PR','nomorPR','text',p?.nomorPR)}
-      ${sel('CoO SPK','idCoO',S.spk.map(s=>({v:s.id,l:`${s.customID} – ${(s.deskripsi||'').substring(0,35)}`})),p?.idCoO,true,true)}
+      ${sel('CoO SPK','idCoO',S.spk.map(s=>({v:s.id,l:`${s.customID} – ${(s.deskripsi||'').substring(0,35)}`})),preCoO||p?.idCoO,true,true)}
       ${fld('Tgl PR','tglPR','date',p?.tglPR)}
       ${tarea('Deskripsi','deskripsi',p?.deskripsi)}
       ${fld('Estimasi Nilai (Rp)','estimasiNilai','number',p?.estimasiNilai)}
@@ -1174,12 +1234,12 @@ const dPR = async id => {
 };
 
 // ===== PENAGIHAN SA CRUD =====
-const mSA = (id=null) => {
+const mSA = (id=null, preCoO=null) => {
   const s=id?S.sa.find(x=>x.id===id):null;
   showM(`<div class="p-6"><h2 class="text-base font-bold mb-4">${s?'Edit':'Tambah'} Penagihan SA</h2>
     <form onsubmit="svSA(event,'${id||''}')"><div class="grid grid-cols-2 gap-3">
       ${fld('Custom ID','customID','text',id?s?.customID:genCustomID('SA',S.sa),true)} ${fld('Nomor SA','nomorSA','text',s?.nomorSA)}
-      ${sel('CoO SPK','idCoO',S.spk.map(x=>({v:x.id,l:`${x.customID} – ${(x.deskripsi||'').substring(0,35)}`})),s?.idCoO,true,true)}
+      ${sel('CoO SPK','idCoO',S.spk.map(x=>({v:x.id,l:`${x.customID} – ${(x.deskripsi||'').substring(0,35)}`})),preCoO||s?.idCoO,true,true)}
       ${fld('Tgl SA','tglSA','date',s?.tglSA)}
       ${tarea('Deskripsi','deskripsi',s?.deskripsi)}
       ${fld('Nilai SA (Rp)','nilaiSA','number',s?.nilaiSA)} ${fld('Nomor Invoice','nomorInvoice','text',s?.nomorInvoice)}
