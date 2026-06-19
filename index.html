@@ -176,7 +176,7 @@ let S = { page:'dashboard', mk:[], spk:[], pr:[], sa:[], sspk:[], dc:[], tvm:[],
 // ===== UTILS =====
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'x'+Math.random().toString(36).slice(2,10)+Date.now().toString(36));
 const rpN = v => +String(v||'').replace(/[^\d.-]/g,'') || 0;
-const rp  = v => v!=null&&v!=='' ? 'Rp '+rpN(v).toLocaleString('id-ID') : '-';
+const rp  = v => v!=null&&v!=='' ? 'Rp '+rpN(v).toLocaleString('id-ID') : '-';
 const df  = d => { if(!d) return '-'; const p=String(d).split('-'); return p.length===3&&p[0].length===4?`${p[2]}/${p[1]}/${p[0]}`:d; };
 const daysLeft = d => { if(!d) return null; return Math.ceil((new Date(d)-new Date())/86400000); };
 const sisaHari = d => {
@@ -968,7 +968,7 @@ const dcItemsSectionInner = () => {
           ${!isRes?`<tfoot class="bg-gray-50 border-t"><tr>
             <td colspan="4" class="px-2 py-1.5 text-right text-gray-500 font-semibold">TOTAL</td>
             <td></td>
-            <td class="px-2 py-1.5 text-right font-mono font-semibold" id="dc-grand-total">${rp(total)}</td>
+            <td class="px-2 py-1.5 text-right font-mono font-semibold whitespace-nowrap" id="dc-grand-total">${rp(total)}</td>
             <td></td>
           </tr></tfoot>`:''}
         </table>
