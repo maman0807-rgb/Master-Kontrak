@@ -1196,10 +1196,12 @@ const dSPK = async id => {
 // ===== PURCHASE REQUEST CRUD =====
 const mPR = (id=null, preCoO=null) => {
   const p=id?S.pr.find(x=>x.id===id):null;
+  const spkWithPR=new Set(S.pr.filter(x=>x.id!==id).map(x=>x.idCoO));
+  const spkOpts=(id?S.spk:S.spk.filter(s=>!spkWithPR.has(s.id))).map(s=>({v:s.id,l:`${s.customID} – ${(s.deskripsi||'').substring(0,35)}`}));
   showM(`<div class="p-6"><h2 class="text-base font-bold mb-4">${p?'Edit':'Tambah'} Purchase Request</h2>
     <form onsubmit="svPR(event,'${id||''}')"><div class="grid grid-cols-2 gap-3">
       ${fld('Custom ID','customID','text',id?p?.customID:genCustomID('PR',S.pr),true)} ${fld('Nomor PR','nomorPR','text',p?.nomorPR)}
-      ${sel('CoO SPK','idCoO',S.spk.map(s=>({v:s.id,l:`${s.customID} – ${(s.deskripsi||'').substring(0,35)}`})),preCoO||p?.idCoO,true,true)}
+      ${spkOpts.length?sel('CoO SPK','idCoO',spkOpts,preCoO||p?.idCoO,true,true):`<div class="col-span-2 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 text-center">✅ Semua CoO SPK sudah memiliki PR.</div>`}
       ${fld('Tgl PR','tglPR','date',p?.tglPR)}
       ${tarea('Deskripsi','deskripsi',p?.deskripsi)}
       ${fld('Estimasi Nilai (Rp)','estimasiNilai','number',p?.estimasiNilai)}
@@ -1225,10 +1227,12 @@ const dPR = async id => {
 // ===== PENAGIHAN SA CRUD =====
 const mSA = (id=null, preCoO=null) => {
   const s=id?S.sa.find(x=>x.id===id):null;
+  const spkWithSA=new Set(S.sa.filter(x=>x.id!==id).map(x=>x.idCoO));
+  const spkOpts=(id?S.spk:S.spk.filter(x=>!spkWithSA.has(x.id))).map(x=>({v:x.id,l:`${x.customID} – ${(x.deskripsi||'').substring(0,35)}`}));
   showM(`<div class="p-6"><h2 class="text-base font-bold mb-4">${s?'Edit':'Tambah'} Penagihan SA</h2>
     <form onsubmit="svSA(event,'${id||''}')"><div class="grid grid-cols-2 gap-3">
       ${fld('Custom ID','customID','text',id?s?.customID:genCustomID('SA',S.sa),true)} ${fld('Nomor SA','nomorSA','text',s?.nomorSA)}
-      ${sel('CoO SPK','idCoO',S.spk.map(x=>({v:x.id,l:`${x.customID} – ${(x.deskripsi||'').substring(0,35)}`})),preCoO||s?.idCoO,true,true)}
+      ${spkOpts.length?sel('CoO SPK','idCoO',spkOpts,preCoO||s?.idCoO,true,true):`<div class="col-span-2 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 text-center">✅ Semua CoO SPK sudah memiliki SA.</div>`}
       ${fld('Tgl SA','tglSA','date',s?.tglSA)}
       ${tarea('Deskripsi','deskripsi',s?.deskripsi)}
       ${fld('Nilai SA (Rp)','nilaiSA','number',s?.nilaiSA)} ${fld('Nomor Invoice','nomorInvoice','text',s?.nomorInvoice)}
