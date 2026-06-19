@@ -181,7 +181,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 // ===== STATE =====
-let S = { page:'dashboard', mk:[], spk:[], pr:[], sa:[], sspk:[], dc:[], tvm:[], users:[], fy:'', fm:'', fkontrak:'', dcTab:'dc', prTab:'list', saTab:'list', tvmTab:'hhe', currentUser:'', currentNama:'', isAdmin:false };
+let S = { page:'dashboard', mk:[], spk:[], pr:[], sa:[], sspk:[], dc:[], tvm:[], users:[], fy:'', fm:'', fkontrak:'', dcTab:'dc', prTab:'missing', saTab:'missing', tvmTab:'hhe', currentUser:'', currentNama:'', isAdmin:false };
 
 // ===== UTILS =====
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'x'+Math.random().toString(36).slice(2,10)+Date.now().toString(36));
@@ -782,8 +782,8 @@ const rPR = () => {
       </div>
     </div>
     <div class="flex gap-0 border-b border-gray-200 mb-4">
-      ${tabBtn('list','🛒 Purchase Request ('+data.length+')')}
       ${tabBtn('missing',`${spkNoPR.length>0?'⚠ ':'✅ '}SPK Belum Ada PR (${spkNoPR.length})`)}
+      ${tabBtn('list','📋 Semua PR ('+data.length+')')}
     </div>
     ${isList?`
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
@@ -855,8 +855,8 @@ const rSA = () => {
       </div>
     </div>
     <div class="flex gap-0 border-b border-gray-200 mb-4">
-      ${tabBtn('list','💳 Penagihan SA ('+data.length+')')}
       ${tabBtn('missing',`${spkNoSA.length>0?'⚠ ':'✅ '}SPK Belum Ditagih (${spkNoSA.length})`)}
+      ${tabBtn('list','📋 Semua SA ('+data.length+')')}
     </div>
     ${isList?`
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
