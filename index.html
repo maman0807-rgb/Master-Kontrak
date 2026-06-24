@@ -578,7 +578,7 @@ const rDC = () => {
 
   const rowDC = d => {
     const items=d.items?.length?d.items:[{namaPart:d.namaPart,jumlah:d.jumlah,satuan:d.satuan,kimap:d.kimap,hargaSatuan:d.hargaSatuan}];
-    const grandTotal=items.reduce((a,x)=>a+(+x.jumlah||0)*(+x.hargaSatuan||0),0);
+    const grandTotal=items.reduce((a,x)=>a+(+x.hargaSatuan||0),0);
     return `
     <tr class="bg-gray-50 border-t-2 border-gray-200">
       <td class="px-4 py-2.5 font-semibold text-rose-700 whitespace-nowrap">${esc(d.noPerm||'-')}</td>
@@ -605,10 +605,8 @@ const rDC = () => {
                 <th class="px-3 py-1.5 text-left font-medium">Nama Part / Material</th>
                 <th class="px-3 py-1.5 text-left font-medium">Part Number</th>
                 <th class="px-3 py-1.5 text-left font-medium">KIMAP</th>
-                <th class="px-3 py-1.5 text-center font-medium w-14">Qty</th>
                 <th class="px-3 py-1.5 text-left font-medium w-16">Satuan</th>
-                <th class="px-3 py-1.5 text-right font-medium">Harga Satuan</th>
-                <th class="px-3 py-1.5 text-right font-medium">Total</th>
+                <th class="px-3 py-1.5 text-right font-medium">Harga (Rp)</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 bg-white">
@@ -618,10 +616,8 @@ const rDC = () => {
                 <td class="px-3 py-1.5 text-gray-800 font-medium">${esc(item.namaPart||'-')}</td>
                 <td class="px-3 py-1.5 text-blue-700 whitespace-nowrap font-medium">${esc(item.partNumber||'-')}</td>
                 <td class="px-3 py-1.5 text-gray-500 whitespace-nowrap">${esc(item.kimap||'-')}</td>
-                <td class="px-3 py-1.5 text-center font-semibold">${+item.jumlah||0}</td>
                 <td class="px-3 py-1.5 text-gray-500">${esc(item.satuan||'-')}</td>
-                <td class="px-3 py-1.5 text-right font-mono">${rp(item.hargaSatuan)}</td>
-                <td class="px-3 py-1.5 text-right font-mono font-semibold">${rp((+item.jumlah||0)*(+item.hargaSatuan||0))}</td>
+                <td class="px-3 py-1.5 text-right font-mono font-semibold">${rp(+item.hargaSatuan||0)}</td>
               </tr>`).join('')}
             </tbody>
           </table>
@@ -975,15 +971,14 @@ const dcItemRow = (item) => `
     <td class="p-1.5"><input data-f="namaPart" value="${esc(item.namaPart||'')}" placeholder="Nama part / material" class="border rounded px-2 py-1.5 text-xs w-full" required></td>
     <td class="p-1.5"><input data-f="partNumber" value="${esc(item.partNumber||'')}" placeholder="Part No." class="border rounded px-2 py-1.5 text-xs w-24"></td>
     <td class="p-1.5"><input data-f="kimap" value="${esc(item.kimap||'')}" placeholder="KIMAP" class="border rounded px-2 py-1.5 text-xs w-20"></td>
-    <td class="p-1.5"><input data-f="jumlah" type="number" value="${+item.jumlah||1}" min="0.01" step="0.01" onchange="dcUpdateGrand()" class="border rounded px-2 py-1.5 text-xs w-16 text-center"></td>
     <td class="p-1.5"><input data-f="satuan" value="${esc(item.satuan||'pcs')}" class="border rounded px-2 py-1.5 text-xs w-14"></td>
-    ${!_dcIsRes?`<td class="p-1.5"><input data-f="hargaSatuan" type="number" value="${+item.hargaSatuan||0}" min="0" onchange="dcUpdateGrand()" class="border rounded px-2 py-1.5 text-xs w-28 text-right font-mono"></td><td class="p-1.5 text-right font-mono text-xs whitespace-nowrap dc-row-total">${rp((+item.jumlah||0)*(+item.hargaSatuan||0))}</td>`:''}
+    ${!_dcIsRes?`<td class="p-1.5"><input data-f="hargaSatuan" type="number" value="${+item.hargaSatuan||0}" min="0" onchange="dcUpdateGrand()" class="border rounded px-2 py-1.5 text-xs w-32 text-right font-mono"></td><td class="p-1.5 text-right font-mono text-xs whitespace-nowrap dc-row-total">${rp(+item.hargaSatuan||0)}</td>`:''}
     <td class="p-1.5 text-center"><button type="button" onclick="dcRemoveItem(this)" class="text-red-400 hover:text-red-600 text-sm px-1" title="Hapus baris">✕</button></td>
   </tr>`;
 
 const dcItemsSectionInner = () => {
   const isRes = _dcIsRes;
-  const total = _dcItems.reduce((a,x)=>a+(+x.jumlah||0)*(+x.hargaSatuan||0),0);
+  const total = _dcItems.reduce((a,x)=>a+(+x.hargaSatuan||0),0);
   return `
     <div class="flex items-center justify-between mb-1.5">
       <label class="text-xs font-medium text-gray-600">Item Part / Material <span class="text-red-400">*</span></label>
@@ -997,9 +992,8 @@ const dcItemsSectionInner = () => {
               <th class="px-2 py-2 text-left">Nama Part / Material</th>
               <th class="px-2 py-2 text-left w-24">Part Number</th>
               <th class="px-2 py-2 text-left w-20">KIMAP</th>
-              <th class="px-2 py-2 text-center w-14">Jml</th>
               <th class="px-2 py-2 text-left w-14">Satuan</th>
-              ${!isRes?'<th class="px-2 py-2 text-right">Harga Sat. (Rp)</th><th class="px-2 py-2 text-right w-24">Total</th>':''}
+              ${!isRes?'<th class="px-2 py-2 text-right">Harga (Rp)</th><th class="px-2 py-2 text-right w-24">Total</th>':''}
               <th class="px-2 py-2 w-6"></th>
             </tr>
           </thead>
@@ -1007,7 +1001,7 @@ const dcItemsSectionInner = () => {
             ${_dcItems.map(item=>dcItemRow(item)).join('')}
           </tbody>
           ${!isRes?`<tfoot class="bg-gray-50 border-t"><tr>
-            <td colspan="5" class="px-2 py-1.5 text-right text-gray-500 font-semibold">TOTAL</td>
+            <td colspan="4" class="px-2 py-1.5 text-right text-gray-500 font-semibold">TOTAL</td>
             <td></td>
             <td class="px-2 py-1.5 text-right font-mono font-semibold whitespace-nowrap" id="dc-grand-total">${rp(total)}</td>
             <td></td>
@@ -1022,7 +1016,6 @@ const dcSyncFromDOM = () => {
   _dcItems = [...rows].map(r => ({
     namaPart: r.querySelector('[data-f=namaPart]')?.value?.trim()||'',
     partNumber: r.querySelector('[data-f=partNumber]')?.value?.trim()||'',
-    jumlah: +(r.querySelector('[data-f=jumlah]')?.value||1),
     satuan: r.querySelector('[data-f=satuan]')?.value?.trim()||'pcs',
     kimap: r.querySelector('[data-f=kimap]')?.value?.trim()||'',
     hargaSatuan: +(r.querySelector('[data-f=hargaSatuan]')?.value||0)
@@ -1037,7 +1030,7 @@ const dcRenderItems = () => {
 
 const dcAddItem = () => {
   dcSyncFromDOM();
-  _dcItems.push({namaPart:'',jumlah:1,satuan:'pcs',kimap:'',hargaSatuan:0});
+  _dcItems.push({namaPart:'',satuan:'pcs',kimap:'',hargaSatuan:0});
   dcRenderItems();
   document.querySelector('#dc-items-body tr:last-child [data-f=namaPart]')?.focus();
 };
@@ -1047,7 +1040,7 @@ const dcRemoveItem = btn => {
   const row = btn.closest('tr');
   const idx = [...document.querySelectorAll('#dc-items-body tr')].indexOf(row);
   if(idx>=0) _dcItems.splice(idx,1);
-  if(!_dcItems.length) _dcItems.push({namaPart:'',jumlah:1,satuan:'pcs',kimap:'',hargaSatuan:0});
+  if(!_dcItems.length) _dcItems.push({namaPart:'',satuan:'pcs',kimap:'',hargaSatuan:0});
   dcRenderItems();
 };
 
@@ -1055,11 +1048,10 @@ const dcUpdateGrand = () => {
   if(_dcIsRes) return;
   let grand=0;
   document.querySelectorAll('#dc-items-body tr').forEach(r=>{
-    const jml=+(r.querySelector('[data-f=jumlah]')?.value||0);
     const hrg=+(r.querySelector('[data-f=hargaSatuan]')?.value||0);
     const totCell=r.querySelector('.dc-row-total');
-    if(totCell) totCell.textContent=rp(jml*hrg);
-    grand+=jml*hrg;
+    if(totCell) totCell.textContent=rp(hrg);
+    grand+=hrg;
   });
   const gt=document.getElementById('dc-grand-total');
   if(gt) gt.textContent=rp(grand);
@@ -1069,11 +1061,10 @@ const getDCItemsFromDOM = () => {
   return [...document.querySelectorAll('#dc-items-body tr')].map(r=>({
     namaPart: r.querySelector('[data-f=namaPart]')?.value?.trim()||'',
     partNumber: r.querySelector('[data-f=partNumber]')?.value?.trim()||'',
-    jumlah: +(r.querySelector('[data-f=jumlah]')?.value||1),
     satuan: r.querySelector('[data-f=satuan]')?.value?.trim()||'pcs',
     kimap: r.querySelector('[data-f=kimap]')?.value?.trim()||'',
     hargaSatuan: +(r.querySelector('[data-f=hargaSatuan]')?.value||0),
-    total: (+(r.querySelector('[data-f=jumlah]')?.value||1))*(+(r.querySelector('[data-f=hargaSatuan]')?.value||0))
+    total: +(r.querySelector('[data-f=hargaSatuan]')?.value||0)
   }));
 };
 
