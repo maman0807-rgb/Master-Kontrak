@@ -185,7 +185,7 @@ const applyDCFilter = () => {
 const rpN = v => +String(v||'').replace(/[^\d.-]/g,'') || 0;
 const rp  = v => v!=null&&v!=='' ? 'Rp '+rpN(v).toLocaleString('id-ID') : '-';
 const df  = d => { if(!d) return '-'; const p=String(d).split('-'); return p.length===3&&p[0].length===4?`${p[2]}/${p[1]}/${p[0]}`:d; };
-const daysLeft = d => { if(!d) return null; return Math.ceil((new Date(d)-new Date())/86400000); };
+const daysLeft = d => { if(!d) return null; return Math.ceil((new Date(d+'T00:00:00')-new Date())/86400000); };
 const sisaHari = d => {
   const n=daysLeft(d); if(n===null) return '-';
   if(n<0)   return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">⚠ Expired ${Math.abs(n)}h</span>`;
@@ -325,6 +325,7 @@ const sbClose = () => {
 
 const go = page => {
   S.page=page;
+  if(!['spk','pr','sa'].includes(page)) S.fkontrak='';
   document.querySelectorAll('.nav-item').forEach(el=>{
     el.classList.remove('bg-blue-800','text-white','font-semibold');
     el.classList.add('text-blue-100');
@@ -380,7 +381,7 @@ const rDash = () => {
 
   const perK = S.mk.map(k=>{
     const spks=S.spk.filter(x=>x.idKontrak===k.id);
-    const real=S.sa.filter(x=>spks.map(s=>s.id).includes(x.idCoO)).reduce((a,x)=>a+rpN(x.nilaiSA),0);
+    const real=saF.filter(x=>spks.map(s=>s.id).includes(x.idCoO)).reduce((a,x)=>a+rpN(x.nilaiSA),0);
     return {...k,spkCount:spks.length,nilaiSpk:spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0),real};
   });
 
@@ -1320,7 +1321,7 @@ const svMK = async (e,id) => {
   const o={id:id||uid(),customID:f.customID.value.trim(),nomorSPB:f.nomorSPB.value.trim(),vendor:f.vendor.value.trim(),judulKontrak:f.judulKontrak.value.trim(),nilaiKontrak:f.nilaiKontrak.value,pic:f.pic.value.trim(),tglMulai:f.tglMulai.value,tglBerakhir:f.tglBerakhir.value,status:f.status.value,createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
   setLoad(true,'Menyimpan...'); const {error}=await sb.from('master_kontrak').upsert(F.to.mk(o));
   setLoad(false); if(dbErr(error)) return;
-  if(id) S.mk[S.mk.findIndex(x=>x.id===id)]=o; else S.mk.push(o);
+  if(id) S.mk[S.mk.findIndex(x=>x.id===id)]=o; else { S.mk.push(o); S.mk.sort((a,b)=>a.customID.localeCompare(b.customID)); }
   closeModal(); render();
 };
 const dMK = async id => {
@@ -1399,12 +1400,14 @@ const mPR = (id=null, preCoO=null) => {
 };
 const svPR = async (e,id) => {
   e.preventDefault(); const f=e.target;
+  const idCoO=f.idCoO?.value?.trim()||'';
+  if(!idCoO){alert('Tidak ada CoO SPK yang tersedia. Tambah CoO SPK terlebih dahulu.');return;}
   if(!id&&S.pr.some(x=>x.customID===f.customID.value.trim())){
     f.customID.value=genCustomID('PR',S.pr);
     alert('ID duplikat terdeteksi, ID baru telah di-generate. Periksa lalu simpan ulang.');return;
   }
   const ex=id?S.pr.find(x=>x.id===id):null;
-  const o={id:id||uid(),customID:f.customID.value.trim(),nomorPR:f.nomorPR.value.trim(),idCoO:f.idCoO.value,tglPR:f.tglPR.value,deskripsi:f.deskripsi.value.trim(),estimasiNilai:f.estimasiNilai.value,catatan:f.catatan.value.trim(),createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
+  const o={id:id||uid(),customID:f.customID.value.trim(),nomorPR:f.nomorPR.value.trim(),idCoO,tglPR:f.tglPR.value,deskripsi:f.deskripsi.value.trim(),estimasiNilai:f.estimasiNilai.value,catatan:f.catatan.value.trim(),createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
   setLoad(true,'Menyimpan...'); const {error}=await sb.from('purchase_request').upsert(F.to.pr(o));
   setLoad(false); if(dbErr(error)) return;
   if(id) S.pr[S.pr.findIndex(x=>x.id===id)]=o; else S.pr.unshift(o);
@@ -1434,12 +1437,14 @@ const mSA = (id=null, preCoO=null) => {
 };
 const svSA = async (e,id) => {
   e.preventDefault(); const f=e.target;
+  const idCoO=f.idCoO?.value?.trim()||'';
+  if(!idCoO){alert('Tidak ada CoO SPK yang tersedia. Tambah CoO SPK terlebih dahulu.');return;}
   if(!id&&S.sa.some(x=>x.customID===f.customID.value.trim())){
     f.customID.value=genCustomID('SA',S.sa);
     alert('ID duplikat terdeteksi, ID baru telah di-generate. Periksa lalu simpan ulang.');return;
   }
   const ex=id?S.sa.find(x=>x.id===id):null;
-  const o={id:id||uid(),customID:f.customID.value.trim(),nomorSA:f.nomorSA.value.trim(),idCoO:f.idCoO.value,tglSA:f.tglSA.value,deskripsi:f.deskripsi.value.trim(),nilaiSA:f.nilaiSA.value,nomorInvoice:f.nomorInvoice.value.trim(),catatan:f.catatan.value.trim(),createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
+  const o={id:id||uid(),customID:f.customID.value.trim(),nomorSA:f.nomorSA.value.trim(),idCoO,tglSA:f.tglSA.value,deskripsi:f.deskripsi.value.trim(),nilaiSA:f.nilaiSA.value,nomorInvoice:f.nomorInvoice.value.trim(),catatan:f.catatan.value.trim(),createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
   setLoad(true,'Menyimpan...'); const {error}=await sb.from('penagihan_sa').upsert(F.to.sa(o));
   setLoad(false); if(dbErr(error)) return;
   if(id) S.sa[S.sa.findIndex(x=>x.id===id)]=o; else S.sa.unshift(o);
@@ -1657,8 +1662,20 @@ const dUser = async id => {
 
 // ===== EXPORT SEMUA (multi-sheet) =====
 const exportRekapRes = () => {
-  const rows = window._rekapRes||[];
-  if(!rows.length){alert('Tidak ada data rekap reservasi.');return;}
+  const resOnly=byDate(S.dc,'tanggal').filter(x=>x.jenis==='Reservasi');
+  const map={};
+  resOnly.forEach(d=>{
+    const items=d.items?.length?d.items:[{namaPart:d.namaPart,jumlah:d.jumlah,satuan:d.satuan,kimap:d.kimap,partNumber:''}];
+    items.filter(x=>x.namaPart).forEach(item=>{
+      const key=(item.namaPart||'').trim().toLowerCase();
+      if(!map[key]) map[key]={nama:item.namaPart,partNumber:item.partNumber||'',kimap:item.kimap||'',satuan:item.satuan||'-',totalQty:0,count:0};
+      map[key].totalQty+=(+item.jumlah||1); map[key].count++;
+      if(item.partNumber&&!map[key].partNumber) map[key].partNumber=item.partNumber;
+      if(item.kimap&&!map[key].kimap) map[key].kimap=item.kimap;
+    });
+  });
+  const rows=Object.values(map).sort((a,b)=>b.totalQty-a.totalQty);
+  if(!rows.length){alert('Tidak ada data rekap reservasi untuk filter aktif.');return;}
   const label=(S.fy?'Tahun '+S.fy:'Semua Tahun')+(S.fm?' Bulan '+S.fm:'');
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet([
@@ -1678,11 +1695,12 @@ const exportAll = () => {
   const wb=XLSX.utils.book_new();
   const add=(name,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),name);
   add('SPK',[['LocalID','NoSPK','Tanggal','Vendor','Uraian','NilaiKontrak','Realisasi','Progress','Status','Keterangan'],...S.sspk.map(s=>[s.id,s.noSPK,s.tanggal,s.vendor,s.uraian,rpN(s.nilaiKontrak),rpN(s.realisasi),+s.progress||0,s.status,s.keterangan])]);
-  add('Permintaan Part',[['LocalID','Jenis','NoPerm','Tanggal','NamaPart','Jumlah','Satuan','HargaSatuan','Total','KIMAP','NomorPR','NomorPO','NomorMemo','NomorMR','NomorReservasi','NomorGR','TglGR','DiambilOleh','Status','Keterangan'],...S.dc.map(d=>[d.id,d.jenis||'Direct Charge',d.noPerm,d.tanggal,d.namaPart,+d.jumlah||0,d.satuan,rpN(d.hargaSatuan),rpN(d.total),d.kimap,d.nomorPR,d.nomorPO,d.nomorMemo,d.nomorMR,d.nomorReservasi,d.nomorGR,d.tglGR,d.diambilOleh,d.status,d.keterangan])]);
+  add('Permintaan Part',[['LocalID','Jenis','Tanggal','NamaPart','Jumlah','Satuan','HargaSatuan','Total','KIMAP','NomorPR','NomorPO','NomorMR','NomorReservasi','NomorGR','TglGR','DiambilOleh','Status','Keterangan','Items'],...S.dc.map(d=>[d.id,d.jenis||'Direct Charge',d.tanggal,d.namaPart,+d.jumlah||0,d.satuan,rpN(d.hargaSatuan),rpN(d.total),d.kimap,d.nomorPR,d.nomorPO,d.nomorMR,d.nomorReservasi,d.nomorGR,d.tglGR,d.diambilOleh,d.status,d.keterangan,d.items?.length?JSON.stringify(d.items):''])]);
   add('Master Kontrak',[['LocalID','CustomID','NomorSPB','Vendor','JudulKontrak','NilaiKontrak','TglMulai','TglBerakhir','PIC','Status'],...S.mk.map(k=>[k.id,k.customID,k.nomorSPB,k.vendor,k.judulKontrak,rpN(k.nilaiKontrak),k.tglMulai,k.tglBerakhir,k.pic,k.status])]);
   add('CoO SPK',[['LocalID','IDKontrak','CustomID','NomorSPK','Deskripsi','NilaiSPK','TglTerbit','TglMulai','TglSelesai','Status','Catatan'],...S.spk.map(s=>[s.id,s.idKontrak,s.customID,s.nomorSPK,s.deskripsi,rpN(s.nilaiSPK),s.tglTerbit,s.tglMulai,s.tglSelesai,s.status,s.catatan])]);
   add('Purchase Request',[['LocalID','IDCoO','CustomID','NomorPR','TglPR','Deskripsi','EstimasiNilai','Catatan'],...S.pr.map(p=>[p.id,p.idCoO,p.customID,p.nomorPR,p.tglPR,p.deskripsi,rpN(p.estimasiNilai),p.catatan])]);
   add('Penagihan SA',[['LocalID','IDCoO','CustomID','NomorSA','TglSA','Deskripsi','NilaiSA','NomorInvoice','Catatan'],...S.sa.map(s=>[s.id,s.idCoO,s.customID,s.nomorSA,s.tglSA,s.deskripsi,rpN(s.nilaiSA),s.nomorInvoice,s.catatan])]);
+  add('TVM',[['LocalID','NomorCOO','NomorPR','Fungsi','Deskripsi','Nilai','TglMulai','TglSelesai','Status','Catatan'],...S.tvm.map(t=>[t.id,t.nomorCOO,t.nomorPR,t.fungsi,t.deskripsi,rpN(t.nilai),t.tglMulai,t.tglSelesai,t.status,t.catatan])]);
   XLSX.writeFile(wb,`Backup_RekapKontrak_${new Date().toISOString().slice(0,10)}.xlsx`);
 };
 
@@ -1705,16 +1723,18 @@ const importExcel = input => {
         });
       };
       const sspk=rdSheet('SPK',[['LocalID','id'],['NoSPK','noSPK'],['Tanggal','tanggal'],['Vendor','vendor'],['Uraian','uraian'],['NilaiKontrak','nilaiKontrak'],['Realisasi','realisasi'],['Progress','progress'],['Status','status'],['Keterangan','keterangan']]);
-      const dc  =rdSheet('Permintaan Part',[['LocalID','id'],['Jenis','jenis'],['NoPerm','noPerm'],['Tanggal','tanggal'],['NamaPart','namaPart'],['Jumlah','jumlah'],['Satuan','satuan'],['HargaSatuan','hargaSatuan'],['Total','total'],['KIMAP','kimap'],['NomorPR','nomorPR'],['NomorPO','nomorPO'],['NomorMemo','nomorMemo'],['NomorMR','nomorMR'],['NomorReservasi','nomorReservasi'],['NomorGR','nomorGR'],['TglGR','tglGR'],['DiambilOleh','diambilOleh'],['Status','status'],['Keterangan','keterangan']]);
+      const dcRaw=rdSheet('Permintaan Part',[['LocalID','id'],['Jenis','jenis'],['Tanggal','tanggal'],['NamaPart','namaPart'],['Jumlah','jumlah'],['Satuan','satuan'],['HargaSatuan','hargaSatuan'],['Total','total'],['KIMAP','kimap'],['NomorPR','nomorPR'],['NomorPO','nomorPO'],['NomorMR','nomorMR'],['NomorReservasi','nomorReservasi'],['NomorGR','nomorGR'],['TglGR','tglGR'],['DiambilOleh','diambilOleh'],['Status','status'],['Keterangan','keterangan'],['Items','items']]);
+      const dc=dcRaw.map(d=>({...d,items:d.items?JSON.parse(d.items):[]}));
       const mk  =rdSheet('Master Kontrak',[['LocalID','id'],['CustomID','customID'],['NomorSPB','nomorSPB'],['Vendor','vendor'],['JudulKontrak','judulKontrak'],['NilaiKontrak','nilaiKontrak'],['TglMulai','tglMulai'],['TglBerakhir','tglBerakhir'],['PIC','pic'],['Status','status']]);
       const spk =rdSheet('CoO SPK',[['LocalID','id'],['IDKontrak','idKontrak'],['CustomID','customID'],['NomorSPK','nomorSPK'],['Deskripsi','deskripsi'],['NilaiSPK','nilaiSPK'],['TglTerbit','tglTerbit'],['TglMulai','tglMulai'],['TglSelesai','tglSelesai'],['Status','status'],['Catatan','catatan']]);
       const pr  =rdSheet('Purchase Request',[['LocalID','id'],['IDCoO','idCoO'],['CustomID','customID'],['NomorPR','nomorPR'],['TglPR','tglPR'],['Deskripsi','deskripsi'],['EstimasiNilai','estimasiNilai'],['Catatan','catatan']]);
       const sa  =rdSheet('Penagihan SA',[['LocalID','id'],['IDCoO','idCoO'],['CustomID','customID'],['NomorSA','nomorSA'],['TglSA','tglSA'],['Deskripsi','deskripsi'],['NilaiSA','nilaiSA'],['NomorInvoice','nomorInvoice'],['Catatan','catatan']]);
+      const tvm =rdSheet('TVM',[['LocalID','id'],['NomorCOO','nomorCOO'],['NomorPR','nomorPR'],['Fungsi','fungsi'],['Deskripsi','deskripsi'],['Nilai','nilai'],['TglMulai','tglMulai'],['TglSelesai','tglSelesai'],['Status','status'],['Catatan','catatan']]);
 
-      const total=sspk.length+dc.length+mk.length+spk.length+pr.length+sa.length;
-      if(!total){alert('Tidak ada data terbaca.\nPastikan nama sheet: SPK, Permintaan Part, Master Kontrak, CoO SPK, Purchase Request, Penagihan SA');return;}
+      const total=sspk.length+dc.length+mk.length+spk.length+pr.length+sa.length+tvm.length;
+      if(!total){alert('Tidak ada data terbaca.\nPastikan nama sheet: SPK, Permintaan Part, Master Kontrak, CoO SPK, Purchase Request, Penagihan SA, TVM');return;}
 
-      if(!confirm(`Data ditemukan:\n• ${sspk.length} SPK\n• ${dc.length} Permintaan Part\n• ${mk.length} Master Kontrak\n• ${spk.length} CoO SPK\n• ${pr.length} Purchase Request\n• ${sa.length} Penagihan SA\n\nUpload ke Supabase? (Data lama akan di-replace)`)) return;
+      if(!confirm(`Data ditemukan:\n• ${sspk.length} SPK\n• ${dc.length} Permintaan Part\n• ${mk.length} Master Kontrak\n• ${spk.length} CoO SPK\n• ${pr.length} Purchase Request\n• ${sa.length} Penagihan SA\n• ${tvm.length} TVM\n\nUpload ke Supabase? (Data lama akan di-replace)`)) return;
 
       setLoad(true,'Mengupload ke Supabase...');
       const ups = async (table, rows, conv) => {
@@ -1729,6 +1749,7 @@ const importExcel = input => {
       await ups('coo_spk',spk,F.to.coo);
       await ups('purchase_request',pr,F.to.pr);
       await ups('penagihan_sa',sa,F.to.sa);
+      await ups('tvm_coo',tvm,F.to.tvm);
 
       await loadAll();
       alert(`Import berhasil! ${total} data diupload ke Supabase.`);
