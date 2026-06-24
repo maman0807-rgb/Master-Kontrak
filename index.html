@@ -588,9 +588,9 @@ const rSSPK = () => {
     </div>
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
-        ${thead([['No. SPK/SPB'],['Jenis','center'],['Tanggal','center'],['Vendor'],['Uraian'],['Nilai Kontrak','right'],['Progres Fisik','center'],['Status','center'],['Aksi','center']])}
+        ${thead([['No. SPK/SPB'],['Jenis','center'],['Tanggal','center'],['Vendor'],['Uraian'],['Nilai Kontrak','right'],['Sisa','right'],['Progres Fisik','center'],['Status','center'],['Aksi','center']])}
         <tbody class="divide-y divide-gray-100">
-          ${data.length===0?emptyRow('📄','Belum ada data SPK.',9):data.map(s=>`
+          ${data.length===0?emptyRow('📄','Belum ada data SPK.',10):data.map(s=>`
             <tr class="hover:bg-gray-50">
               <td class="px-4 py-3 font-semibold text-blue-700 whitespace-nowrap">${esc(s.noSPK)}</td>
               <td class="px-4 py-3 text-center">${badge(s.jenisAnggaran||'-')}</td>
@@ -598,6 +598,7 @@ const rSSPK = () => {
               <td class="px-4 py-3 max-w-xs"><div class="clamp2" title="${esc(s.vendor)}">${esc(s.vendor||'-')}</div></td>
               <td class="px-4 py-3 text-gray-600 max-w-sm"><div class="clamp2" title="${esc(s.uraian)}">${esc(s.uraian||'-')}</div></td>
               <td class="px-4 py-3 text-right font-mono whitespace-nowrap">${rp(s.nilaiKontrak)}</td>
+              <td class="px-4 py-3 text-right font-mono text-orange-600 whitespace-nowrap">${rp(rpN(s.nilaiKontrak)-rpN(s.realisasi))}</td>
               <td class="px-4 py-3 w-28">${pBar(+s.progress||0)}</td>
               <td class="px-4 py-3 text-center">${badge(s.status)}</td>
               <td class="px-4 py-3 text-center whitespace-nowrap no-print">
@@ -610,6 +611,7 @@ const rSSPK = () => {
         <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
           <tr><td colspan="5" class="px-4 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
           <td class="px-4 py-3 text-right font-mono">${rp(tNilai)}</td>
+          <td class="px-4 py-3 text-right font-mono text-orange-600">${rp(tNilai-tReal)}</td>
           <td colspan="3"></td></tr>
         </tfoot>
       </table>
