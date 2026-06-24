@@ -1326,7 +1326,7 @@ const rTVM = () => {
                 <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(t.tanggal)}</td>
                 <td class="px-4 py-3 max-w-xs"><div class="clamp2" title="${esc(t.deskripsi)}">${esc(t.deskripsi||'-')}</div></td>
                 <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(t.tglMulai)}</td>
-                <td class="px-4 py-3 text-center whitespace-nowrap">${sisaHari(t.tglSelesai)}</td>
+                <td class="px-4 py-3 text-center whitespace-nowrap">${t.status==='Selesai'?`<span class="text-xs text-gray-500">${df(t.tglSelesai)}</span>`:sisaHari(t.tglSelesai)}</td>
                 <td class="px-4 py-3 text-right font-mono font-semibold whitespace-nowrap">${rp(t.nilai)}</td>
                 <td class="px-4 py-3 text-center">${badge(t.status)}</td>
                 <td class="px-4 py-3 text-gray-400 max-w-xs"><div class="clamp2">${esc(t.catatan||'-')}</div></td>
