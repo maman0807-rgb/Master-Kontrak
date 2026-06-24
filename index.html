@@ -1317,13 +1317,12 @@ const rTVM = () => {
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
-          ${thead([['No. CoO/SPK'],['Tanggal','center'],['Deskripsi Pekerjaan'],['Tgl Mulai','center'],['Tgl Selesai','center'],['Nilai','right'],['Status','center'],['Ket.'],['Aksi','center']])}
+          ${thead([['No. CoO/SPK'],['Deskripsi Pekerjaan'],['Tgl Mulai','center'],['Tgl Selesai','center'],['Nilai','right'],['Status','center'],['Ket.'],['Aksi','center']])}
           <tbody class="divide-y divide-gray-100">
-            ${tabData.length===0?emptyRow('🔩',`Belum ada data ${isHHE?'Hoist & Heavy Equipment':'Rotating Mechanical'}.`,9)
+            ${tabData.length===0?emptyRow('🔩',`Belum ada data ${isHHE?'Hoist & Heavy Equipment':'Rotating Mechanical'}.`,8)
               :tabData.map(t=>`
               <tr class="hover:bg-gray-50">
                 <td class="px-4 py-3 font-semibold text-blue-700 whitespace-nowrap">${esc(t.nomorCOO||'-')}</td>
-                <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(t.tanggal)}</td>
                 <td class="px-4 py-3 max-w-xs"><div class="clamp2" title="${esc(t.deskripsi)}">${esc(t.deskripsi||'-')}</div></td>
                 <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(t.tglMulai)}</td>
                 <td class="px-4 py-3 text-center whitespace-nowrap">${t.status==='Selesai'?`<span class="text-xs text-gray-500">${df(t.tglSelesai)}</span>`:sisaHari(t.tglSelesai)}</td>
@@ -1338,7 +1337,7 @@ const rTVM = () => {
               </tr>`).join('')}
           </tbody>
           ${tabData.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
-            <tr><td colspan="5" class="px-4 py-3 text-right text-gray-500">TOTAL (${tabData.length})</td>
+            <tr><td colspan="4" class="px-4 py-3 text-right text-gray-500">TOTAL (${tabData.length})</td>
             <td class="px-4 py-3 text-right font-mono">${rp(tabTotal)}</td>
             <td colspan="3"></td></tr>
           </tfoot>`:''}
@@ -1352,7 +1351,7 @@ const mTVM = (id=null) => {
   const t=id?S.tvm.find(x=>x.id===id):null;
   showM(`<div class="p-6"><h2 class="text-base font-bold mb-4">${t?'Edit':'Tambah'} CoO TVM Trakindo</h2>
     <form onsubmit="svTVM(event,'${id||''}')"><div class="grid grid-cols-2 gap-3">
-      ${fld('No. CoO / No. SPK','nomorCOO','text',t?.nomorCOO,true)} ${fld('Tanggal Terbit','tanggal','date',t?.tanggal,true)}
+      <div class="col-span-2">${fld('No. CoO / No. SPK','nomorCOO','text',t?.nomorCOO,true)}</div>
       <div class="col-span-2">${sel('Fungsi','fungsi',FUNGSI,t?.fungsi||(S.tvmTab==='hhe'?'Hoist & Heavy Equipment':'Rotating Mechanical'),true)}</div>
       ${tarea('Deskripsi Pekerjaan','deskripsi',t?.deskripsi)}
       ${fld('Tgl Mulai','tglMulai','date',t?.tglMulai)} ${fld('Tgl Selesai','tglSelesai','date',t?.tglSelesai)}
@@ -1364,7 +1363,7 @@ const mTVM = (id=null) => {
 const svTVM = async (e,id) => {
   e.preventDefault(); const f=e.target;
   const ex=id?S.tvm.find(x=>x.id===id):null;
-  const o={id:id||uid(),nomorCOO:f.nomorCOO.value.trim(),tanggal:f.tanggal.value,fungsi:f.fungsi.value,deskripsi:f.deskripsi.value.trim(),nilai:f.nilai.value,tglMulai:f.tglMulai.value,tglSelesai:f.tglSelesai.value,status:f.status.value,catatan:f.catatan.value.trim(),createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
+  const o={id:id||uid(),nomorCOO:f.nomorCOO.value.trim(),tanggal:f.tglMulai.value,fungsi:f.fungsi.value,deskripsi:f.deskripsi.value.trim(),nilai:f.nilai.value,tglMulai:f.tglMulai.value,tglSelesai:f.tglSelesai.value,status:f.status.value,catatan:f.catatan.value.trim(),createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
   setLoad(true,'Menyimpan...'); const {error}=await sb.from('tvm_coo').upsert(F.to.tvm(o));
   setLoad(false); if(dbErr(error)) return;
   if(id) S.tvm[S.tvm.findIndex(x=>x.id===id)]=o; else S.tvm.unshift(o);
