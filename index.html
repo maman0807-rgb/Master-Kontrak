@@ -1547,24 +1547,7 @@ const importExcel = input => {
 };
 
 // ===== REFRESH / PERBARUI DATA =====
-const doRefresh = async () => {
-  const icon  = document.getElementById('refresh-icon');
-  const label = document.getElementById('refresh-label');
-  const mIcon = document.getElementById('refresh-btn-mobile');
-  if(icon)  { icon.classList.add('spin'); }
-  if(mIcon) { mIcon.classList.add('spin'); }
-  if(label) label.textContent = 'Memperbarui...';
-  await loadAll();
-  if(icon)  { icon.classList.remove('spin'); }
-  if(mIcon) { mIcon.classList.remove('spin'); }
-  if(label) label.textContent = 'Perbarui Data';
-  const ts = document.getElementById('refresh-ts');
-  if(ts) {
-    const now = new Date();
-    ts.textContent = `Diperbarui ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-    ts.classList.remove('hidden');
-  }
-};
+const doRefresh = () => window.location.reload();
 
 // ===== INIT =====
 document.getElementById('modal-overlay').addEventListener('click', e=>{
