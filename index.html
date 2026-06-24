@@ -231,7 +231,7 @@ const F = {
     coo:  r => ({id:r.id,idKontrak:r.id_kontrak,customID:r.custom_id,nomorSPK:r.nomor_spk,deskripsi:r.deskripsi,nilaiSPK:r.nilai_spk,tglTerbit:r.tgl_terbit,tglMulai:r.tgl_mulai,tglSelesai:r.tgl_selesai,status:r.status,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
     pr:   r => ({id:r.id,idCoO:r.id_coo,customID:r.custom_id,nomorPR:r.nomor_pr,tglPR:r.tgl_pr,deskripsi:r.deskripsi,estimasiNilai:r.estimasi_nilai,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
     sa:   r => ({id:r.id,idCoO:r.id_coo,customID:r.custom_id,nomorSA:r.nomor_sa,tglSA:r.tgl_sa,deskripsi:r.deskripsi,nilaiSA:r.nilai_sa,nomorInvoice:r.nomor_invoice,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
-    tvm:  r => ({id:r.id,nomorCOO:r.nomor_coo,tanggal:r.tanggal,fungsi:r.fungsi||'Hoist & Heavy Equipment',deskripsi:r.deskripsi,nilai:r.nilai,tglMulai:r.tgl_mulai,tglSelesai:r.tgl_selesai,status:r.status,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
+    tvm:  r => ({id:r.id,nomorCOO:r.nomor_coo,nomorPR:r.nomor_pr,tanggal:r.tanggal,fungsi:r.fungsi||'Hoist & Heavy Equipment',deskripsi:r.deskripsi,nilai:r.nilai,tglMulai:r.tgl_mulai,tglSelesai:r.tgl_selesai,status:r.status,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
   },
   // JS → Supabase
   to: {
@@ -241,7 +241,7 @@ const F = {
     coo:  o => ({id:o.id,id_kontrak:o.idKontrak,custom_id:o.customID,nomor_spk:o.nomorSPK,deskripsi:o.deskripsi,nilai_spk:rpN(o.nilaiSPK),tgl_terbit:dn(o.tglTerbit),tgl_mulai:dn(o.tglMulai),tgl_selesai:dn(o.tglSelesai),status:o.status,catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     pr:   o => ({id:o.id,id_coo:o.idCoO,custom_id:o.customID,nomor_pr:o.nomorPR,tgl_pr:dn(o.tglPR),deskripsi:o.deskripsi,estimasi_nilai:rpN(o.estimasiNilai),catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     sa:   o => ({id:o.id,id_coo:o.idCoO,custom_id:o.customID,nomor_sa:o.nomorSA,tgl_sa:dn(o.tglSA),deskripsi:o.deskripsi,nilai_sa:rpN(o.nilaiSA),nomor_invoice:o.nomorInvoice,catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
-    tvm:  o => ({id:o.id,nomor_coo:o.nomorCOO,tanggal:dn(o.tanggal),fungsi:o.fungsi,deskripsi:o.deskripsi,nilai:rpN(o.nilai),tgl_mulai:dn(o.tglMulai),tgl_selesai:dn(o.tglSelesai),status:o.status,catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
+    tvm:  o => ({id:o.id,nomor_coo:o.nomorCOO,nomor_pr:o.nomorPR||null,tanggal:dn(o.tanggal),fungsi:o.fungsi,deskripsi:o.deskripsi,nilai:rpN(o.nilai),tgl_mulai:dn(o.tglMulai),tgl_selesai:dn(o.tglSelesai),status:o.status,catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
   }
 };
 
@@ -1317,12 +1317,13 @@ const rTVM = () => {
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
-          ${thead([['No. CoO/SPK'],['Deskripsi Pekerjaan'],['Tgl Mulai','center'],['Tgl Selesai','center'],['Nilai','right'],['Status','center'],['Ket.'],['Aksi','center']])}
+          ${thead([['No. CoO/SPK'],['No. PR'],['Deskripsi Pekerjaan'],['Tgl Mulai','center'],['Tgl Selesai','center'],['Nilai','right'],['Status','center'],['Ket.'],['Aksi','center']])}
           <tbody class="divide-y divide-gray-100">
-            ${tabData.length===0?emptyRow('🔩',`Belum ada data ${isHHE?'Hoist & Heavy Equipment':'Rotating Mechanical'}.`,8)
+            ${tabData.length===0?emptyRow('🔩',`Belum ada data ${isHHE?'Hoist & Heavy Equipment':'Rotating Mechanical'}.`,9)
               :tabData.map(t=>`
               <tr class="hover:bg-gray-50">
                 <td class="px-4 py-3 font-semibold text-blue-700 whitespace-nowrap">${esc(t.nomorCOO||'-')}</td>
+                <td class="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">${esc(t.nomorPR||'-')}</td>
                 <td class="px-4 py-3 max-w-xs"><div class="clamp2" title="${esc(t.deskripsi)}">${esc(t.deskripsi||'-')}</div></td>
                 <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(t.tglMulai)}</td>
                 <td class="px-4 py-3 text-center whitespace-nowrap">${t.status==='Selesai'?`<span class="text-xs text-gray-500">${df(t.tglSelesai)}</span>`:sisaHari(t.tglSelesai)}</td>
@@ -1337,7 +1338,7 @@ const rTVM = () => {
               </tr>`).join('')}
           </tbody>
           ${tabData.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
-            <tr><td colspan="4" class="px-4 py-3 text-right text-gray-500">TOTAL (${tabData.length})</td>
+            <tr><td colspan="5" class="px-4 py-3 text-right text-gray-500">TOTAL (${tabData.length})</td>
             <td class="px-4 py-3 text-right font-mono">${rp(tabTotal)}</td>
             <td colspan="3"></td></tr>
           </tfoot>`:''}
@@ -1352,7 +1353,7 @@ const mTVM = (id=null) => {
   showM(`<div class="p-6"><h2 class="text-base font-bold mb-4">${t?'Edit':'Tambah'} CoO TVM Trakindo</h2>
     <form onsubmit="svTVM(event,'${id||''}')"><div class="grid grid-cols-2 gap-3">
       <div class="col-span-2">${fld('No. CoO / No. SPK','nomorCOO','text',t?.nomorCOO,true)}</div>
-      <div class="col-span-2">${sel('Fungsi','fungsi',FUNGSI,t?.fungsi||(S.tvmTab==='hhe'?'Hoist & Heavy Equipment':'Rotating Mechanical'),true)}</div>
+      ${fld('No. PR','nomorPR','text',t?.nomorPR)} ${sel('Fungsi','fungsi',FUNGSI,t?.fungsi||(S.tvmTab==='hhe'?'Hoist & Heavy Equipment':'Rotating Mechanical'),true)}
       ${tarea('Deskripsi Pekerjaan','deskripsi',t?.deskripsi)}
       ${fld('Tgl Mulai','tglMulai','date',t?.tglMulai)} ${fld('Tgl Selesai','tglSelesai','date',t?.tglSelesai)}
       ${fld('Nilai (Rp)','nilai','number',t?.nilai)} ${sel('Status','status',['Open','In Progress','Selesai'],t?.status||'Open')}
@@ -1363,7 +1364,7 @@ const mTVM = (id=null) => {
 const svTVM = async (e,id) => {
   e.preventDefault(); const f=e.target;
   const ex=id?S.tvm.find(x=>x.id===id):null;
-  const o={id:id||uid(),nomorCOO:f.nomorCOO.value.trim(),tanggal:f.tglMulai.value,fungsi:f.fungsi.value,deskripsi:f.deskripsi.value.trim(),nilai:f.nilai.value,tglMulai:f.tglMulai.value,tglSelesai:f.tglSelesai.value,status:f.status.value,catatan:f.catatan.value.trim(),createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
+  const o={id:id||uid(),nomorCOO:f.nomorCOO.value.trim(),nomorPR:f.nomorPR.value.trim(),tanggal:f.tglMulai.value,fungsi:f.fungsi.value,deskripsi:f.deskripsi.value.trim(),nilai:f.nilai.value,tglMulai:f.tglMulai.value,tglSelesai:f.tglSelesai.value,status:f.status.value,catatan:f.catatan.value.trim(),createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
   setLoad(true,'Menyimpan...'); const {error}=await sb.from('tvm_coo').upsert(F.to.tvm(o));
   setLoad(false); if(dbErr(error)) return;
   if(id) S.tvm[S.tvm.findIndex(x=>x.id===id)]=o; else S.tvm.unshift(o);
