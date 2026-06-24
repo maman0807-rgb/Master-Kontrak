@@ -682,11 +682,6 @@ const rDC = () => {
         <tbody class="divide-y divide-gray-100">
           ${data.length===0 ? emptyRow(isDC?'🔧':'📋',`Belum ada data ${jenis}.`,ncols) : data.map(isDC ? rowDC : rowRes).join('')}
         </tbody>
-        ${!isDC?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
-          <tr>
-            <td colspan="${ncols}" class="px-4 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
-          </tr>
-        </tfoot>`:''}
       </table>
     </div></div>
   </div>`;
