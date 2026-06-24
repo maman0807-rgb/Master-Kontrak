@@ -206,6 +206,7 @@ const BC = {
   'Aktif':'bg-sky-100 text-sky-700','Closed':'bg-gray-100 text-gray-600','Selesai':'bg-emerald-100 text-emerald-700',
   'Open':'bg-sky-100 text-sky-700','In Progress':'bg-amber-100 text-amber-700','Terminasi':'bg-red-100 text-red-600',
   'Ditagih':'bg-indigo-100 text-indigo-700','Lunas':'bg-emerald-100 text-emerald-700',
+  'ABI':'bg-blue-100 text-blue-700','ABO':'bg-teal-100 text-teal-700',
   // Direct Charge flow
   'Pengajuan':'bg-slate-100 text-slate-600',
   'Proses Planner':'bg-yellow-100 text-yellow-700',
@@ -232,7 +233,7 @@ const dbErr = err => { if(err){alert('Error: '+err.message);return true;} return
 const F = {
   // Supabase → JS
   from: {
-    spk:  r => ({id:r.id,noSPK:r.no_spk,tanggal:r.tanggal,vendor:r.vendor,uraian:r.uraian,nilaiKontrak:r.nilai_kontrak,realisasi:r.realisasi,progress:r.progress,status:r.status,keterangan:r.keterangan,createdBy:r.created_by,updatedBy:r.updated_by}),
+    spk:  r => ({id:r.id,noSPK:r.no_spk,tanggal:r.tanggal,vendor:r.vendor,uraian:r.uraian,nilaiKontrak:r.nilai_kontrak,realisasi:r.realisasi,progress:r.progress,status:r.status,jenisAnggaran:r.jenis_anggaran,keterangan:r.keterangan,createdBy:r.created_by,updatedBy:r.updated_by}),
     dc:   r => ({id:r.id,jenis:r.jenis||'Direct Charge',noPerm:r.no_perm,tanggal:r.tanggal,namaPart:r.nama_part,jumlah:r.jumlah,satuan:r.satuan,hargaSatuan:r.harga_satuan,total:r.total,kimap:r.kimap,nomorPR:r.nomor_pr,nomorPO:r.nomor_po,nomorMemo:r.nomor_memo,nomorMR:r.nomor_mr,nomorReservasi:r.nomor_reservasi,nomorGR:r.nomor_gr,tglGR:r.tgl_gr,diambilOleh:r.diambil_oleh,status:r.status,keterangan:r.keterangan,items:r.items||[],createdBy:r.created_by,updatedBy:r.updated_by}),
     mk:   r => ({id:r.id,customID:r.custom_id,nomorSPB:r.nomor_spb,vendor:r.vendor,judulKontrak:r.judul_kontrak,nilaiKontrak:r.nilai_kontrak,tglMulai:r.tgl_mulai,tglBerakhir:r.tgl_berakhir,pic:r.pic,status:r.status,createdBy:r.created_by,updatedBy:r.updated_by}),
     coo:  r => ({id:r.id,idKontrak:r.id_kontrak,customID:r.custom_id,nomorSPK:r.nomor_spk,deskripsi:r.deskripsi,nilaiSPK:r.nilai_spk,tglTerbit:r.tgl_terbit,tglMulai:r.tgl_mulai,tglSelesai:r.tgl_selesai,status:r.status,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
@@ -242,7 +243,7 @@ const F = {
   },
   // JS → Supabase
   to: {
-    spk:  o => ({id:o.id,no_spk:o.noSPK,tanggal:dn(o.tanggal),vendor:o.vendor,uraian:o.uraian,nilai_kontrak:rpN(o.nilaiKontrak),realisasi:rpN(o.realisasi),progress:+o.progress||0,status:o.status,keterangan:o.keterangan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
+    spk:  o => ({id:o.id,no_spk:o.noSPK,tanggal:dn(o.tanggal),vendor:o.vendor,uraian:o.uraian,nilai_kontrak:rpN(o.nilaiKontrak),realisasi:rpN(o.realisasi),progress:+o.progress||0,status:o.status,jenis_anggaran:o.jenisAnggaran||null,keterangan:o.keterangan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     dc:   o => ({id:o.id,jenis:o.jenis||'Direct Charge',no_perm:o.noPerm,tanggal:dn(o.tanggal),nama_part:o.namaPart,jumlah:rpN(o.jumlah),satuan:o.satuan,harga_satuan:rpN(o.hargaSatuan),total:rpN(o.total),kimap:o.kimap||null,nomor_pr:o.nomorPR||null,nomor_po:o.nomorPO||null,nomor_memo:o.nomorMemo||null,nomor_mr:o.nomorMR||null,nomor_reservasi:o.nomorReservasi||null,nomor_gr:o.nomorGR||null,tgl_gr:dn(o.tglGR),diambil_oleh:o.diambilOleh||null,status:o.status,keterangan:o.keterangan,items:o.items||[],created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     mk:   o => ({id:o.id,custom_id:o.customID,nomor_spb:o.nomorSPB,vendor:o.vendor,judul_kontrak:o.judulKontrak,nilai_kontrak:rpN(o.nilaiKontrak),tgl_mulai:dn(o.tglMulai),tgl_berakhir:dn(o.tglBerakhir),pic:o.pic,status:o.status,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     coo:  o => ({id:o.id,id_kontrak:o.idKontrak,custom_id:o.customID,nomor_spk:o.nomorSPK,deskripsi:o.deskripsi,nilai_spk:rpN(o.nilaiSPK),tgl_terbit:dn(o.tglTerbit),tgl_mulai:dn(o.tglMulai),tgl_selesai:dn(o.tglSelesai),status:o.status,catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
@@ -425,12 +426,18 @@ const rDash = () => {
     </div>
 
     <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Rekap SPK Lumpsum</h2>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
       ${card('💰','Nilai Kontrak',rp(sNilai),null,'text-gray-700')}
       ${card('✅','Nilai Tagihan',rp(sReal),null,'text-emerald-700')}
       ${card('🔖','Sisa Belum Ditagih',rp(sNilai-sReal),null,'text-orange-600')}
       ${card('⏳','Belum Lunas',sF.filter(x=>x.status!=='Lunas').length+' SPK',null,'text-amber-600')}
     </div>
+    <div class="grid grid-cols-2 gap-3 mb-6">${(()=>{
+      const abi=sF.filter(x=>x.jenisAnggaran==='ABI'), abo=sF.filter(x=>x.jenisAnggaran==='ABO');
+      const abiN=abi.reduce((a,x)=>a+rpN(x.nilaiKontrak),0), aboN=abo.reduce((a,x)=>a+rpN(x.nilaiKontrak),0);
+      return card('🔵','ABI — Investasi',abi.length+' SPK · '+rp(abiN),'Tagihan: '+rp(abi.reduce((a,x)=>a+rpN(x.realisasi),0)),'text-blue-700')
+           + card('🟢','ABO — Operasi',abo.length+' SPK · '+rp(aboN),'Tagihan: '+rp(abo.reduce((a,x)=>a+rpN(x.realisasi),0)),'text-teal-700');
+    })()}</div>
 
     <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Rekap Permintaan Part — Direct Charge</h2>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
@@ -581,11 +588,12 @@ const rSSPK = () => {
     </div>
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
-        ${thead([['No. SPK/SPB'],['Tanggal','center'],['Vendor'],['Uraian'],['Nilai Kontrak','right'],['Nilai Tagihan','right'],['Sisa','right'],['Progres Fisik','center'],['Status','center'],['Aksi','center']])}
+        ${thead([['No. SPK/SPB'],['Jenis','center'],['Tanggal','center'],['Vendor'],['Uraian'],['Nilai Kontrak','right'],['Nilai Tagihan','right'],['Sisa','right'],['Progres Fisik','center'],['Status','center'],['Aksi','center']])}
         <tbody class="divide-y divide-gray-100">
-          ${data.length===0?emptyRow('📄','Belum ada data SPK.',10):data.map(s=>`
+          ${data.length===0?emptyRow('📄','Belum ada data SPK.',11):data.map(s=>`
             <tr class="hover:bg-gray-50">
               <td class="px-4 py-3 font-semibold text-blue-700 whitespace-nowrap">${esc(s.noSPK)}</td>
+              <td class="px-4 py-3 text-center">${badge(s.jenisAnggaran||'-')}</td>
               <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(s.tanggal)}</td>
               <td class="px-4 py-3 max-w-xs"><div class="clamp2" title="${esc(s.vendor)}">${esc(s.vendor||'-')}</div></td>
               <td class="px-4 py-3 text-gray-600 max-w-sm"><div class="clamp2" title="${esc(s.uraian)}">${esc(s.uraian||'-')}</div></td>
@@ -1217,14 +1225,14 @@ const mSSPK = (id=null) => {
       <div class="col-span-2">${fld('Vendor / Kontraktor','vendor','text',s?.vendor)}</div>
       ${tarea('Uraian Pekerjaan','uraian',s?.uraian)}
       ${fld('Nilai Kontrak (Rp)','nilaiKontrak','number',s?.nilaiKontrak)} ${fld('Nilai Tagihan (Rp)','realisasi','number',s?.realisasi)}
-      ${fld('Progress Fisik (%)','progress','number',s?.progress||0,false,'min="0" max="100"')} ${sel('Status','status',['Aktif','Ditagih','Lunas'],s?.status||'Aktif')}
-      <div class="col-span-2">${fld('Keterangan','keterangan','text',s?.keterangan)}</div>
+      ${sel('Jenis Anggaran','jenisAnggaran',['ABI','ABO'],s?.jenisAnggaran||'ABI')} ${sel('Status','status',['Aktif','Ditagih','Lunas'],s?.status||'Aktif')}
+      ${fld('Progress Fisik (%)','progress','number',s?.progress||0,false,'min="0" max="100"')} ${fld('Keterangan','keterangan','text',s?.keterangan)}
     </div>${mFoot()}</form></div>`);
 };
 const svSSPK = async (e,id) => {
   e.preventDefault(); const f=e.target;
   const ex=id?S.sspk.find(x=>x.id===id):null;
-  const o={id:id||uid(),noSPK:f.noSPK.value.trim(),tanggal:f.tanggal.value,vendor:f.vendor.value.trim(),uraian:f.uraian.value.trim(),nilaiKontrak:f.nilaiKontrak.value,realisasi:f.realisasi.value,progress:f.progress.value,status:f.status.value,keterangan:f.keterangan.value.trim(),createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
+  const o={id:id||uid(),noSPK:f.noSPK.value.trim(),tanggal:f.tanggal.value,vendor:f.vendor.value.trim(),uraian:f.uraian.value.trim(),nilaiKontrak:f.nilaiKontrak.value,realisasi:f.realisasi.value,progress:f.progress.value,status:f.status.value,jenisAnggaran:f.jenisAnggaran.value,keterangan:f.keterangan.value.trim(),createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
   setLoad(true,'Menyimpan...');
   const {error}=await sb.from('spk').upsert(F.to.spk(o));
   setLoad(false); if(dbErr(error)) return;
@@ -1693,7 +1701,7 @@ const exportRekapRes = () => {
 const exportAll = () => {
   const wb=XLSX.utils.book_new();
   const add=(name,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),name);
-  add('SPK',[['LocalID','NoSPK','Tanggal','Vendor','Uraian','NilaiKontrak','Realisasi','Progress','Status','Keterangan'],...S.sspk.map(s=>[s.id,s.noSPK,s.tanggal,s.vendor,s.uraian,rpN(s.nilaiKontrak),rpN(s.realisasi),+s.progress||0,s.status,s.keterangan])]);
+  add('SPK',[['LocalID','NoSPK','Tanggal','Vendor','Uraian','NilaiKontrak','Realisasi','Progress','Status','JenisAnggaran','Keterangan'],...S.sspk.map(s=>[s.id,s.noSPK,s.tanggal,s.vendor,s.uraian,rpN(s.nilaiKontrak),rpN(s.realisasi),+s.progress||0,s.status,s.jenisAnggaran||'',s.keterangan])]);
   add('Permintaan Part',[['LocalID','Jenis','Tanggal','NamaPart','Jumlah','Satuan','HargaSatuan','Total','KIMAP','NomorPO','NomorMR','NomorReservasi','DiambilOleh','Status','JudulPekerjaan','Items'],...S.dc.map(d=>[d.id,d.jenis||'Direct Charge',d.tanggal,d.namaPart,+d.jumlah||0,d.satuan,rpN(d.hargaSatuan),rpN(d.total),d.kimap,d.nomorPO,d.nomorMR,d.nomorReservasi,d.diambilOleh,d.status,d.keterangan,d.items?.length?JSON.stringify(d.items):''])]);
   add('Master Kontrak',[['LocalID','CustomID','NomorSPB','Vendor','JudulKontrak','NilaiKontrak','TglMulai','TglBerakhir','PIC','Status'],...S.mk.map(k=>[k.id,k.customID,k.nomorSPB,k.vendor,k.judulKontrak,rpN(k.nilaiKontrak),k.tglMulai,k.tglBerakhir,k.pic,k.status])]);
   add('CoO SPK',[['LocalID','IDKontrak','CustomID','NomorSPK','Deskripsi','NilaiSPK','TglTerbit','TglMulai','TglSelesai','Status','Catatan'],...S.spk.map(s=>[s.id,s.idKontrak,s.customID,s.nomorSPK,s.deskripsi,rpN(s.nilaiSPK),s.tglTerbit,s.tglMulai,s.tglSelesai,s.status,s.catatan])]);
@@ -1721,7 +1729,7 @@ const importExcel = input => {
           return o;
         });
       };
-      const sspk=rdSheet('SPK',[['LocalID','id'],['NoSPK','noSPK'],['Tanggal','tanggal'],['Vendor','vendor'],['Uraian','uraian'],['NilaiKontrak','nilaiKontrak'],['Realisasi','realisasi'],['Progress','progress'],['Status','status'],['Keterangan','keterangan']]);
+      const sspk=rdSheet('SPK',[['LocalID','id'],['NoSPK','noSPK'],['Tanggal','tanggal'],['Vendor','vendor'],['Uraian','uraian'],['NilaiKontrak','nilaiKontrak'],['Realisasi','realisasi'],['Progress','progress'],['Status','status'],['JenisAnggaran','jenisAnggaran'],['Keterangan','keterangan']]);
       const dcRaw=rdSheet('Permintaan Part',[['LocalID','id'],['Jenis','jenis'],['Tanggal','tanggal'],['NamaPart','namaPart'],['Jumlah','jumlah'],['Satuan','satuan'],['HargaSatuan','hargaSatuan'],['Total','total'],['KIMAP','kimap'],['NomorPO','nomorPO'],['NomorMR','nomorMR'],['NomorReservasi','nomorReservasi'],['DiambilOleh','diambilOleh'],['Status','status'],['JudulPekerjaan','keterangan'],['Items','items']]);
       const dc=dcRaw.map(d=>({...d,items:d.items?JSON.parse(d.items):[]}));
       const mk  =rdSheet('Master Kontrak',[['LocalID','id'],['CustomID','customID'],['NomorSPB','nomorSPB'],['Vendor','vendor'],['JudulKontrak','judulKontrak'],['NilaiKontrak','nilaiKontrak'],['TglMulai','tglMulai'],['TglBerakhir','tglBerakhir'],['PIC','pic'],['Status','status']]);
