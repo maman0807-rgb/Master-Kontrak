@@ -1586,7 +1586,7 @@ const importExcel = input => {
 };
 
 // ===== REFRESH / PERBARUI DATA =====
-const doRefresh = () => window.location.reload();
+const doRefresh = () => { window.location.href = window.location.pathname + '?v=' + Date.now(); };
 
 // ===== INIT =====
 document.getElementById('modal-overlay').addEventListener('click', e=>{
