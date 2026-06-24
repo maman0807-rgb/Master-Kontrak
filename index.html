@@ -579,7 +579,7 @@ const rDC = () => {
   };
 
   const thDC  = [['Tanggal','center'],['No. PR'],['No. PO'],['Status','center'],['Total','right'],['Ket.'],['','center']];
-  const thRes = [['No. Reservasi'],['No. MR'],['Tanggal','center'],['Nama Part / Material'],['Jml','center'],['Satuan'],['KIMAP / Kode Part'],['No. GR'],['Tgl. GR','center'],['Diambil Oleh'],['Status','center'],['','center']];
+  const thRes = [['No. Reservasi'],['No. MR'],['Tanggal','center'],['No. GR'],['Tgl. GR','center'],['Status','center'],['','center']];
   const th = isDC ? thDC : thRes;
   const ncols = th.length;
 
@@ -617,17 +617,20 @@ const rDC = () => {
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 bg-white">
-              ${items.map((item,i)=>`
-              <tr class="hover:bg-gray-50">
+              ${items.map((item,i)=>{
+                const hitPart=S.fpart&&(item.partNumber||'').toLowerCase().includes(S.fpart.toLowerCase());
+                const hitDesc=S.fdesc&&(item.namaPart||'').toLowerCase().includes(S.fdesc.toLowerCase());
+                const hit=hitPart||hitDesc;
+                return `<tr class="${hit?'bg-yellow-50 border-l-4 border-yellow-400':'hover:bg-gray-50'}">
                 <td class="px-3 py-1.5 text-gray-400">${i+1}</td>
-                <td class="px-3 py-1.5 text-gray-800 font-medium">${esc(item.namaPart||'-')}</td>
-                <td class="px-3 py-1.5 text-blue-700 whitespace-nowrap font-medium">${esc(item.partNumber||'-')}</td>
+                <td class="px-3 py-1.5 font-medium ${hit?'text-yellow-800':'text-gray-800'}">${esc(item.namaPart||'-')}</td>
+                <td class="px-3 py-1.5 whitespace-nowrap font-medium ${hit?'text-yellow-700':'text-blue-700'}">${esc(item.partNumber||'-')}</td>
                 <td class="px-3 py-1.5 text-gray-500 whitespace-nowrap">${esc(item.kimap||'-')}</td>
                 <td class="px-3 py-1.5 text-center">${+item.jumlah||1}</td>
                 <td class="px-3 py-1.5 text-gray-500">${esc(item.satuan||'-')}</td>
                 <td class="px-3 py-1.5 text-right font-mono">${rp(+item.hargaSatuan||0)}</td>
                 <td class="px-3 py-1.5 text-right font-mono font-semibold">${rp((+item.jumlah||1)*(+item.hargaSatuan||0))}</td>
-              </tr>`).join('')}
+              </tr>`;}).join('')}
             </tbody>
           </table>
         </div>
@@ -637,26 +640,49 @@ const rDC = () => {
 
   const rowRes = d => {
     const items=d.items?.length?d.items:[{namaPart:d.namaPart,jumlah:d.jumlah,satuan:d.satuan,kimap:d.kimap}];
-    const first=items[0], multi=items.length>1;
-    return `<tr class="hover:bg-gray-50">
-      <td class="px-4 py-3 font-semibold text-violet-700 whitespace-nowrap">${esc(d.nomorReservasi||'-')}</td>
-      <td class="px-4 py-3 text-gray-500 whitespace-nowrap">${esc(d.nomorMR||'-')}</td>
-      <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(d.tanggal)}</td>
-      <td class="px-4 py-3 max-w-xs">
-        <div class="clamp2" title="${esc(first.namaPart)}">${esc(first.namaPart||'-')}</div>
-        ${multi?`<div class="text-xs text-blue-500 mt-0.5">+${items.length-1} item lagi</div>`:''}
-      </td>
-      <td class="px-4 py-3 text-center">${multi?`<span class="text-xs font-semibold text-blue-600">${items.length} item</span>`:esc(first.jumlah||'-')}</td>
-      <td class="px-4 py-3 text-gray-500">${multi?'-':esc(first.satuan||'-')}</td>
-      <td class="px-4 py-3 text-gray-500 whitespace-nowrap">${multi?'-':esc(first.kimap||'-')}</td>
-      <td class="px-4 py-3 text-gray-500 whitespace-nowrap">${esc(d.nomorGR||'-')}</td>
-      <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(d.tglGR)}</td>
-      <td class="px-4 py-3 text-gray-600 whitespace-nowrap">${esc(d.diambilOleh||'-')}</td>
-      <td class="px-4 py-3 text-center">${badge(d.status||'MR Dibuat')}</td>
-      <td class="px-4 py-3 text-center whitespace-nowrap no-print">
+    return `
+    <tr class="bg-gray-50 border-t-2 border-gray-200">
+      <td class="px-4 py-2.5 font-semibold text-violet-700 whitespace-nowrap">${esc(d.nomorReservasi||'-')}</td>
+      <td class="px-4 py-2.5 text-gray-500 whitespace-nowrap text-xs">${esc(d.nomorMR||'-')}</td>
+      <td class="px-4 py-2.5 text-center text-gray-500 whitespace-nowrap text-xs">${df(d.tanggal)}</td>
+      <td class="px-4 py-2.5 text-gray-500 whitespace-nowrap text-xs">${esc(d.nomorGR||'-')}</td>
+      <td class="px-4 py-2.5 text-center text-gray-500 whitespace-nowrap text-xs">${df(d.tglGR)}</td>
+      <td class="px-4 py-2.5 text-center">${badge(d.status||'MR Dibuat')}</td>
+      <td class="px-4 py-2.5 text-center whitespace-nowrap no-print">
         <button onclick="mDC('${d.id}')" class="text-blue-600 hover:underline mr-2">Edit</button>
         <button onclick="dDC('${d.id}')" class="text-red-500 hover:underline">Hapus</button>
         ${byLine(d)}
+      </td>
+    </tr>
+    <tr>
+      <td colspan="7" class="px-4 pt-0 pb-3">
+        <div class="ml-2 border border-gray-200 rounded-lg overflow-hidden">
+          <table class="w-full text-xs">
+            <thead class="bg-violet-50 text-gray-500 border-b border-gray-200">
+              <tr>
+                <th class="px-3 py-1.5 text-left font-medium w-6">#</th>
+                <th class="px-3 py-1.5 text-left font-medium">Nama Part / Material</th>
+                <th class="px-3 py-1.5 text-left font-medium">Part Number</th>
+                <th class="px-3 py-1.5 text-left font-medium">KIMAP</th>
+                <th class="px-3 py-1.5 text-center font-medium w-14">Qty</th>
+                <th class="px-3 py-1.5 text-left font-medium w-16">Satuan</th>
+                <th class="px-3 py-1.5 text-left font-medium">Diambil Oleh</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 bg-white">
+              ${items.map((item,i)=>`
+              <tr class="hover:bg-gray-50">
+                <td class="px-3 py-1.5 text-gray-400">${i+1}</td>
+                <td class="px-3 py-1.5 text-gray-800 font-medium">${esc(item.namaPart||'-')}</td>
+                <td class="px-3 py-1.5 text-blue-700 whitespace-nowrap font-medium">${esc(item.partNumber||'-')}</td>
+                <td class="px-3 py-1.5 text-gray-500 whitespace-nowrap">${esc(item.kimap||'-')}</td>
+                <td class="px-3 py-1.5 text-center">${+item.jumlah||1}</td>
+                <td class="px-3 py-1.5 text-gray-500">${esc(item.satuan||'-')}</td>
+                <td class="px-3 py-1.5 text-gray-500">${esc(d.diambilOleh||'-')}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
       </td>
     </tr>`;
   };
