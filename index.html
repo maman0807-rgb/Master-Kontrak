@@ -349,7 +349,7 @@ const byLine = r => {
   const u = (r.updatedBy && r.updatedBy!==r.createdBy) ? `<span title="${esc(r.updatedBy)}"> ✏️ ${esc(shortU(r.updatedBy))}</span>` : '';
   return `<div class="text-[10px] text-gray-400 mt-1.5 leading-tight">${c}${u}</div>`;
 };
-const thead = ths => `<thead class="bg-gray-50 text-gray-500 text-xs uppercase"><tr>${ths.map(([t,a])=>`<th class="px-4 py-3 text-${a||'left'}">${t}</th>`).join('')}</tr></thead>`;
+const thead = ths => `<thead class="bg-gray-100 text-gray-600 text-xs uppercase border-b-2 border-gray-200"><tr>${ths.map(([t,a])=>`<th class="px-4 py-3 font-semibold text-${a||'left'}">${t}</th>`).join('')}</tr></thead>`;
 const tfoot_total = (label, cols, vals) => `<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200"><tr><td colspan="${label[0]}" class="px-4 py-3 text-right text-gray-500">TOTAL ${label[1]}</td>${vals.map(v=>`<td class="px-4 py-3 text-right font-mono ${v[1]||''}">${v[0]}</td>`).join('')}</tr></tfoot>`;
 
 // ===== DASHBOARD =====
@@ -634,7 +634,7 @@ const rDC = () => {
   };
 
   const thDC  = [['Tanggal','center'],['No. PR'],['No. PO'],['Status','center'],['Total','right'],['Ket.'],['','center']];
-  const thRes = [['No. Reservasi'],['No. MR'],['Tanggal','center'],['No. GR'],['Tgl. GR','center'],['Status','center'],['','center']];
+  const thRes = [['No. Reservasi'],['No. MR'],['Tanggal','center'],['Status','center'],['','center']];
   const th = isDC ? thDC : thRes;
   const ncols = th.length;
 
@@ -642,7 +642,7 @@ const rDC = () => {
     const items=d.items?.length?d.items:[{namaPart:d.namaPart,jumlah:d.jumlah,satuan:d.satuan,kimap:d.kimap,hargaSatuan:d.hargaSatuan}];
     const grandTotal=items.reduce((a,x)=>a+(+x.jumlah||1)*(+x.hargaSatuan||0),0);
     return `
-    <tr class="bg-gray-50 border-t-2 border-gray-200">
+    <tr class="bg-indigo-50 border-t-2 border-indigo-200 border-l-4 border-l-indigo-500">
       <td class="px-4 py-2.5 text-center text-gray-500 whitespace-nowrap text-xs">${df(d.tanggal)}</td>
       <td class="px-4 py-2.5 text-gray-500 whitespace-nowrap text-xs">${esc(d.nomorPR||'-')}</td>
       <td class="px-4 py-2.5 font-semibold text-indigo-700 whitespace-nowrap">${esc(d.nomorPO||'-')}</td>
@@ -656,10 +656,10 @@ const rDC = () => {
       </td>
     </tr>
     <tr>
-      <td colspan="7" class="px-4 pt-0 pb-3">
-        <div class="ml-2 border border-gray-200 rounded-lg overflow-hidden">
+      <td colspan="7" class="px-3 pt-0 pb-3 bg-indigo-50/30">
+        <div class="ml-4 border border-indigo-100 rounded-lg overflow-hidden shadow-sm">
           <table class="w-full text-xs">
-            <thead class="bg-blue-50 text-gray-500 border-b border-gray-200">
+            <thead class="bg-indigo-100 text-indigo-700 border-b border-indigo-200">
               <tr>
                 <th class="px-3 py-1.5 text-left font-medium w-6">#</th>
                 <th class="px-3 py-1.5 text-left font-medium">Nama Part / Material</th>
@@ -696,12 +696,10 @@ const rDC = () => {
   const rowRes = d => {
     const items=d.items?.length?d.items:[{namaPart:d.namaPart,jumlah:d.jumlah,satuan:d.satuan,kimap:d.kimap}];
     return `
-    <tr class="bg-gray-50 border-t-2 border-gray-200">
+    <tr class="bg-violet-50 border-t-2 border-violet-200 border-l-4 border-l-violet-500">
       <td class="px-4 py-2.5 font-semibold text-violet-700 whitespace-nowrap">${esc(d.nomorReservasi||'-')}</td>
       <td class="px-4 py-2.5 text-gray-500 whitespace-nowrap text-xs">${esc(d.nomorMR||'-')}</td>
       <td class="px-4 py-2.5 text-center text-gray-500 whitespace-nowrap text-xs">${df(d.tanggal)}</td>
-      <td class="px-4 py-2.5 text-gray-500 whitespace-nowrap text-xs">${esc(d.nomorGR||'-')}</td>
-      <td class="px-4 py-2.5 text-center text-gray-500 whitespace-nowrap text-xs">${df(d.tglGR)}</td>
       <td class="px-4 py-2.5 text-center">${badge(d.status||'MR Dibuat')}</td>
       <td class="px-4 py-2.5 text-center whitespace-nowrap no-print">
         <button onclick="mDC('${d.id}')" class="text-blue-600 hover:underline mr-2">Edit</button>
@@ -710,10 +708,10 @@ const rDC = () => {
       </td>
     </tr>
     <tr>
-      <td colspan="7" class="px-4 pt-0 pb-3">
-        <div class="ml-2 border border-gray-200 rounded-lg overflow-hidden">
+      <td colspan="5" class="px-3 pt-0 pb-3 bg-violet-50/30">
+        <div class="ml-4 border border-violet-100 rounded-lg overflow-hidden shadow-sm">
           <table class="w-full text-xs">
-            <thead class="bg-violet-50 text-gray-500 border-b border-gray-200">
+            <thead class="bg-violet-100 text-violet-700 border-b border-violet-200">
               <tr>
                 <th class="px-3 py-1.5 text-left font-medium w-6">#</th>
                 <th class="px-3 py-1.5 text-left font-medium">Nama Part / Material</th>
@@ -1258,7 +1256,6 @@ const mDC = (id=null) => {
       <div id="res-fields" class="contents">
         ${fld('No. Reservasi','nomorReservasi','text',d?.nomorReservasi)} ${fld('No. MR (Material Request)','nomorMR','text',d?.nomorMR)}
         ${sel('Status','statusRes',['MR Dibuat','Reservasi Dibuat','Diterima'],d?.status||'MR Dibuat')}
-        ${fld('No. GR','nomorGR','text',d?.nomorGR)} ${fld('Tgl. GR','tglGR','date',d?.tglGR)}
         <div class="col-span-2">${fld('Diambil Oleh','diambilOleh','text',d?.diambilOleh)}</div>
       </div>
     </div>${mFoot()}</form></div>`);
@@ -1286,7 +1283,6 @@ const svDC = async (e,id) => {
     nomorPR:isRes?'':f.nomorPR.value.trim(),nomorPO:isRes?'':f.nomorPO.value.trim(),
     nomorMR:isRes?f.nomorMR.value.trim():'',
     status:isRes?f.statusRes.value:f.status.value,keterangan:isRes?'':f.keterangan?.value?.trim()||'',
-    nomorGR:isRes?f.nomorGR.value.trim():'',tglGR:isRes?f.tglGR.value:'',
     diambilOleh:isRes?f.diambilOleh.value.trim():'',
     createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
   S.dcTab=isRes?'reservasi':'dc';
@@ -1695,7 +1691,7 @@ const exportAll = () => {
   const wb=XLSX.utils.book_new();
   const add=(name,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),name);
   add('SPK',[['LocalID','NoSPK','Tanggal','Vendor','Uraian','NilaiKontrak','Realisasi','Progress','Status','Keterangan'],...S.sspk.map(s=>[s.id,s.noSPK,s.tanggal,s.vendor,s.uraian,rpN(s.nilaiKontrak),rpN(s.realisasi),+s.progress||0,s.status,s.keterangan])]);
-  add('Permintaan Part',[['LocalID','Jenis','Tanggal','NamaPart','Jumlah','Satuan','HargaSatuan','Total','KIMAP','NomorPR','NomorPO','NomorMR','NomorReservasi','NomorGR','TglGR','DiambilOleh','Status','Keterangan','Items'],...S.dc.map(d=>[d.id,d.jenis||'Direct Charge',d.tanggal,d.namaPart,+d.jumlah||0,d.satuan,rpN(d.hargaSatuan),rpN(d.total),d.kimap,d.nomorPR,d.nomorPO,d.nomorMR,d.nomorReservasi,d.nomorGR,d.tglGR,d.diambilOleh,d.status,d.keterangan,d.items?.length?JSON.stringify(d.items):''])]);
+  add('Permintaan Part',[['LocalID','Jenis','Tanggal','NamaPart','Jumlah','Satuan','HargaSatuan','Total','KIMAP','NomorPR','NomorPO','NomorMR','NomorReservasi','DiambilOleh','Status','Keterangan','Items'],...S.dc.map(d=>[d.id,d.jenis||'Direct Charge',d.tanggal,d.namaPart,+d.jumlah||0,d.satuan,rpN(d.hargaSatuan),rpN(d.total),d.kimap,d.nomorPR,d.nomorPO,d.nomorMR,d.nomorReservasi,d.diambilOleh,d.status,d.keterangan,d.items?.length?JSON.stringify(d.items):''])]);
   add('Master Kontrak',[['LocalID','CustomID','NomorSPB','Vendor','JudulKontrak','NilaiKontrak','TglMulai','TglBerakhir','PIC','Status'],...S.mk.map(k=>[k.id,k.customID,k.nomorSPB,k.vendor,k.judulKontrak,rpN(k.nilaiKontrak),k.tglMulai,k.tglBerakhir,k.pic,k.status])]);
   add('CoO SPK',[['LocalID','IDKontrak','CustomID','NomorSPK','Deskripsi','NilaiSPK','TglTerbit','TglMulai','TglSelesai','Status','Catatan'],...S.spk.map(s=>[s.id,s.idKontrak,s.customID,s.nomorSPK,s.deskripsi,rpN(s.nilaiSPK),s.tglTerbit,s.tglMulai,s.tglSelesai,s.status,s.catatan])]);
   add('Purchase Request',[['LocalID','IDCoO','CustomID','NomorPR','TglPR','Deskripsi','EstimasiNilai','Catatan'],...S.pr.map(p=>[p.id,p.idCoO,p.customID,p.nomorPR,p.tglPR,p.deskripsi,rpN(p.estimasiNilai),p.catatan])]);
@@ -1723,7 +1719,7 @@ const importExcel = input => {
         });
       };
       const sspk=rdSheet('SPK',[['LocalID','id'],['NoSPK','noSPK'],['Tanggal','tanggal'],['Vendor','vendor'],['Uraian','uraian'],['NilaiKontrak','nilaiKontrak'],['Realisasi','realisasi'],['Progress','progress'],['Status','status'],['Keterangan','keterangan']]);
-      const dcRaw=rdSheet('Permintaan Part',[['LocalID','id'],['Jenis','jenis'],['Tanggal','tanggal'],['NamaPart','namaPart'],['Jumlah','jumlah'],['Satuan','satuan'],['HargaSatuan','hargaSatuan'],['Total','total'],['KIMAP','kimap'],['NomorPR','nomorPR'],['NomorPO','nomorPO'],['NomorMR','nomorMR'],['NomorReservasi','nomorReservasi'],['NomorGR','nomorGR'],['TglGR','tglGR'],['DiambilOleh','diambilOleh'],['Status','status'],['Keterangan','keterangan'],['Items','items']]);
+      const dcRaw=rdSheet('Permintaan Part',[['LocalID','id'],['Jenis','jenis'],['Tanggal','tanggal'],['NamaPart','namaPart'],['Jumlah','jumlah'],['Satuan','satuan'],['HargaSatuan','hargaSatuan'],['Total','total'],['KIMAP','kimap'],['NomorPR','nomorPR'],['NomorPO','nomorPO'],['NomorMR','nomorMR'],['NomorReservasi','nomorReservasi'],['DiambilOleh','diambilOleh'],['Status','status'],['Keterangan','keterangan'],['Items','items']]);
       const dc=dcRaw.map(d=>({...d,items:d.items?JSON.parse(d.items):[]}));
       const mk  =rdSheet('Master Kontrak',[['LocalID','id'],['CustomID','customID'],['NomorSPB','nomorSPB'],['Vendor','vendor'],['JudulKontrak','judulKontrak'],['NilaiKontrak','nilaiKontrak'],['TglMulai','tglMulai'],['TglBerakhir','tglBerakhir'],['PIC','pic'],['Status','status']]);
       const spk =rdSheet('CoO SPK',[['LocalID','id'],['IDKontrak','idKontrak'],['CustomID','customID'],['NomorSPK','nomorSPK'],['Deskripsi','deskripsi'],['NilaiSPK','nilaiSPK'],['TglTerbit','tglTerbit'],['TglMulai','tglMulai'],['TglSelesai','tglSelesai'],['Status','status'],['Catatan','catatan']]);
