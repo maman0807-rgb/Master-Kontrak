@@ -571,7 +571,7 @@ const rDC = () => {
     return `<button onclick="S.dcTab='${t}';render()" class="px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition ${active ? 'border-blue-700 text-blue-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${label}</button>`;
   };
 
-  const thDC  = [['No. Permintaan'],['Tanggal','center'],['No. PR'],['No. Memo'],['No. PO'],['Status','center'],['Total','right'],['Ket.'],['','center']];
+  const thDC  = [['Tanggal','center'],['No. PR'],['No. PO'],['Status','center'],['Total','right'],['Ket.'],['','center']];
   const thRes = [['No. Reservasi'],['No. MR'],['Tanggal','center'],['Nama Part / Material'],['Jml','center'],['Satuan'],['KIMAP / Kode Part'],['No. GR'],['Tgl. GR','center'],['Diambil Oleh'],['Status','center'],['','center']];
   const th = isDC ? thDC : thRes;
   const ncols = th.length;
@@ -581,10 +581,8 @@ const rDC = () => {
     const grandTotal=items.reduce((a,x)=>a+(+x.jumlah||1)*(+x.hargaSatuan||0),0);
     return `
     <tr class="bg-gray-50 border-t-2 border-gray-200">
-      <td class="px-4 py-2.5 font-semibold text-rose-700 whitespace-nowrap">${esc(d.noPerm||'-')}</td>
       <td class="px-4 py-2.5 text-center text-gray-500 whitespace-nowrap text-xs">${df(d.tanggal)}</td>
       <td class="px-4 py-2.5 text-gray-500 whitespace-nowrap text-xs">${esc(d.nomorPR||'-')}</td>
-      <td class="px-4 py-2.5 text-gray-500 whitespace-nowrap text-xs">${esc(d.nomorMemo||'-')}</td>
       <td class="px-4 py-2.5 font-semibold text-indigo-700 whitespace-nowrap">${esc(d.nomorPO||'-')}</td>
       <td class="px-4 py-2.5 text-center">${badge(d.status)}</td>
       <td class="px-4 py-2.5 text-right font-mono font-bold whitespace-nowrap">${rp(grandTotal)}</td>
@@ -596,7 +594,7 @@ const rDC = () => {
       </td>
     </tr>
     <tr>
-      <td colspan="9" class="px-4 pt-0 pb-3">
+      <td colspan="7" class="px-4 pt-0 pb-3">
         <div class="ml-2 border border-gray-200 rounded-lg overflow-hidden">
           <table class="w-full text-xs">
             <thead class="bg-blue-50 text-gray-500 border-b border-gray-200">
@@ -606,6 +604,7 @@ const rDC = () => {
                 <th class="px-3 py-1.5 text-left font-medium">Part Number</th>
                 <th class="px-3 py-1.5 text-left font-medium">KIMAP</th>
                 <th class="px-3 py-1.5 text-left font-medium w-16">Satuan</th>
+                <th class="px-3 py-1.5 text-right font-medium">Harga (Rp)</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 bg-white">
@@ -616,6 +615,7 @@ const rDC = () => {
                 <td class="px-3 py-1.5 text-blue-700 whitespace-nowrap font-medium">${esc(item.partNumber||'-')}</td>
                 <td class="px-3 py-1.5 text-gray-500 whitespace-nowrap">${esc(item.kimap||'-')}</td>
                 <td class="px-3 py-1.5 text-gray-500">${esc(item.satuan||'-')}</td>
+                <td class="px-3 py-1.5 text-right font-mono font-semibold">${rp((+item.jumlah||1)*(+item.hargaSatuan||0))}</td>
               </tr>`).join('')}
             </tbody>
           </table>
@@ -1102,11 +1102,9 @@ const mDC = (id=null) => {
     <form onsubmit="svDC(event,'${id||''}')"><div class="grid grid-cols-2 gap-3">
       ${sel('Jenis','jenis',['Direct Charge','Reservasi'],jenisVal,true,false)}
       ${fld('Tanggal','tanggal','date',d?.tanggal,true)}
-      <div class="col-span-2">${fld('No. Permintaan','noPerm','text',d?.noPerm)}</div>
       <div class="col-span-2" id="dc-items-wrap">${dcItemsSectionInner()}</div>
       <div id="dc-fields" class="contents">
         ${fld('No. PR','nomorPR','text',d?.nomorPR)} ${fld('No. PO','nomorPO','text',d?.nomorPO)}
-        <div class="col-span-2">${fld('No. Memo','nomorMemo','text',d?.nomorMemo)}</div>
         ${sel('Status','status',['Pengajuan','Proses Planner','Proses AstmenRAM','Proses Senior Manager','Proses SCM','PO Terbit','Diterima','Ditolak'],d?.status||'Pengajuan')}
         ${fld('Keterangan','keterangan','text',d?.keterangan)}
       </div>
@@ -1134,13 +1132,13 @@ const svDC = async (e,id) => {
   if(!items.length){alert('Tambahkan minimal 1 item part/material.');return;}
   const grandTotal=isRes?0:items.reduce((a,x)=>a+x.total,0);
   const ex=id?S.dc.find(x=>x.id===id):null;
-  const o={id:id||uid(),jenis,noPerm:f.noPerm?.value?.trim()||'',tanggal:f.tanggal.value,items,
+  const o={id:id||uid(),jenis,tanggal:f.tanggal.value,items,
     namaPart:items[0].namaPart,jumlah:items[0].jumlah,satuan:items[0].satuan,kimap:items[0].kimap,
     hargaSatuan:isRes?0:items[0].hargaSatuan,total:grandTotal,
     nomorReservasi:isRes?f.nomorReservasi.value.trim():'',
     nomorPR:isRes?'':f.nomorPR.value.trim(),nomorPO:isRes?'':f.nomorPO.value.trim(),
-    nomorMemo:isRes?'':f.nomorMemo.value.trim(),nomorMR:isRes?f.nomorMR.value.trim():'',
-    status:isRes?f.statusRes.value:f.status.value,keterangan:isRes?'':f.keterangan.value.trim(),
+    nomorMR:isRes?f.nomorMR.value.trim():'',
+    status:isRes?f.statusRes.value:f.status.value,keterangan:isRes?'':f.keterangan?.value?.trim()||'',
     nomorGR:isRes?f.nomorGR.value.trim():'',tglGR:isRes?f.tglGR.value:'',
     diambilOleh:isRes?f.diambilOleh.value.trim():'',
     createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
