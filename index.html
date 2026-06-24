@@ -171,7 +171,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 // ===== STATE =====
-let S = { page:'dashboard', mk:[], spk:[], pr:[], sa:[], sspk:[], dc:[], tvm:[], users:[], fy:'', fm:'', fkontrak:'', dcTab:'dc', prTab:'missing', saTab:'missing', tvmTab:'hhe', currentUser:'', currentNama:'', isAdmin:false };
+let S = { page:'dashboard', mk:[], spk:[], pr:[], sa:[], sspk:[], dc:[], tvm:[], users:[], fy:'', fm:'', fkontrak:'', dcTab:'dc', prTab:'missing', saTab:'missing', tvmTab:'hhe', currentUser:'', currentNama:'', isAdmin:false, fpo:'', fpart:'', fdesc:'' };
 
 // ===== UTILS =====
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'x'+Math.random().toString(36).slice(2,10)+Date.now().toString(36));
@@ -556,7 +556,14 @@ const rDC = () => {
   const isDC = S.dcTab === 'dc';
   const jenis = isDC ? 'Direct Charge' : 'Reservasi';
   const all = byDate(S.dc,'tanggal');
-  const data = all.filter(x => (x.jenis||'Direct Charge') === jenis);
+  const byJenis = all.filter(x => (x.jenis||'Direct Charge') === jenis);
+  const data = isDC ? byJenis.filter(d => {
+    if(S.fpo && d.nomorPO !== S.fpo) return false;
+    const items = d.items?.length ? d.items : [{namaPart:d.namaPart,kimap:d.kimap,partNumber:d.partNumber}];
+    if(S.fpart && !items.some(x=>(x.partNumber||'').toLowerCase().includes(S.fpart.toLowerCase()))) return false;
+    if(S.fdesc && !items.some(x=>(x.namaPart||'').toLowerCase().includes(S.fdesc.toLowerCase()))) return false;
+    return true;
+  }) : byJenis;
   const total = data.reduce((a,x) => a+rpN(x.total), 0);
 
   const tabBtn = (t, label) => {
@@ -596,7 +603,8 @@ const rDC = () => {
               <tr>
                 <th class="px-3 py-1.5 text-left font-medium w-6">#</th>
                 <th class="px-3 py-1.5 text-left font-medium">Nama Part / Material</th>
-                <th class="px-3 py-1.5 text-left font-medium">KIMAP / Part Number</th>
+                <th class="px-3 py-1.5 text-left font-medium">Part Number</th>
+                <th class="px-3 py-1.5 text-left font-medium">KIMAP</th>
                 <th class="px-3 py-1.5 text-center font-medium w-14">Qty</th>
                 <th class="px-3 py-1.5 text-left font-medium w-16">Satuan</th>
                 <th class="px-3 py-1.5 text-right font-medium">Harga Satuan</th>
@@ -608,6 +616,7 @@ const rDC = () => {
               <tr class="hover:bg-gray-50">
                 <td class="px-3 py-1.5 text-gray-400">${i+1}</td>
                 <td class="px-3 py-1.5 text-gray-800 font-medium">${esc(item.namaPart||'-')}</td>
+                <td class="px-3 py-1.5 text-blue-700 whitespace-nowrap font-medium">${esc(item.partNumber||'-')}</td>
                 <td class="px-3 py-1.5 text-gray-500 whitespace-nowrap">${esc(item.kimap||'-')}</td>
                 <td class="px-3 py-1.5 text-center font-semibold">${+item.jumlah||0}</td>
                 <td class="px-3 py-1.5 text-gray-500">${esc(item.satuan||'-')}</td>
@@ -657,10 +666,21 @@ const rDC = () => {
       </div>
     </div>
 
-    <div class="flex gap-0 border-b border-gray-200 mb-4">
+    <div class="flex gap-0 border-b border-gray-200">
       ${tabBtn('dc','🔧 Direct Charge ('+all.filter(x=>(x.jenis||'Direct Charge')==='Direct Charge').length+')')}
       ${tabBtn('reservasi','📋 Reservasi ('+all.filter(x=>x.jenis==='Reservasi').length+')')}
     </div>
+    ${isDC?`<div class="flex flex-wrap gap-2 items-center py-3 mb-2 border-b border-gray-100">
+      <select onchange="S.fpo=this.value;render()" class="border rounded-lg px-3 py-1.5 text-xs bg-white">
+        <option value="">Semua No. PO</option>
+        ${[...new Set(byJenis.filter(x=>x.nomorPO).map(x=>x.nomorPO))].sort().map(p=>`<option value="${esc(p)}" ${S.fpo===p?'selected':''}>${esc(p)}</option>`).join('')}
+      </select>
+      <input type="text" placeholder="🔍 Part Number..." value="${esc(S.fpart)}" oninput="S.fpart=this.value;render()" class="border rounded-lg px-3 py-1.5 text-xs bg-white w-44">
+      <input type="text" placeholder="🔍 Nama Part / Deskripsi..." value="${esc(S.fdesc)}" oninput="S.fdesc=this.value;render()" class="border rounded-lg px-3 py-1.5 text-xs bg-white w-52">
+      ${S.fpo||S.fpart||S.fdesc?`<button onclick="S.fpo='';S.fpart='';S.fdesc='';render()" class="text-xs text-red-400 hover:text-red-600 flex items-center gap-1">✕ Reset</button>`:''}
+      ${(S.fpo||S.fpart||S.fdesc)?`<span class="text-xs text-gray-400">${data.length} hasil</span>`:''}
+    </div>`:''}
+    <div class="mb-4"></div>
 
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
@@ -953,9 +973,10 @@ let _dcItems = [], _dcIsRes = false;
 const dcItemRow = (item) => `
   <tr>
     <td class="p-1.5"><input data-f="namaPart" value="${esc(item.namaPart||'')}" placeholder="Nama part / material" class="border rounded px-2 py-1.5 text-xs w-full" required></td>
+    <td class="p-1.5"><input data-f="partNumber" value="${esc(item.partNumber||'')}" placeholder="Part No." class="border rounded px-2 py-1.5 text-xs w-24"></td>
+    <td class="p-1.5"><input data-f="kimap" value="${esc(item.kimap||'')}" placeholder="KIMAP" class="border rounded px-2 py-1.5 text-xs w-20"></td>
     <td class="p-1.5"><input data-f="jumlah" type="number" value="${+item.jumlah||1}" min="0.01" step="0.01" onchange="dcUpdateGrand()" class="border rounded px-2 py-1.5 text-xs w-16 text-center"></td>
     <td class="p-1.5"><input data-f="satuan" value="${esc(item.satuan||'pcs')}" class="border rounded px-2 py-1.5 text-xs w-14"></td>
-    <td class="p-1.5"><input data-f="kimap" value="${esc(item.kimap||'')}" placeholder="Kode" class="border rounded px-2 py-1.5 text-xs w-20"></td>
     ${!_dcIsRes?`<td class="p-1.5"><input data-f="hargaSatuan" type="number" value="${+item.hargaSatuan||0}" min="0" onchange="dcUpdateGrand()" class="border rounded px-2 py-1.5 text-xs w-28 text-right font-mono"></td><td class="p-1.5 text-right font-mono text-xs whitespace-nowrap dc-row-total">${rp((+item.jumlah||0)*(+item.hargaSatuan||0))}</td>`:''}
     <td class="p-1.5 text-center"><button type="button" onclick="dcRemoveItem(this)" class="text-red-400 hover:text-red-600 text-sm px-1" title="Hapus baris">✕</button></td>
   </tr>`;
@@ -974,9 +995,10 @@ const dcItemsSectionInner = () => {
           <thead class="bg-gray-50 text-gray-500 border-b">
             <tr>
               <th class="px-2 py-2 text-left">Nama Part / Material</th>
+              <th class="px-2 py-2 text-left w-24">Part Number</th>
+              <th class="px-2 py-2 text-left w-20">KIMAP</th>
               <th class="px-2 py-2 text-center w-14">Jml</th>
               <th class="px-2 py-2 text-left w-14">Satuan</th>
-              <th class="px-2 py-2 text-left w-20">KIMAP</th>
               ${!isRes?'<th class="px-2 py-2 text-right">Harga Sat. (Rp)</th><th class="px-2 py-2 text-right w-24">Total</th>':''}
               <th class="px-2 py-2 w-6"></th>
             </tr>
@@ -985,7 +1007,7 @@ const dcItemsSectionInner = () => {
             ${_dcItems.map(item=>dcItemRow(item)).join('')}
           </tbody>
           ${!isRes?`<tfoot class="bg-gray-50 border-t"><tr>
-            <td colspan="4" class="px-2 py-1.5 text-right text-gray-500 font-semibold">TOTAL</td>
+            <td colspan="5" class="px-2 py-1.5 text-right text-gray-500 font-semibold">TOTAL</td>
             <td></td>
             <td class="px-2 py-1.5 text-right font-mono font-semibold whitespace-nowrap" id="dc-grand-total">${rp(total)}</td>
             <td></td>
@@ -999,6 +1021,7 @@ const dcSyncFromDOM = () => {
   const rows = document.querySelectorAll('#dc-items-body tr');
   _dcItems = [...rows].map(r => ({
     namaPart: r.querySelector('[data-f=namaPart]')?.value?.trim()||'',
+    partNumber: r.querySelector('[data-f=partNumber]')?.value?.trim()||'',
     jumlah: +(r.querySelector('[data-f=jumlah]')?.value||1),
     satuan: r.querySelector('[data-f=satuan]')?.value?.trim()||'pcs',
     kimap: r.querySelector('[data-f=kimap]')?.value?.trim()||'',
@@ -1045,6 +1068,7 @@ const dcUpdateGrand = () => {
 const getDCItemsFromDOM = () => {
   return [...document.querySelectorAll('#dc-items-body tr')].map(r=>({
     namaPart: r.querySelector('[data-f=namaPart]')?.value?.trim()||'',
+    partNumber: r.querySelector('[data-f=partNumber]')?.value?.trim()||'',
     jumlah: +(r.querySelector('[data-f=jumlah]')?.value||1),
     satuan: r.querySelector('[data-f=satuan]')?.value?.trim()||'pcs',
     kimap: r.querySelector('[data-f=kimap]')?.value?.trim()||'',
