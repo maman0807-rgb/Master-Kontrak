@@ -463,11 +463,65 @@ const rDash = () => {
     </div>
 
     <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Rekap Permintaan Part — Reservasi</h2>
-    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
       ${card('📝','MR Dibuat',resOnly.filter(x=>x.status==='MR Dibuat').length+' item',null,'text-amber-600')}
       ${card('📋','Reservasi Dibuat',resOnly.filter(x=>x.status==='Reservasi Dibuat').length+' item',null,'text-blue-700')}
       ${card('✅','Diterima',resDone.length+' item',null,'text-emerald-700')}
     </div>
+
+    ${(()=>{
+      const allResItems = resOnly.flatMap(d=>(d.items?.length?d.items:[{namaPart:d.namaPart,jumlah:d.jumlah,satuan:d.satuan,kimap:d.kimap}]).filter(x=>x.namaPart));
+      if(!allResItems.length) return '';
+      const partMap={};
+      allResItems.forEach(item=>{
+        const key=(item.namaPart||'').trim().toLowerCase();
+        if(!partMap[key]) partMap[key]={nama:item.namaPart,kimap:item.kimap||'',satuan:item.satuan||'',count:0,totalQty:0};
+        partMap[key].count++;
+        partMap[key].totalQty+=(+item.jumlah||1);
+      });
+      const parts=Object.values(partMap);
+      const byFreq=[...parts].sort((a,b)=>b.count-a.count).slice(0,10);
+      const byQty=[...parts].sort((a,b)=>b.totalQty-a.totalQty).slice(0,10);
+      const tblRow=(p,i,val,sub)=>`<tr class="hover:bg-gray-50">
+        <td class="px-3 py-2 text-gray-400 text-xs w-6">${i+1}</td>
+        <td class="px-3 py-2 font-medium text-gray-800 text-xs">${esc(p.nama)}</td>
+        <td class="px-3 py-2 text-gray-400 text-xs whitespace-nowrap">${esc(p.kimap)}</td>
+        <td class="px-3 py-2 text-center font-bold text-xs text-blue-700">${val}</td>
+        <td class="px-3 py-2 text-center text-gray-400 text-xs">${sub}</td>
+      </tr>`;
+      return `<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div class="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+            <span class="text-base">🔁</span>
+            <span class="text-xs font-semibold text-gray-700">Paling Sering Diminta</span>
+            <span class="ml-auto text-xs text-gray-400">${byFreq.length} material</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+              ${thead([['#'],['Nama Part'],['KIMAP'],['Frekuensi','center'],['Total Qty','center']])}
+              <tbody class="divide-y divide-gray-100">
+                ${byFreq.map((p,i)=>tblRow(p,i,p.count+'x',p.totalQty+' '+p.satuan)).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div class="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+            <span class="text-base">📦</span>
+            <span class="text-xs font-semibold text-gray-700">Paling Banyak Diambil (Qty)</span>
+            <span class="ml-auto text-xs text-gray-400">${byQty.length} material</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+              ${thead([['#'],['Nama Part'],['KIMAP'],['Total Qty','center'],['Frekuensi','center']])}
+              <tbody class="divide-y divide-gray-100">
+                ${byQty.map((p,i)=>tblRow(p,i,p.totalQty+' '+p.satuan,p.count+'x')).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+    })()}
 
     <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Realisasi Per Kontrak COO</h2>
     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
