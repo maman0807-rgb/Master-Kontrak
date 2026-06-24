@@ -256,7 +256,7 @@ const loadAll = async () => {
     sb.from('purchase_request').select('*').order('tgl_pr',{ascending:false}),
     sb.from('penagihan_sa').select('*').order('tgl_sa',{ascending:false}),
     sb.from('user_profiles').select('*').order('email'),
-    sb.from('tvm_coo').select('*').order('tanggal',{ascending:false}),
+    sb.from('tvm_coo').select('*').order('tgl_mulai',{ascending:false}),
   ]);
   S.sspk  = (r1.data||[]).map(F.from.spk);
   S.dc    = (r2.data||[]).map(F.from.dc);
@@ -1281,7 +1281,7 @@ const dSA = async id => {
 // ===== TVM TRAKINDO =====
 const FUNGSI = ['Hoist & Heavy Equipment','Rotating Mechanical'];
 const rTVM = () => {
-  const data = byDate(S.tvm,'tanggal');
+  const data = byDate(S.tvm,'tglMulai');
   const hhe  = data.filter(x=>x.fungsi==='Hoist & Heavy Equipment');
   const rot  = data.filter(x=>x.fungsi==='Rotating Mechanical');
   const tHHE = hhe.reduce((a,x)=>a+rpN(x.nilai),0);
