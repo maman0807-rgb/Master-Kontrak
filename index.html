@@ -177,6 +177,11 @@ let S = { page:'dashboard', mk:[], spk:[], pr:[], sa:[], sspk:[], dc:[], tvm:[],
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'x'+Math.random().toString(36).slice(2,10)+Date.now().toString(36));
 const debounce = (fn,ms=300)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};};
 const dRender = debounce(()=>render());
+const applyDCFilter = () => {
+  S.fpart = document.getElementById('inp-fpart')?.value?.trim()||'';
+  S.fdesc = document.getElementById('inp-fdesc')?.value?.trim()||'';
+  render();
+};
 const rpN = v => +String(v||'').replace(/[^\d.-]/g,'') || 0;
 const rp  = v => v!=null&&v!=='' ? 'Rp '+rpN(v).toLocaleString('id-ID') : '-';
 const df  = d => { if(!d) return '-'; const p=String(d).split('-'); return p.length===3&&p[0].length===4?`${p[2]}/${p[1]}/${p[0]}`:d; };
@@ -675,10 +680,11 @@ const rDC = () => {
         <option value="">Semua No. PO</option>
         ${[...new Set(byJenis.filter(x=>x.nomorPO).map(x=>x.nomorPO))].sort().map(p=>`<option value="${esc(p)}" ${S.fpo===p?'selected':''}>${esc(p)}</option>`).join('')}
       </select>
-      <input type="text" placeholder="🔍 Part Number..." value="${esc(S.fpart)}" oninput="S.fpart=this.value;dRender()" class="border rounded-lg px-3 py-1.5 text-xs bg-white w-44">
-      <input type="text" placeholder="🔍 Nama Part / Deskripsi..." value="${esc(S.fdesc)}" oninput="S.fdesc=this.value;dRender()" class="border rounded-lg px-3 py-1.5 text-xs bg-white w-52">
-      ${S.fpo||S.fpart||S.fdesc?`<button onclick="S.fpo='';S.fpart='';S.fdesc='';render()" class="text-xs text-red-400 hover:text-red-600 flex items-center gap-1">✕ Reset</button>`:''}
-      ${(S.fpo||S.fpart||S.fdesc)?`<span class="text-xs text-gray-400">${data.length} hasil</span>`:''}
+      <input type="text" id="inp-fpart" placeholder="Part Number..." value="${esc(S.fpart)}" onkeydown="if(event.key==='Enter')applyDCFilter()" class="border rounded-lg px-3 py-1.5 text-xs bg-white w-44">
+      <input type="text" id="inp-fdesc" placeholder="Nama Part / Deskripsi..." value="${esc(S.fdesc)}" onkeydown="if(event.key==='Enter')applyDCFilter()" class="border rounded-lg px-3 py-1.5 text-xs bg-white w-52">
+      <button onclick="applyDCFilter()" class="px-3 py-1.5 bg-blue-700 text-white rounded-lg text-xs hover:bg-blue-800">Cari</button>
+      ${S.fpo||S.fpart||S.fdesc?`<button onclick="S.fpo='';S.fpart='';S.fdesc='';render()" class="text-xs text-red-400 hover:text-red-600">✕ Reset</button>`:''}
+      ${S.fpart||S.fdesc?`<span class="text-xs text-gray-400">${data.length} hasil</span>`:''}
     </div>`:''}
     <div class="mb-4"></div>
 
