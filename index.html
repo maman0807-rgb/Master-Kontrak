@@ -171,7 +171,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 // ===== STATE =====
-let S = { page:'dashboard', mk:[], spk:[], pr:[], sa:[], sspk:[], dc:[], tvm:[], users:[], fy:'', fm:'', fkontrak:'', dcTab:'dc', prTab:'missing', saTab:'missing', tvmTab:'hhe', currentUser:'', currentNama:'', isAdmin:false, fpo:'', fpart:'', fdesc:'' };
+let S = { page:'dashboard', mk:[], spk:[], pr:[], sa:[], sspk:[], dc:[], tvm:[], users:[], fy:'', fm:'', fkontrak:'', dcTab:'dc', prTab:'missing', saTab:'missing', tvmTab:'hhe', currentUser:'', currentNama:'', isAdmin:false, fpo:'', fpart:'', fdesc:'', resView:'detail' };
 
 // ===== UTILS =====
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'x'+Math.random().toString(36).slice(2,10)+Date.now().toString(36));
@@ -766,16 +766,65 @@ const rDC = () => {
       ${S.fpo||S.fpart||S.fdesc?`<button onclick="S.fpo='';S.fpart='';S.fdesc='';render()" class="text-xs text-red-400 hover:text-red-600">✕ Reset</button>`:''}
       ${S.fpart||S.fdesc?`<span class="text-xs text-gray-400">${data.length} hasil</span>`:''}
     </div>`:''}
-    <div class="mb-4"></div>
+    ${!isDC?`<div class="flex items-center gap-2 mb-3 no-print">
+      <button onclick="S.resView='detail';render()" class="${S.resView!=='rekap'?'bg-violet-700 text-white':'bg-white border border-gray-200 text-gray-600'} px-3 py-1.5 rounded-lg text-xs font-medium transition">📋 Detail</button>
+      <button onclick="S.resView='rekap';render()" class="${S.resView==='rekap'?'bg-violet-700 text-white':'bg-white border border-gray-200 text-gray-600'} px-3 py-1.5 rounded-lg text-xs font-medium transition">📊 Rekap</button>
+      ${S.resView==='rekap'?`<span class="ml-2 text-xs text-gray-400">${S.fy?'Tahun '+S.fy:'Semua Tahun'}${S.fm?' · Bulan '+S.fm:''}</span>`:''}
+    </div>`:''}
 
-    <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
+    ${(!isDC && S.resView==='rekap') ? (()=>{
+      const map={};
+      data.forEach(d=>{
+        const items=d.items?.length?d.items:[{namaPart:d.namaPart,jumlah:d.jumlah,satuan:d.satuan,kimap:d.kimap,partNumber:''}];
+        items.filter(x=>x.namaPart).forEach(item=>{
+          const key=(item.namaPart||'').trim().toLowerCase();
+          if(!map[key]) map[key]={nama:item.namaPart,partNumber:item.partNumber||'',kimap:item.kimap||'',satuan:item.satuan||'-',totalQty:0,count:0};
+          map[key].totalQty+=(+item.jumlah||1);
+          map[key].count++;
+          if(item.partNumber&&!map[key].partNumber) map[key].partNumber=item.partNumber;
+          if(item.kimap&&!map[key].kimap) map[key].kimap=item.kimap;
+        });
+      });
+      const rows=Object.values(map).sort((a,b)=>b.totalQty-a.totalQty);
+      window._rekapRes=rows;
+      if(!rows.length) return `<div class="bg-white rounded-xl p-8 text-center text-gray-400 text-sm shadow-sm">Belum ada data Reservasi${S.fy?' untuk tahun '+S.fy:''}.</div>`;
+      return `<div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 no-print">
+          <span class="text-xs text-gray-500 font-semibold">${rows.length} jenis material &middot; ${rows.reduce((a,x)=>a+x.totalQty,0)} total qty</span>
+          <button onclick="exportRekapRes()" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs hover:bg-emerald-700">⬇ Export Excel</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            ${thead([['#'],['Nama Part / Material'],['Part Number'],['KIMAP'],['Satuan'],['Total Qty','center'],['Frekuensi','center']])}
+            <tbody class="divide-y divide-gray-100">
+              ${rows.map((p,i)=>`<tr class="hover:bg-gray-50">
+                <td class="px-4 py-2.5 text-gray-400 text-xs">${i+1}</td>
+                <td class="px-4 py-2.5 font-medium text-gray-800">${esc(p.nama)}</td>
+                <td class="px-4 py-2.5 text-blue-700 text-xs whitespace-nowrap">${esc(p.partNumber||'-')}</td>
+                <td class="px-4 py-2.5 text-gray-500 text-xs whitespace-nowrap">${esc(p.kimap||'-')}</td>
+                <td class="px-4 py-2.5 text-gray-500 text-xs">${esc(p.satuan)}</td>
+                <td class="px-4 py-2.5 text-center font-bold text-violet-700 text-base">${p.totalQty}</td>
+                <td class="px-4 py-2.5 text-center text-gray-400 text-xs">${p.count}x</td>
+              </tr>`).join('')}
+            </tbody>
+            <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
+              <tr>
+                <td colspan="5" class="px-4 py-3 text-right text-gray-500">TOTAL (${rows.length} jenis material)</td>
+                <td class="px-4 py-3 text-center text-violet-700 text-sm">${rows.reduce((a,x)=>a+x.totalQty,0)}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>`;
+    })() : `<div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
         ${thead(th)}
         <tbody class="divide-y divide-gray-100">
           ${data.length===0 ? emptyRow(isDC?'🔧':'📋',`Belum ada data ${jenis}.`,ncols) : data.map(isDC ? rowDC : rowRes).join('')}
         </tbody>
       </table>
-    </div></div>
+    </div></div>`}
   </div>`;
 };
 
@@ -1607,6 +1656,24 @@ const dUser = async id => {
 };
 
 // ===== EXPORT SEMUA (multi-sheet) =====
+const exportRekapRes = () => {
+  const rows = window._rekapRes||[];
+  if(!rows.length){alert('Tidak ada data rekap reservasi.');return;}
+  const label=(S.fy?'Tahun '+S.fy:'Semua Tahun')+(S.fm?' Bulan '+S.fm:'');
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([
+    ['Rekap Material Reservasi — '+label],
+    [],
+    ['No','Nama Part / Material','Part Number','KIMAP','Satuan','Total Qty','Frekuensi'],
+    ...rows.map((p,i)=>[i+1,p.nama,p.partNumber,p.kimap,p.satuan,p.totalQty,p.count+'x']),
+    [],
+    ['','','','','TOTAL',rows.reduce((a,x)=>a+x.totalQty,0),'']
+  ]);
+  ws['!cols']=[{wch:4},{wch:36},{wch:16},{wch:16},{wch:8},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws,'Rekap Reservasi');
+  XLSX.writeFile(wb,`Rekap_Reservasi_${S.fy||'Semua'}.xlsx`);
+};
+
 const exportAll = () => {
   const wb=XLSX.utils.book_new();
   const add=(name,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),name);
