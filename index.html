@@ -714,8 +714,24 @@ const rDC = () => {
 
   const tabBtn = (t, label) => {
     const active = S.dcTab === t;
-    return `<button onclick="S.dcTab='${t}';render()" class="px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition ${active ? 'border-blue-700 text-blue-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${label}</button>`;
+    const colActive = t==='dc' ? 'border-indigo-600 text-indigo-700' : 'border-violet-600 text-violet-700';
+    return `<button onclick="S.dcTab='${t}';render()" class="px-4 py-2 text-sm font-medium border-b-2 transition ${active ? colActive+' bg-white font-semibold' : 'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${label}</button>`;
   };
+
+  // DC: monthly breakdown for selected/current year
+  const dcYear = S.fy || new Date().getFullYear().toString();
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+  const dcMonths = MONTH_NAMES.map((label,i)=>({ m:String(i+1).padStart(2,'0'), label, nilai:0, count:0 }));
+  byJenis.filter(x=>x.tanggal&&x.tanggal.startsWith(dcYear)).forEach(d=>{
+    const mo = dcMonths.find(x=>x.m===(d.tanggal||'').substring(5,7));
+    if(mo){ mo.nilai+=rpN(d.total); mo.count++; }
+  });
+  const dcMonthMax = Math.max(...dcMonths.map(x=>x.nilai),1);
+  const dcTotalYear = dcMonths.reduce((a,x)=>a+x.nilai,0);
+  const dcMonthActive = dcMonths.filter(x=>x.count>0).length||1;
+
+  // Reservasi: all unique years for per-tahun rekap
+  const resYears = [...new Set(byJenis.filter(x=>x.tanggal).map(x=>x.tanggal.substring(0,4)))].sort();
 
   const thDC  = [['Tanggal','center'],['No. PO/RO'],['Status','center'],['Total','right'],['Judul Pekerjaan'],['','center']];
   const thRes = [['No. Reservasi'],['No. MR'],['Tanggal','center'],['Status','center'],['','center']];
@@ -823,81 +839,146 @@ const rDC = () => {
     </tr>`;
   };
 
+  // Reservasi rekap per tahun
+  const rekapPerTahun = () => {
+    const map = {};
+    byJenis.forEach(d => {
+      const yr = (d.tanggal||'').substring(0,4);
+      if(!yr) return;
+      const items = d.items?.length ? d.items : [{namaPart:d.namaPart,jumlah:d.jumlah,satuan:d.satuan,kimap:d.kimap,partNumber:''}];
+      items.filter(x=>x.namaPart).forEach(item => {
+        const key = (item.namaPart||'').trim().toLowerCase();
+        if(!map[key]) map[key] = {nama:item.namaPart, partNumber:item.partNumber||'', kimap:item.kimap||'', satuan:item.satuan||'-', byYear:{}, total:0};
+        map[key].byYear[yr] = (map[key].byYear[yr]||0) + (+item.jumlah||1);
+        map[key].total += (+item.jumlah||1);
+        if(item.partNumber && !map[key].partNumber) map[key].partNumber = item.partNumber;
+        if(item.kimap && !map[key].kimap) map[key].kimap = item.kimap;
+      });
+    });
+    return Object.values(map).sort((a,b)=>b.total-a.total);
+  };
+
   return `<div class="fade-in">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
-      <h1 class="text-lg font-bold text-gray-800">Permintaan Part</h1>
-      <div class="flex gap-2 flex-wrap no-print">
+      <h1 class="text-lg font-bold text-gray-800">Permintaan Part <span class="text-xs font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full ml-1">Hoist</span></h1>
+      <div class="flex gap-2 flex-wrap no-print items-center">
         ${fBar()}
         <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
-        <button onclick="mDC()" class="px-3 py-1.5 bg-blue-800 text-white rounded-lg text-sm hover:bg-blue-900">+ Tambah ${jenis}</button>
+        <button onclick="mDC()" class="px-3 py-1.5 ${isDC?'bg-indigo-700 hover:bg-indigo-800':'bg-violet-700 hover:bg-violet-800'} text-white rounded-lg text-sm">+ Tambah ${jenis}</button>
       </div>
     </div>
 
-    <div class="flex gap-0 border-b border-gray-200">
+    <div class="flex border-b border-gray-200 mb-4 bg-gray-50">
       ${tabBtn('dc','🔧 Direct Charge ('+all.filter(x=>(x.jenis||'Direct Charge')==='Direct Charge').length+')')}
-      ${tabBtn('reservasi','📋 Reservasi ('+all.filter(x=>x.jenis==='Reservasi').length+')')}
+      ${tabBtn('reservasi','📦 Reservasi ('+all.filter(x=>x.jenis==='Reservasi').length+')')}
     </div>
-    ${isDC?`<div class="flex flex-wrap gap-2 items-center py-3 mb-2 border-b border-gray-100">
-      <select onchange="S.fy=this.value;render()" class="border rounded-lg px-3 py-1.5 text-xs bg-white">
-        <option value="">Semua Tahun</option>
-        ${[...new Set(byJenis.filter(x=>x.tanggal).map(x=>x.tanggal.substring(0,4)))].sort().reverse().map(y=>`<option value="${y}" ${S.fy==y?'selected':''}>${y}</option>`).join('')}
-      </select>
+
+    ${isDC ? `
+    <!-- DC STAT CARDS -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-indigo-500">
+        <p class="text-xs text-gray-400 mb-1">Total DC ${dcYear}</p>
+        <p class="text-lg font-bold text-indigo-700 font-mono">${rp(dcTotalYear)}</p>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-400">
+        <p class="text-xs text-gray-400 mb-1">Jumlah PO/RO ${dcYear}</p>
+        <p class="text-lg font-bold text-blue-700">${byJenis.filter(x=>x.tanggal&&x.tanggal.startsWith(dcYear)).length}</p>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-sky-400">
+        <p class="text-xs text-gray-400 mb-1">Rata-rata / Bulan</p>
+        <p class="text-lg font-bold text-sky-700 font-mono">${rp(dcTotalYear/dcMonthActive)}</p>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-gray-300">
+        <p class="text-xs text-gray-400 mb-1">Total Semua Tahun</p>
+        <p class="text-lg font-bold text-gray-600 font-mono">${rp(byJenis.reduce((a,x)=>a+rpN(x.total),0))}</p>
+      </div>
+    </div>
+
+    <!-- DC MONTHLY TREND -->
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs font-semibold text-gray-500 tracking-wide">TREND BULANAN — ${dcYear}</span>
+        <select onchange="S.fy=this.value;render()" class="border rounded-lg px-2 py-1 text-xs bg-white">
+          ${[...new Set(byJenis.filter(x=>x.tanggal).map(x=>x.tanggal.substring(0,4)))].sort().reverse().map(y=>`<option value="${y}" ${dcYear===y?'selected':''}>${y}</option>`).join('')}
+          <option value="" ${!S.fy?'selected':''}>Semua</option>
+        </select>
+      </div>
+      <div class="flex items-end gap-1 h-16">
+        ${dcMonths.map(mo=>{
+          const pct = Math.round(mo.nilai/dcMonthMax*100);
+          const now = new Date(); const isNow = mo.m===String(now.getMonth()+1).padStart(2,'0')&&dcYear===String(now.getFullYear());
+          return `<div class="flex-1 flex flex-col items-center gap-0.5 group relative cursor-default" title="${mo.label}: ${rp(mo.nilai)} (${mo.count} PO)">
+            <div class="w-full ${isNow?'bg-indigo-400':'bg-indigo-200'} rounded-sm hover:bg-indigo-500 transition" style="height:${mo.nilai?Math.max(pct,4):2}%"></div>
+            <span class="text-[9px] text-gray-400">${mo.label}</span>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 border-t border-gray-100 pt-2">
+        ${dcMonths.filter(x=>x.count>0).map(mo=>`<span class="text-[10px] text-gray-500"><span class="font-semibold text-indigo-700">${mo.label}</span> ${rp(mo.nilai)}</span>`).join('')}
+        ${dcMonths.every(x=>!x.count)?`<span class="text-xs text-gray-300 italic">Tidak ada data DC untuk tahun ${dcYear}</span>`:''}
+      </div>
+    </div>
+
+    <!-- DC FILTERS + TABLE -->
+    <div class="flex flex-wrap gap-2 items-center py-3 mb-2 border-b border-gray-100 no-print">
       <select onchange="S.fpo=this.value;render()" class="border rounded-lg px-3 py-1.5 text-xs bg-white">
         <option value="">Semua No. PO/RO</option>
         ${[...new Set(byJenis.filter(x=>x.nomorPO).map(x=>x.nomorPO))].sort().map(p=>`<option value="${esc(p)}" ${S.fpo===p?'selected':''}>${esc(p)}</option>`).join('')}
       </select>
       <input type="text" id="inp-fpart" placeholder="Part Number..." value="${esc(S.fpart)}" onkeydown="if(event.key==='Enter')applyDCFilter()" class="border rounded-lg px-3 py-1.5 text-xs bg-white w-44">
       <input type="text" id="inp-fdesc" placeholder="Nama Part / Deskripsi..." value="${esc(S.fdesc)}" onkeydown="if(event.key==='Enter')applyDCFilter()" class="border rounded-lg px-3 py-1.5 text-xs bg-white w-52">
-      <button onclick="applyDCFilter()" class="px-3 py-1.5 bg-blue-700 text-white rounded-lg text-xs hover:bg-blue-800">Cari</button>
+      <button onclick="applyDCFilter()" class="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs hover:bg-indigo-700">Cari</button>
       ${S.fy||S.fpo||S.fpart||S.fdesc?`<button onclick="S.fy='';S.fpo='';S.fpart='';S.fdesc='';render()" class="text-xs text-red-400 hover:text-red-600">✕ Reset</button>`:''}
       ${S.fpart||S.fdesc?`<span class="text-xs text-gray-400">${data.length} hasil</span>`:''}
-    </div>`:''}
-    ${!isDC?`<div class="flex items-center gap-2 mb-3 no-print">
+    </div>
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        ${thead(thDC)}
+        <tbody class="divide-y divide-gray-100">
+          ${data.length===0?emptyRow('🔧','Belum ada data Direct Charge.',thDC.length):data.map(rowDC).join('')}
+        </tbody>
+        ${data.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
+          <tr><td colspan="3" class="px-4 py-3 text-right text-gray-500">TOTAL (${data.length} PO/RO)</td>
+          <td class="px-4 py-3 text-right font-mono text-indigo-700">${rp(total)}</td><td colspan="2"></td></tr>
+        </tfoot>`:''}
+      </table>
+    </div></div>
+    ` : `
+    <!-- RESERVASI TABS -->
+    <div class="flex items-center gap-2 mb-4 no-print">
       <button onclick="S.resView='detail';render()" class="${S.resView!=='rekap'?'bg-violet-700 text-white':'bg-white border border-gray-200 text-gray-600'} px-3 py-1.5 rounded-lg text-xs font-medium transition">📋 Detail</button>
-      <button onclick="S.resView='rekap';render()" class="${S.resView==='rekap'?'bg-violet-700 text-white':'bg-white border border-gray-200 text-gray-600'} px-3 py-1.5 rounded-lg text-xs font-medium transition">📊 Rekap</button>
-      ${S.resView==='rekap'?`<span class="ml-2 text-xs text-gray-400">${S.fy?'Tahun '+S.fy:'Semua Tahun'}${S.fm?' · Bulan '+S.fm:''}</span>`:''}
-    </div>`:''}
+      <button onclick="S.resView='rekap';render()" class="${S.resView==='rekap'?'bg-violet-700 text-white':'bg-white border border-gray-200 text-gray-600'} px-3 py-1.5 rounded-lg text-xs font-medium transition">📊 Rekap Material</button>
+    </div>
 
-    ${(!isDC && S.resView==='rekap') ? (()=>{
-      const map={};
-      data.forEach(d=>{
-        const items=d.items?.length?d.items:[{namaPart:d.namaPart,jumlah:d.jumlah,satuan:d.satuan,kimap:d.kimap,partNumber:''}];
-        items.filter(x=>x.namaPart).forEach(item=>{
-          const key=(item.namaPart||'').trim().toLowerCase();
-          if(!map[key]) map[key]={nama:item.namaPart,partNumber:item.partNumber||'',kimap:item.kimap||'',satuan:item.satuan||'-',totalQty:0,count:0};
-          map[key].totalQty+=(+item.jumlah||1);
-          map[key].count++;
-          if(item.partNumber&&!map[key].partNumber) map[key].partNumber=item.partNumber;
-          if(item.kimap&&!map[key].kimap) map[key].kimap=item.kimap;
-        });
-      });
-      const rows=Object.values(map).sort((a,b)=>b.totalQty-a.totalQty);
-      window._rekapRes=rows;
-      if(!rows.length) return `<div class="bg-white rounded-xl p-8 text-center text-gray-400 text-sm shadow-sm">Belum ada data Reservasi${S.fy?' untuk tahun '+S.fy:''}.</div>`;
+    ${S.resView==='rekap' ? (()=>{
+      const rows = rekapPerTahun();
+      window._rekapRes = rows;
+      if(!rows.length) return `<div class="bg-white rounded-xl p-8 text-center text-gray-400 text-sm shadow-sm">Belum ada data Reservasi.</div>`;
+      const theadCols = [['#'],['Nama Part / Material'],['Part Number'],['KIMAP'],['Sat.'],...resYears.map(y=>[y,'center']),['Total','center']];
       return `<div class="bg-white rounded-xl shadow-sm overflow-hidden">
         <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 no-print">
-          <span class="text-xs text-gray-500 font-semibold">${rows.length} jenis material &middot; ${rows.reduce((a,x)=>a+x.totalQty,0)} total qty</span>
+          <span class="text-xs text-gray-500 font-semibold">${rows.length} jenis material &middot; ${rows.reduce((a,x)=>a+x.total,0)} total qty &middot; ${resYears.length > 0 ? resYears.join(', ') : ''}</span>
           <button onclick="exportRekapRes()" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs hover:bg-emerald-700">⬇ Export Excel</button>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
-            ${thead([['#'],['Nama Part / Material'],['Part Number'],['KIMAP'],['Satuan'],['Total Qty','center'],['Frekuensi','center']])}
+            ${thead(theadCols)}
             <tbody class="divide-y divide-gray-100">
               ${rows.map((p,i)=>`<tr class="hover:bg-gray-50">
-                <td class="px-4 py-2.5 text-gray-400 text-xs">${i+1}</td>
-                <td class="px-4 py-2.5 font-medium text-gray-800">${esc(p.nama)}</td>
-                <td class="px-4 py-2.5 text-blue-700 text-xs whitespace-nowrap">${esc(p.partNumber||'-')}</td>
-                <td class="px-4 py-2.5 text-gray-500 text-xs whitespace-nowrap">${esc(p.kimap||'-')}</td>
-                <td class="px-4 py-2.5 text-gray-500 text-xs">${esc(p.satuan)}</td>
-                <td class="px-4 py-2.5 text-center font-bold text-violet-700 text-base">${p.totalQty}</td>
-                <td class="px-4 py-2.5 text-center text-gray-400 text-xs">${p.count}x</td>
+                <td class="px-3 py-2 text-gray-400 text-xs">${i+1}</td>
+                <td class="px-3 py-2 font-medium text-gray-800 text-xs max-w-[200px]"><div class="clamp2">${esc(p.nama)}</div></td>
+                <td class="px-3 py-2 text-blue-700 text-xs whitespace-nowrap">${esc(p.partNumber||'-')}</td>
+                <td class="px-3 py-2 text-gray-500 text-xs whitespace-nowrap">${esc(p.kimap||'-')}</td>
+                <td class="px-3 py-2 text-gray-400 text-xs">${esc(p.satuan)}</td>
+                ${resYears.map(y=>`<td class="px-3 py-2 text-center font-mono text-xs ${p.byYear[y]?'font-semibold text-violet-700':'text-gray-200'}">${p.byYear[y]||'-'}</td>`).join('')}
+                <td class="px-3 py-2 text-center font-bold text-violet-800 text-sm">${p.total}</td>
               </tr>`).join('')}
             </tbody>
             <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
               <tr>
-                <td colspan="5" class="px-4 py-3 text-right text-gray-500">TOTAL (${rows.length} jenis material)</td>
-                <td class="px-4 py-3 text-center text-violet-700 text-sm">${rows.reduce((a,x)=>a+x.totalQty,0)}</td>
-                <td></td>
+                <td colspan="5" class="px-3 py-3 text-right text-gray-500">TOTAL (${rows.length} jenis)</td>
+                ${resYears.map(y=>`<td class="px-3 py-3 text-center text-violet-600">${rows.reduce((a,x)=>a+(x.byYear[y]||0),0)}</td>`).join('')}
+                <td class="px-3 py-3 text-center text-violet-800 text-sm">${rows.reduce((a,x)=>a+x.total,0)}</td>
               </tr>
             </tfoot>
           </table>
@@ -905,12 +986,13 @@ const rDC = () => {
       </div>`;
     })() : `<div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
-        ${thead(th)}
+        ${thead(thRes)}
         <tbody class="divide-y divide-gray-100">
-          ${data.length===0 ? emptyRow(isDC?'🔧':'📋',`Belum ada data ${jenis}.`,ncols) : data.map(isDC ? rowDC : rowRes).join('')}
+          ${data.length===0?emptyRow('📦','Belum ada data Reservasi.',thRes.length):data.map(rowRes).join('')}
         </tbody>
       </table>
     </div></div>`}
+    `}
   </div>`;
 };
 
