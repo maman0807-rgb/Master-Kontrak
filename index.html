@@ -72,7 +72,7 @@
       <span class="text-base">📋</span> CoO SPK
     </button>
     <button onclick="go('plh')" id="nav-plh" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
-      <span class="text-base">🔀</span> Pipeline PR·SA
+      <span class="text-base">🔀</span> Pipeline PR·PO·SA
     </button>
     <button onclick="go('dc')" id="nav-dc" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
       <span class="text-base">🔧</span> DC & Reservasi
@@ -104,7 +104,7 @@
       <span class="text-base">📋</span> CoO SPK
     </button>
     <button onclick="go('plr')" id="nav-plr" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
-      <span class="text-base">🔀</span> Pipeline SA
+      <span class="text-base">🔀</span> Pipeline PR·PO·SA
     </button>
     <button onclick="go('dcr')" id="nav-dcr" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
       <span class="text-base">🔧</span> DC & Reservasi
@@ -344,7 +344,7 @@ const byK = arr => {
 };
 
 // ===== FILTER BAR =====
-const fBar = (showK=false) => `
+const fBar = (showK=false, mkList=null) => `
   <div class="flex flex-wrap gap-2 items-center">
     <select onchange="S.fy=this.value;render()" class="border rounded-lg px-3 py-1.5 text-sm bg-white">
       <option value="">Semua Tahun</option>
@@ -357,7 +357,7 @@ const fBar = (showK=false) => `
     </select>
     ${showK?`<select onchange="S.fkontrak=this.value;render()" class="border rounded-lg px-3 py-1.5 text-sm bg-white max-w-xs truncate">
       <option value="">Semua Kontrak</option>
-      ${S.mk.map(k=>`<option value="${k.id}" ${S.fkontrak===k.id?'selected':''}>${esc(k.nomorSPB||k.customID)}${k.nomorSPB?' ('+esc(k.customID)+')':''}</option>`).join('')}
+      ${(mkList||S.mk).map(k=>`<option value="${k.id}" ${S.fkontrak===k.id?'selected':''}>${esc(k.nomorSPB||k.customID)}${k.nomorSPB?' ('+esc(k.customID)+')':''}</option>`).join('')}
     </select>`:''}
   </div>`;
 
@@ -372,8 +372,10 @@ const sbClose = () => {
 };
 
 const go = page => {
+  const hoistPg=new Set(['spk','pr','sa','plh']),staticPg=new Set(['spks','pls']),rotPg=new Set(['spkr','plr']);
+  const grp=p=>hoistPg.has(p)?'h':staticPg.has(p)?'s':rotPg.has(p)?'r':'';
+  if(grp(page)!==grp(S.page)||!grp(page)) S.fkontrak='';
   S.page=page;
-  if(!['spk','pr','sa','spks','spkr','pls','plh','plr'].includes(page)) S.fkontrak='';
   document.querySelectorAll('.nav-item').forEach(el=>{
     el.classList.remove('bg-blue-800','text-white','font-semibold');
     el.classList.add('text-blue-100');
@@ -1297,6 +1299,7 @@ const rMKS = () => {
       <div class="flex gap-2 flex-wrap no-print items-center">
         ${fBar()}
         <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
+        <button onclick="mMK(null,'Static')" class="px-3 py-1.5 bg-teal-700 text-white rounded-lg text-sm hover:bg-teal-800">+ Tambah</button>
       </div>
     </div>
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
@@ -1328,8 +1331,8 @@ const rMKS = () => {
               <td class="px-3 py-2.5 text-center">${badge(k.status)}</td>
               <td class="px-3 py-2.5 text-center whitespace-nowrap no-print">
                 <button onclick="S.fkontrak='${k.id}';go('spks')" class="text-teal-600 hover:underline text-xs mr-1">SPK</button>
-                <button onclick="mMK('${k.id}')" class="text-blue-600 hover:underline text-xs mr-1">Edit</button>
-                <button onclick="dMK('${k.id}')" class="text-red-500 hover:underline text-xs">Hapus</button>
+                <button onclick="mMK('${k.id}','Static')" class="text-blue-600 hover:underline text-xs mr-1">Edit</button>
+                <button onclick="dMK('${k.id}','Static')" class="text-red-500 hover:underline text-xs">Hapus</button>
                 ${byLine(k)}
               </td>
             </tr>`;}).join('')}
@@ -1357,10 +1360,6 @@ const rSPKS = () => {
   const totalReal = data.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0);
   const pctReal   = totalSPK>0 ? (totalReal/totalSPK*100).toFixed(1) : 0;
 
-  const filterMKS = `<select onchange="S.fkontrak=this.value;render()" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white max-w-[220px]">
-    <option value="">Semua Kontrak</option>
-    ${S.mkS.map(k=>`<option value="${k.id}" ${S.fkontrak===k.id?'selected':''}>${esc(k.nomorSPB||k.customID)} – ${esc(k.vendor)}</option>`).join('')}
-  </select>`;
 
   // Realisasi summary cards per kontrak (if not filtered to one kontrak)
   const mkMap = {};
@@ -1410,7 +1409,7 @@ const rSPKS = () => {
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
       <h1 class="text-lg font-bold text-gray-800">CoO SPK <span class="text-xs font-normal bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full ml-1">Static</span> <span class="text-sm font-normal text-gray-400">(${data.length})</span></h1>
       <div class="flex gap-2 flex-wrap no-print items-center">
-        ${filterMKS}
+        ${fBar(true, S.mkS)}
         <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
         <button onclick="mSPKS()" class="px-3 py-1.5 bg-teal-700 text-white rounded-lg text-sm hover:bg-teal-800">+ Tambah SPK</button>
       </div>
@@ -1455,7 +1454,7 @@ const rSPKS = () => {
             <td colspan="3" class="px-3 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
             <td class="px-3 py-3 text-right font-mono">${rp(totalSPK)}</td>
             <td class="px-3 py-3 text-right font-mono text-teal-700">${rp(totalReal)} <span class="text-gray-400 font-normal">(${pctReal}%)</span></td>
-            <td colspan="4"></td>
+            <td colspan="5"></td>
           </tr>
         </tfoot>
       </table>
@@ -1522,7 +1521,7 @@ const rPLS = () => {
     <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
       <h1 class="text-lg font-bold text-gray-800">Pipeline PR · PO · SA <span class="text-xs font-normal bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full ml-1">Static</span></h1>
       <div class="no-print flex gap-2 items-center">
-        ${fBar(true)}
+        ${fBar(true, S.mkS)}
         <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
       </div>
     </div>
@@ -1933,7 +1932,7 @@ const rPLR = () => {
   }).filter(Boolean);
 
   if(!all.length) return `<div class="fade-in">
-    <h1 class="text-lg font-bold text-gray-800 mb-4">Pipeline SA <span class="text-xs font-normal bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full ml-1">Rotating</span></h1>
+    <h1 class="text-lg font-bold text-gray-800 mb-4">Pipeline PR · PO · SA <span class="text-xs font-normal bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full ml-1">Rotating</span></h1>
     <div class="bg-white rounded-xl p-10 text-center shadow-sm">
       <p class="text-4xl mb-3">⚙️</p>
       <p class="text-gray-500 text-sm">Belum ada SPK Rotating.</p>
@@ -1945,7 +1944,7 @@ const rPLR = () => {
     <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
       <h1 class="text-lg font-bold text-gray-800">Pipeline PR · PO · SA <span class="text-xs font-normal bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full ml-1">Rotating</span></h1>
       <div class="no-print flex gap-2 items-center">
-        ${fBar(true)}
+        ${fBar(true, S.mkR)}
         <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
       </div>
     </div>
@@ -2143,7 +2142,9 @@ const rMKR = () => {
                 <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(k.tglBerakhir,k.status)}</td>
                 <td class="px-3 py-2.5 text-center">${badge(k.status)}</td>
                 <td class="px-3 py-2.5 text-center whitespace-nowrap no-print">
-                  <button onclick="S.fkontrak='${k.id}';go('spkr')" class="text-emerald-600 hover:underline text-xs">SPK</button>
+                  <button onclick="S.fkontrak='${k.id}';go('spkr')" class="text-emerald-600 hover:underline text-xs mr-1">SPK</button>
+                  <button onclick="mMK('${k.id}')" class="text-blue-600 hover:underline text-xs mr-1">Edit</button>
+                  <button onclick="dMK('${k.id}')" class="text-red-500 hover:underline text-xs">Hapus</button>
                 </td>
               </tr>`;}).join('')}
           </tbody>
@@ -2180,6 +2181,13 @@ const rSPKR = () => {
   const saBySpk = {};
   S.sa.forEach(a=>{ saBySpk[a.idCoO]=(saBySpk[a.idCoO]||0)+rpN(a.nilaiSA); });
 
+  const hasPR_fn = s => !!s.nomorPR;
+  const hasPO_fn = s => !!s.nomorPO;
+  const hasSA_fn = s => !!(s.nomorSA || saBySpk[s.id]);
+  const docBadgeR = (has,label,val) => has
+    ? `<span class="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap" title="${esc(val||'')}">✓ ${label}${val?': '+esc(String(val).slice(-8)):''}</span>`
+    : `<span class="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-gray-50 text-gray-300 border border-gray-100 whitespace-nowrap">– ${label}</span>`;
+
   // Summary per kontrak
   const perK = S.mkR.map(k=>{
     const spks = S.spkR.filter(x=>x.idKontrak===k.id);
@@ -2195,7 +2203,7 @@ const rSPKR = () => {
     <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
       <h1 class="text-lg font-bold text-gray-800">CoO SPK <span class="text-xs font-normal bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full ml-1">Rotating</span></h1>
       <div class="no-print flex gap-2 items-center">
-        ${fBar(true)}
+        ${fBar(true, S.mkR)}
         <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
         <button onclick="mSPKR()" class="px-3 py-1.5 bg-emerald-700 text-white rounded-lg text-sm hover:bg-emerald-800">+ Tambah SPK</button>
       </div>
@@ -2233,7 +2241,6 @@ const rSPKR = () => {
             const k=S.mkR.find(x=>x.id===s.idKontrak);
             const real=saBySpk[s.id]||0;
             const pct=rpN(s.nilaiSPK)>0?Math.min(Math.round(real/rpN(s.nilaiSPK)*100),100):0;
-            const hasSA=real>0;
             const realCls=pct>=100?'text-emerald-600':pct>0?'text-blue-600':'text-gray-400';
             return `<tr class="hover:bg-gray-50">
               <td class="px-3 py-2.5 font-semibold text-emerald-700 whitespace-nowrap text-xs">${esc(s.customID)}</td>
@@ -2246,9 +2253,11 @@ const rSPKR = () => {
                 ${real?`<div class="text-[10px] text-gray-400">${pct}%</div>`:''}
               </td>
               <td class="px-3 py-2.5">
-                <span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-medium ${hasSA?'bg-emerald-50 text-emerald-700':'bg-gray-50 text-gray-300'}">
-                  ${hasSA?'✓':'–'} SA
-                </span>
+                <div class="flex flex-col gap-0.5">
+                  ${docBadgeR(hasPR_fn(s),'PR',s.nomorPR)}
+                  ${docBadgeR(hasPO_fn(s),'PO',s.nomorPO)}
+                  ${docBadgeR(hasSA_fn(s),'SA',s.nomorSA)}
+                </div>
               </td>
               <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(s.tglSelesai,s.status)}</td>
               <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
@@ -2824,10 +2833,13 @@ const dDC = async id => {
 };
 
 // ===== MASTER KONTRAK CRUD =====
-const mMK = (id=null) => {
-  const k=id?S.mk.find(x=>x.id===id):null;
-  showM(`<div class="p-6"><h2 class="text-base font-bold mb-4">${k?'Edit':'Tambah'} Master Kontrak</h2>
-    <form onsubmit="svMK(event,'${id||''}')"><div class="grid grid-cols-2 gap-3">
+const mMK = (id=null, jenis='HHE') => {
+  const list = jenis==='Static' ? S.mkS : S.mk;
+  const k = id ? list.find(x=>x.id===id) : null;
+  const badgeCls = jenis==='Static' ? 'bg-teal-100 text-teal-700' : 'bg-blue-100 text-blue-700';
+  const label = jenis==='Static' ? 'Static' : 'Hoist';
+  showM(`<div class="p-6"><h2 class="text-base font-bold mb-4">${k?'Edit':'Tambah'} Master Kontrak <span class="text-xs font-normal ${badgeCls} px-2 py-0.5 rounded-full ml-1">${label}</span></h2>
+    <form onsubmit="svMK(event,'${id||''}','${jenis}')"><div class="grid grid-cols-2 gap-3">
       ${fld('Custom ID','customID','text',k?.customID,true)} ${fld('Nomor SPB','nomorSPB','text',k?.nomorSPB)}
       <div class="col-span-2">${fld('Vendor','vendor','text',k?.vendor,true)}</div>
       ${tarea('Judul Kontrak','judulKontrak',k?.judulKontrak)}
@@ -2836,31 +2848,38 @@ const mMK = (id=null) => {
       ${sel('Status','status',['Aktif','Selesai','Terminasi'],k?.status||'Aktif')}
     </div>${mFoot()}</form></div>`);
 };
-const svMK = async (e,id) => {
+const svMK = async (e, id, jenis='HHE') => {
   e.preventDefault(); const f=e.target;
-  const ex=id?S.mk.find(x=>x.id===id):null;
-  const o={id:id||uid(),customID:f.customID.value.trim(),nomorSPB:f.nomorSPB.value.trim(),vendor:f.vendor.value.trim(),judulKontrak:f.judulKontrak.value.trim(),nilaiKontrak:f.nilaiKontrak.value,pic:f.pic.value.trim(),tglMulai:f.tglMulai.value,tglBerakhir:f.tglBerakhir.value,status:f.status.value,createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
+  const list = jenis==='Static' ? S.mkS : S.mk;
+  const ex = id ? list.find(x=>x.id===id) : null;
+  const o={id:id||uid(),customID:f.customID.value.trim(),nomorSPB:f.nomorSPB.value.trim(),vendor:f.vendor.value.trim(),judulKontrak:f.judulKontrak.value.trim(),nilaiKontrak:f.nilaiKontrak.value,pic:f.pic.value.trim(),tglMulai:f.tglMulai.value,tglBerakhir:f.tglBerakhir.value,status:f.status.value,jenis,createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
   setLoad(true,'Menyimpan...'); const {error}=await sb.from('master_kontrak').upsert(F.to.mk(o));
   setLoad(false); if(dbErr(error)) return;
-  if(id) S.mk[S.mk.findIndex(x=>x.id===id)]=o; else { S.mk.push(o); S.mk.sort((a,b)=>a.customID.localeCompare(b.customID)); }
+  if(id){ const idx=list.findIndex(x=>x.id===id); if(idx>=0) list[idx]=o; }
+  else { list.push(o); list.sort((a,b)=>a.customID.localeCompare(b.customID)); }
   closeModal(); render();
 };
-const dMK = async id => {
-  if(!confirm('Hapus kontrak ini? Semua SPK, PR, dan SA terkait ikut terhapus.')) return;
-  const spkIds=S.spk.filter(x=>x.idKontrak===id).map(x=>x.id);
+const dMK = async (id, jenis='HHE') => {
+  if(!confirm('Hapus kontrak ini? Semua SPK terkait ikut terhapus.')) return;
+  const mkList  = jenis==='Static' ? S.mkS : S.mk;
+  const spkList = jenis==='Static' ? S.spkS : S.spk;
+  const spkIds  = spkList.filter(x=>x.idKontrak===id).map(x=>x.id);
   setLoad(true,'Menghapus...');
   if(spkIds.length){
-    const {error:e1}=await sb.from('penagihan_sa').delete().in('id_coo',spkIds);
-    if(dbErr(e1)){setLoad(false);return;}
-    const {error:e2}=await sb.from('purchase_request').delete().in('id_coo',spkIds);
-    if(dbErr(e2)){setLoad(false);return;}
+    if(jenis!=='Static'){
+      const {error:e1}=await sb.from('penagihan_sa').delete().in('id_coo',spkIds);
+      if(dbErr(e1)){setLoad(false);return;}
+      const {error:e2}=await sb.from('purchase_request').delete().in('id_coo',spkIds);
+      if(dbErr(e2)){setLoad(false);return;}
+    }
     const {error:e3}=await sb.from('coo_spk').delete().eq('id_kontrak',id);
     if(dbErr(e3)){setLoad(false);return;}
   }
   const {error}=await sb.from('master_kontrak').delete().eq('id',id);
   setLoad(false); if(dbErr(error)) return;
-  S.mk=S.mk.filter(x=>x.id!==id); S.spk=S.spk.filter(x=>x.idKontrak!==id);
-  S.pr=S.pr.filter(x=>!spkIds.includes(x.idCoO)); S.sa=S.sa.filter(x=>!spkIds.includes(x.idCoO));
+  const mkIdx=mkList.findIndex(x=>x.id===id); if(mkIdx>=0) mkList.splice(mkIdx,1);
+  if(jenis==='Static') S.spkS=S.spkS.filter(x=>x.idKontrak!==id);
+  else { S.spk=S.spk.filter(x=>x.idKontrak!==id); S.pr=S.pr.filter(x=>!spkIds.includes(x.idCoO)); S.sa=S.sa.filter(x=>!spkIds.includes(x.idCoO)); }
   render();
 };
 
