@@ -227,9 +227,9 @@ const sisaHari = (d, status) => {
   const n=daysLeft(d); if(n===null) return '-';
   if(status==='Closed') return `<span class="text-xs text-gray-400">${df(d)}</span>`;
   if(n<0)   return `<div class="flex flex-col items-center gap-0.5"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">⚠ Expired</span><span class="text-[10px] text-red-500 font-medium">${df(d)}</span></div>`;
-  if(n<=30)  return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">🔴 ${n} hari</span>`;
-  if(n<=100) return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">⚠ ${n} hari</span>`;
-  return `<span class="text-xs text-gray-400">${n} hari</span>`;
+  if(n<=30)  return `<div class="flex flex-col items-center gap-0.5"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">🔴 ${n} hari</span><span class="text-[10px] text-red-500 font-medium">${df(d)}</span></div>`;
+  if(n<=100) return `<div class="flex flex-col items-center gap-0.5"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">⚠ ${n} hari</span><span class="text-[10px] text-amber-500 font-medium">${df(d)}</span></div>`;
+  return `<div class="flex flex-col items-center gap-0.5"><span class="text-xs text-gray-400">${n} hari</span><span class="text-[10px] text-gray-300">${df(d)}</span></div>`;
 };
 const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const dn  = v => v||null;
