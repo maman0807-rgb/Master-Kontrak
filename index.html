@@ -90,6 +90,9 @@
     <button onclick="go('spks')" id="nav-spks" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
       <span class="text-base">📋</span> CoO SPK
     </button>
+    <button onclick="go('pls')" id="nav-pls" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
+      <span class="text-base">🔀</span> Pipeline PR·PO·SA
+    </button>
 
     <p class="text-[10px] font-semibold text-blue-400 uppercase tracking-widest px-2 mt-3 mb-1 flex items-center gap-1.5">
       <span class="flex-1 border-t border-blue-700/40"></span> ROTATING <span class="flex-1 border-t border-blue-700/40"></span>
@@ -199,7 +202,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 // ===== STATE =====
-let S = { page:'dashboard', mk:[], spk:[], mkS:[], spkS:[], mkR:[], spkR:[], pr:[], sa:[], sspk:[], dc:[], tvm:[], users:[], fy:'', fm:'', fkontrak:'', dcTab:'dc', prTab:'perkontrak', saTab:'perkontrak', tvmTab:'hhe', currentUser:'', currentNama:'', isAdmin:false, fpo:'', fpart:'', fdesc:'', resView:'detail' };
+let S = { page:'dashboard', mk:[], spk:[], mkS:[], spkS:[], mkR:[], spkR:[], pr:[], sa:[], sspk:[], dc:[], tvm:[], users:[], fy:'', fm:'', fkontrak:'', dcTab:'dc', prTab:'perkontrak', saTab:'perkontrak', plsTab:'perkontrak', tvmTab:'hhe', currentUser:'', currentNama:'', isAdmin:false, fpo:'', fpart:'', fdesc:'', resView:'detail' };
 
 // ===== UTILS =====
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'x'+Math.random().toString(36).slice(2,10)+Date.now().toString(36));
@@ -358,7 +361,7 @@ const sbClose = () => {
 
 const go = page => {
   S.page=page;
-  if(!['spk','pr','sa','spks','spkr'].includes(page)) S.fkontrak='';
+  if(!['spk','pr','sa','spks','spkr','pls'].includes(page)) S.fkontrak='';
   document.querySelectorAll('.nav-item').forEach(el=>{
     el.classList.remove('bg-blue-800','text-white','font-semibold');
     el.classList.add('text-blue-100');
@@ -371,7 +374,7 @@ const go = page => {
 
 // ===== RENDER =====
 const render = () => {
-  const pages={dashboard:rDash,sspk:rSSPK,dc:rDC,mk:rMK,spk:rSPK,pr:rPR,sa:rSA,tvm:rTVM,users:rUsers,mks:rMKS,spks:rSPKS,mkr:rMKR,spkr:rSPKR};
+  const pages={dashboard:rDash,sspk:rSSPK,dc:rDC,mk:rMK,spk:rSPK,pr:rPR,sa:rSA,tvm:rTVM,users:rUsers,mks:rMKS,spks:rSPKS,mkr:rMKR,spkr:rSPKR,pls:rPLS};
   document.getElementById('app').innerHTML=(pages[S.page]||rDash)();
 };
 const emptyRow = (icon,msg,n) => `<tr><td colspan="${n}" class="py-14 text-center text-gray-400"><div class="text-3xl mb-2">${icon}</div>${msg}</td></tr>`;
@@ -554,7 +557,10 @@ const rDash = () => {
       <div class="bg-white rounded-xl shadow-sm overflow-hidden border-t-4 border-teal-500">
         <div class="px-4 py-3 flex items-center justify-between">
           <span class="text-sm font-bold text-teal-800">STATIC</span>
-          <button onclick="go('mks')" class="text-xs text-blue-600 hover:underline no-print">Detail →</button>
+          <div class="flex gap-2 no-print">
+            <button onclick="go('mks')" class="text-xs text-blue-600 hover:underline">Kontrak</button>
+            <button onclick="go('pls')" class="text-xs text-teal-600 hover:underline">Pipeline →</button>
+          </div>
         </div>
         <div class="px-4 pb-4 flex flex-col gap-1.5">
           ${sRow('Kontrak Aktif', mkS.filter(x=>x.status==='Aktif').length+' / '+mkS.length)}
@@ -1404,6 +1410,225 @@ const rSPKS = () => {
         </tfoot>
       </table>
     </div></div>
+  </div>`;
+};
+
+// ===== PIPELINE STATIC =====
+const rPLS = () => {
+  const hasPR   = s => !!s.nomorPR;
+  const hasPO   = s => !!s.nomorPO;
+  const hasSA   = s => !!s.nomorSA;
+  const hasReal = s => !!rpN(s.nilaiRealisasi);
+  const isLengkap = s => hasPR(s) && hasPO(s) && hasSA(s);
+  const isPending = s => !isLengkap(s) && s.status !== 'Closed';
+
+  const all = S.spkS;
+  let data = all;
+  if(S.fkontrak) data = data.filter(x=>x.idKontrak===S.fkontrak);
+
+  const nPR   = all.filter(hasPR).length;
+  const nPO   = all.filter(hasPO).length;
+  const nSA   = all.filter(hasSA).length;
+  const nReal = all.filter(hasReal).length;
+  const nPend = all.filter(isPending).length;
+
+  const tabBtn=(t,label)=>{const a=S.plsTab===t;return `<button onclick="S.plsTab='${t}';render()" class="px-4 py-2 text-sm font-medium border-b-2 transition ${a?'border-teal-600 text-teal-700 bg-white font-semibold':'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${label}</button>`;};
+
+  // Per kontrak pipeline stats
+  const perKRows = S.mkS.map(k=>{
+    const spks  = S.spkS.filter(x=>x.idKontrak===k.id);
+    if(!spks.length) return null;
+    const wPR   = spks.filter(hasPR).length;
+    const wPO   = spks.filter(hasPO).length;
+    const wSA   = spks.filter(hasSA).length;
+    const wReal = spks.filter(hasReal).length;
+    const nilaiSPK  = spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+    const nilaiReal = spks.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0);
+    const pending   = spks.filter(isPending).length;
+    return {k, n:spks.length, wPR, wPO, wSA, wReal, nilaiSPK, nilaiReal, pending};
+  }).filter(Boolean);
+
+  const stepBar=(done,total,label,colOn,colOff)=>{
+    const pct=total>0?Math.round(done/total*100):0;
+    return `<div class="flex flex-col items-center gap-0.5 min-w-[52px]">
+      <span class="text-[10px] font-semibold ${done===total&&total>0?colOn:done>0?'text-blue-500':colOff}">${done}/${total}</span>
+      <div class="w-full bg-gray-100 rounded-full h-1.5">
+        <div class="${done===total&&total>0?'bg-emerald-500':done>0?'bg-blue-400':'bg-gray-200'} h-1.5 rounded-full" style="width:${pct}%"></div>
+      </div>
+      <span class="text-[9px] text-gray-400">${label}</span>
+    </div>`;
+  };
+
+  // Detail table helper
+  const docBadge=(has,label,val)=>has
+    ?`<span class="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200" title="${esc(val||'')}">✓ ${label}: ${esc((val||'').slice(-10))}</span>`
+    :`<span class="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-gray-50 text-gray-300 border border-gray-100">– ${label}</span>`;
+
+  // Pending SPKs (tab pending)
+  const pendingData = data.filter(isPending);
+  const pendingStep = s => !hasPR(s)?'Belum PR':!hasPO(s)?'Belum PO':!hasSA(s)?'Belum SA':'–';
+
+  return `<div class="fade-in">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
+      <h1 class="text-lg font-bold text-gray-800">Pipeline PR · PO · SA <span class="text-xs font-normal bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full ml-1">Static</span></h1>
+      <div class="no-print flex gap-2 items-center">
+        ${fBar(true)}
+        <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
+      </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-teal-500">
+        <p class="text-[10px] text-gray-400">Total SPK</p>
+        <p class="text-xl font-bold text-teal-700">${all.length}</p>
+        <p class="text-[10px] text-gray-400">${all.filter(x=>x.status!=='Closed').length} aktif</p>
+      </div>
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-purple-400">
+        <p class="text-[10px] text-gray-400">Sudah PR</p>
+        <p class="text-xl font-bold text-purple-700">${nPR}</p>
+        <p class="text-[10px] text-gray-400">${all.length-nPR} belum</p>
+      </div>
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-blue-400">
+        <p class="text-[10px] text-gray-400">Sudah PO</p>
+        <p class="text-xl font-bold text-blue-700">${nPO}</p>
+        <p class="text-[10px] text-gray-400">${all.length-nPO} belum</p>
+      </div>
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-emerald-500">
+        <p class="text-[10px] text-gray-400">Sudah SA</p>
+        <p class="text-xl font-bold text-emerald-700">${nSA}</p>
+        <p class="text-[10px] text-gray-400">${all.length-nSA} belum</p>
+      </div>
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 ${nPend>0?'border-amber-400':'border-emerald-400'}">
+        <p class="text-[10px] text-gray-400">Pipeline Pending</p>
+        <p class="text-xl font-bold ${nPend>0?'text-amber-600':'text-emerald-600'}">${nPend}</p>
+        <p class="text-[10px] text-gray-400">SPK belum lengkap</p>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="flex border-b border-gray-200 mb-4 bg-gray-50">
+      ${tabBtn('perkontrak','📊 Per Kontrak')}
+      ${tabBtn('pending',`${nPend>0?'⚠ ':'✅ '}Pending (${nPend})`)}
+      ${tabBtn('all','📋 Semua SPK ('+all.length+')')}
+    </div>
+
+    ${S.plsTab==='perkontrak'?`
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          ${thead([['No. Kontrak'],['Vendor'],['SPK','center'],['Pipeline PR → PO → SA → Tagih'],['Pending','center'],['Nilai SPK','right'],['Tagih','right']])}
+          <tbody class="divide-y divide-gray-100">
+            ${perKRows.length===0?emptyRow('📊','Belum ada data.',7):perKRows.map(({k,n,wPR,wPO,wSA,wReal,nilaiSPK,nilaiReal,pending})=>`
+              <tr class="hover:bg-gray-50 cursor-pointer" onclick="S.fkontrak='${k.id}';S.plsTab='all';render()">
+                <td class="px-3 py-3 font-semibold text-teal-700 whitespace-nowrap text-xs">${esc(k.nomorSPB||k.customID)}</td>
+                <td class="px-3 py-3 max-w-[160px]"><div class="clamp2 text-xs text-gray-600">${esc(k.vendor)}</div></td>
+                <td class="px-3 py-3 text-center text-xs text-gray-500">${n}</td>
+                <td class="px-3 py-3">
+                  <div class="flex items-center gap-2">
+                    ${stepBar(wPR,n,'PR','text-purple-700','text-gray-300')}
+                    <span class="text-gray-200 text-xs">→</span>
+                    ${stepBar(wPO,n,'PO','text-blue-700','text-gray-300')}
+                    <span class="text-gray-200 text-xs">→</span>
+                    ${stepBar(wSA,n,'SA','text-emerald-700','text-gray-300')}
+                    <span class="text-gray-200 text-xs">→</span>
+                    ${stepBar(wReal,n,'Tagih','text-emerald-800','text-gray-300')}
+                  </div>
+                </td>
+                <td class="px-3 py-3 text-center">
+                  ${pending>0
+                    ?`<span class="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">${pending}</span>`
+                    :`<span class="text-xs text-emerald-600">✓</span>`}
+                </td>
+                <td class="px-3 py-3 text-right font-mono text-xs whitespace-nowrap">${rp(nilaiSPK)}</td>
+                <td class="px-3 py-3 text-right font-mono text-xs font-semibold text-emerald-700 whitespace-nowrap">${nilaiReal?rp(nilaiReal):'-'}</td>
+              </tr>`).join('')}
+          </tbody>
+          <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
+            <tr>
+              <td colspan="6" class="px-3 py-3 text-right text-gray-500">TOTAL</td>
+              <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(S.spkS.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0))}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>`
+
+    :S.plsTab==='pending'?`
+    ${S.fkontrak?`<div class="mb-3 flex items-center gap-2">
+      <button onclick="S.fkontrak='';render()" class="text-xs text-blue-600 hover:underline">← Semua</button>
+      ${(()=>{ const k=S.mkS.find(x=>x.id===S.fkontrak); return k?`<span class="text-xs text-gray-400">|</span> <span class="text-xs font-semibold text-teal-700">${esc(k.nomorSPB||k.customID)}</span>`:''; })()}
+    </div>`:''}
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        ${thead([['No. SPK'],['Kontrak'],['Deskripsi'],['Nilai SPK','right'],['Step Berikut','center'],['Dokumen Pipeline'],['Tgl Selesai','center'],['Status','center']])}
+        <tbody class="divide-y divide-gray-100">
+          ${pendingData.length===0?emptyRow('✅','Semua SPK sudah lengkap PR·PO·SA.',8):pendingData.map(s=>{
+            const k=S.mkS.find(x=>x.id===s.idKontrak);
+            const step=pendingStep(s);
+            const stepCol=step==='Belum PR'?'bg-purple-100 text-purple-700':step==='Belum PO'?'bg-blue-100 text-blue-700':'bg-amber-100 text-amber-700';
+            return `<tr class="hover:bg-gray-50">
+              <td class="px-3 py-2.5 font-semibold text-teal-700 whitespace-nowrap text-xs">${esc(s.nomorSPK||s.customID)}</td>
+              <td class="px-3 py-2.5 text-xs text-teal-600 whitespace-nowrap">${k?esc(k.nomorSPB||k.customID):'-'}</td>
+              <td class="px-3 py-2.5 max-w-[220px]"><div class="clamp2 text-xs text-gray-600">${esc(s.deskripsi||'-')}</div></td>
+              <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(s.nilaiSPK)}</td>
+              <td class="px-3 py-2.5 text-center"><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${stepCol}">${step}</span></td>
+              <td class="px-3 py-2.5">
+                <div class="flex flex-wrap gap-1">
+                  ${docBadge(hasPR(s),'PR',s.nomorPR)}
+                  ${docBadge(hasPO(s),'PO',s.nomorPO)}
+                  ${docBadge(hasSA(s),'SA',s.nomorSA)}
+                </div>
+              </td>
+              <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(s.tglSelesai)}</td>
+              <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
+            </tr>`;}).join('')}
+        </tbody>
+        ${pendingData.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
+          <tr><td colspan="3" class="px-3 py-3 text-right text-gray-500">TOTAL (${pendingData.length})</td>
+          <td class="px-3 py-3 text-right font-mono">${rp(pendingData.reduce((a,x)=>a+rpN(x.nilaiSPK),0))}</td>
+          <td colspan="4"></td></tr>
+        </tfoot>`:''}
+      </table>
+    </div></div>`:`
+
+    ${S.fkontrak?`<div class="mb-3 flex items-center gap-2">
+      <button onclick="S.fkontrak='';render()" class="text-xs text-blue-600 hover:underline">← Semua</button>
+      ${(()=>{ const k=S.mkS.find(x=>x.id===S.fkontrak); return k?`<span class="text-xs text-gray-400">|</span> <span class="text-xs font-semibold text-teal-700">${esc(k.nomorSPB||k.customID)}</span> <span class="text-xs text-gray-400">${esc(k.vendor)}</span>`:''; })()}
+    </div>`:''}
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        ${thead([['No. SPK'],['Kontrak'],['Deskripsi'],['Nilai SPK','right'],['Dokumen Pipeline'],['Realisasi','right'],['Tgl Selesai','center'],['Status','center']])}
+        <tbody class="divide-y divide-gray-100">
+          ${data.length===0?emptyRow('📋','Belum ada data.',8):data.map(s=>{
+            const k=S.mkS.find(x=>x.id===s.idKontrak);
+            const lengkap=isLengkap(s);
+            return `<tr class="hover:bg-gray-50 ${lengkap?'':'bg-amber-50/40'}">
+              <td class="px-3 py-2.5 font-semibold text-teal-700 whitespace-nowrap text-xs">${esc(s.nomorSPK||s.customID)}</td>
+              <td class="px-3 py-2.5 text-xs text-teal-600 whitespace-nowrap">${k?esc(k.nomorSPB||k.customID):'-'}</td>
+              <td class="px-3 py-2.5 max-w-[200px]"><div class="clamp2 text-xs text-gray-600">${esc(s.deskripsi||'-')}</div></td>
+              <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(s.nilaiSPK)}</td>
+              <td class="px-3 py-2.5">
+                <div class="flex flex-wrap gap-1">
+                  ${docBadge(hasPR(s),'PR',s.nomorPR)}
+                  ${docBadge(hasPO(s),'PO',s.nomorPO)}
+                  ${docBadge(hasSA(s),'SA',s.nomorSA)}
+                </div>
+              </td>
+              <td class="px-3 py-2.5 text-right font-mono text-xs font-semibold text-emerald-700 whitespace-nowrap">${s.nilaiRealisasi?rp(s.nilaiRealisasi):'-'}</td>
+              <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(s.tglSelesai)}</td>
+              <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
+            </tr>`;}).join('')}
+        </tbody>
+        ${data.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
+          <tr><td colspan="3" class="px-3 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
+          <td class="px-3 py-3 text-right font-mono">${rp(data.reduce((a,x)=>a+rpN(x.nilaiSPK),0))}</td>
+          <td></td>
+          <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(data.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0))}</td>
+          <td colspan="2"></td></tr>
+        </tfoot>`:''}
+      </table>
+    </div></div>`}
   </div>`;
 };
 
