@@ -93,6 +93,9 @@
     <button onclick="go('pls')" id="nav-pls" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
       <span class="text-base">🔀</span> Pipeline PR·PO·SA
     </button>
+    <button onclick="go('dcs')" id="nav-dcs" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
+      <span class="text-base">🔧</span> DC & Reservasi
+    </button>
 
     <p class="text-[10px] font-semibold text-blue-400 uppercase tracking-widest px-2 mt-3 mb-1 flex items-center gap-1.5">
       <span class="flex-1 border-t border-blue-700/40"></span> ROTATING <span class="flex-1 border-t border-blue-700/40"></span>
@@ -102,6 +105,9 @@
     </button>
     <button onclick="go('spkr')" id="nav-spkr" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
       <span class="text-base">📋</span> CoO SPK
+    </button>
+    <button onclick="go('dcr')" id="nav-dcr" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
+      <span class="text-base">🔧</span> DC & Reservasi
     </button>
 
     <p class="text-[10px] font-semibold text-blue-400 uppercase tracking-widest px-2 mt-3 mb-1 flex items-center gap-1.5">
@@ -265,7 +271,7 @@ const F = {
   // Supabase → JS
   from: {
     spk:  r => ({id:r.id,noSPK:r.no_spk,tanggal:r.tanggal,vendor:r.vendor,uraian:r.uraian,nilaiKontrak:r.nilai_kontrak,realisasi:r.realisasi,progress:r.progress,status:r.status,jenisAnggaran:r.jenis_anggaran,keterangan:r.keterangan,createdBy:r.created_by,updatedBy:r.updated_by}),
-    dc:   r => ({id:r.id,jenis:r.jenis||'Direct Charge',noPerm:r.no_perm,tanggal:r.tanggal,namaPart:r.nama_part,jumlah:r.jumlah,satuan:r.satuan,hargaSatuan:r.harga_satuan,total:r.total,kimap:r.kimap,nomorPR:r.nomor_pr,nomorPO:r.nomor_po,nomorMemo:r.nomor_memo,nomorMR:r.nomor_mr,nomorReservasi:r.nomor_reservasi,nomorGR:r.nomor_gr,tglGR:r.tgl_gr,diambilOleh:r.diambil_oleh,status:r.status,keterangan:r.keterangan,items:r.items||[],createdBy:r.created_by,updatedBy:r.updated_by}),
+    dc:   r => ({id:r.id,jenis:r.jenis||'Direct Charge',fungsi:r.fungsi||'Hoist',noPerm:r.no_perm,tanggal:r.tanggal,namaPart:r.nama_part,jumlah:r.jumlah,satuan:r.satuan,hargaSatuan:r.harga_satuan,total:r.total,kimap:r.kimap,nomorPR:r.nomor_pr,nomorPO:r.nomor_po,nomorMemo:r.nomor_memo,nomorMR:r.nomor_mr,nomorReservasi:r.nomor_reservasi,nomorGR:r.nomor_gr,tglGR:r.tgl_gr,diambilOleh:r.diambil_oleh,status:r.status,keterangan:r.keterangan,items:r.items||[],createdBy:r.created_by,updatedBy:r.updated_by}),
     mk:   r => ({id:r.id,customID:r.custom_id,nomorSPB:r.nomor_spb,vendor:r.vendor,judulKontrak:r.judul_kontrak,nilaiKontrak:r.nilai_kontrak,tglMulai:r.tgl_mulai,tglBerakhir:r.tgl_berakhir,pic:r.pic,status:r.status,jenis:r.jenis||'HHE',createdBy:r.created_by,updatedBy:r.updated_by}),
     coo:  r => ({id:r.id,idKontrak:r.id_kontrak,customID:r.custom_id,nomorSPK:r.nomor_spk,deskripsi:r.deskripsi,nilaiSPK:r.nilai_spk,tglTerbit:r.tgl_terbit,tglMulai:r.tgl_mulai,tglSelesai:r.tgl_selesai,status:r.status,catatan:r.catatan,jenis:r.jenis||'HHE',fungsi:r.fungsi||null,nomorPR:r.nomor_pr,nomorPO:r.nomor_po,nomorSA:r.nomor_sa,nilaiRealisasi:r.nilai_realisasi,noWO:r.no_wo,remarksInvoice:r.remarks_invoice,createdBy:r.created_by,updatedBy:r.updated_by}),
     pr:   r => ({id:r.id,idCoO:r.id_coo,customID:r.custom_id,nomorPR:r.nomor_pr,tglPR:r.tgl_pr,deskripsi:r.deskripsi,estimasiNilai:r.estimasi_nilai,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
@@ -275,7 +281,7 @@ const F = {
   // JS → Supabase
   to: {
     spk:  o => ({id:o.id,no_spk:o.noSPK,tanggal:dn(o.tanggal),vendor:o.vendor,uraian:o.uraian,nilai_kontrak:rpN(o.nilaiKontrak),realisasi:rpN(o.realisasi),progress:+o.progress||0,status:o.status,jenis_anggaran:o.jenisAnggaran||null,keterangan:o.keterangan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
-    dc:   o => ({id:o.id,jenis:o.jenis||'Direct Charge',no_perm:o.noPerm,tanggal:dn(o.tanggal),nama_part:o.namaPart,jumlah:rpN(o.jumlah),satuan:o.satuan,harga_satuan:rpN(o.hargaSatuan),total:rpN(o.total),kimap:o.kimap||null,nomor_pr:o.nomorPR||null,nomor_po:o.nomorPO||null,nomor_memo:o.nomorMemo||null,nomor_mr:o.nomorMR||null,nomor_reservasi:o.nomorReservasi||null,nomor_gr:o.nomorGR||null,tgl_gr:dn(o.tglGR),diambil_oleh:o.diambilOleh||null,status:o.status,keterangan:o.keterangan,items:o.items||[],created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
+    dc:   o => ({id:o.id,jenis:o.jenis||'Direct Charge',fungsi:o.fungsi||'Hoist',no_perm:o.noPerm,tanggal:dn(o.tanggal),nama_part:o.namaPart,jumlah:rpN(o.jumlah),satuan:o.satuan,harga_satuan:rpN(o.hargaSatuan),total:rpN(o.total),kimap:o.kimap||null,nomor_pr:o.nomorPR||null,nomor_po:o.nomorPO||null,nomor_memo:o.nomorMemo||null,nomor_mr:o.nomorMR||null,nomor_reservasi:o.nomorReservasi||null,nomor_gr:o.nomorGR||null,tgl_gr:dn(o.tglGR),diambil_oleh:o.diambilOleh||null,status:o.status,keterangan:o.keterangan,items:o.items||[],created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     mk:   o => ({id:o.id,custom_id:o.customID,nomor_spb:o.nomorSPB,vendor:o.vendor,judul_kontrak:o.judulKontrak,nilai_kontrak:rpN(o.nilaiKontrak),tgl_mulai:dn(o.tglMulai),tgl_berakhir:dn(o.tglBerakhir),pic:o.pic,status:o.status,jenis:o.jenis||'HHE',created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     coo:  o => ({id:o.id,id_kontrak:o.idKontrak,custom_id:o.customID,nomor_spk:o.nomorSPK,deskripsi:o.deskripsi,nilai_spk:rpN(o.nilaiSPK),tgl_terbit:dn(o.tglTerbit),tgl_mulai:dn(o.tglMulai),tgl_selesai:dn(o.tglSelesai),status:o.status,catatan:o.catatan,jenis:o.jenis||'HHE',created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     pr:   o => ({id:o.id,id_coo:o.idCoO,custom_id:o.customID,nomor_pr:o.nomorPR,tgl_pr:dn(o.tglPR),deskripsi:o.deskripsi,estimasi_nilai:rpN(o.estimasiNilai),catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
@@ -379,7 +385,7 @@ const go = page => {
 
 // ===== RENDER =====
 const render = () => {
-  const pages={dashboard:rDash,sspk:rSSPK,dc:rDC,mk:rMK,spk:rSPK,pr:rPR,sa:rSA,tvm:rTVM,users:rUsers,mks:rMKS,spks:rSPKS,mkr:rMKR,spkr:rSPKR,pls:rPLS};
+  const pages={dashboard:rDash,sspk:rSSPK,dc:rDC,dcs:rDCS,dcr:rDCR,mk:rMK,spk:rSPK,pr:rPR,sa:rSA,tvm:rTVM,users:rUsers,mks:rMKS,spks:rSPKS,mkr:rMKR,spkr:rSPKR,pls:rPLS};
   document.getElementById('app').innerHTML=(pages[S.page]||rDash)();
 };
 const emptyRow = (icon,msg,n) => `<tr><td colspan="${n}" class="py-14 text-center text-gray-400"><div class="text-3xl mb-2">${icon}</div>${msg}</td></tr>`;
@@ -773,10 +779,10 @@ const rSSPK = () => {
 };
 
 // ===== PERMINTAAN PART (DC + Reservasi) =====
-const rDC = () => {
+const rDCFungsi = (fungsiLabel, accentCol, badgeCol, pageKey) => {
   const isDC = S.dcTab === 'dc';
   const jenis = isDC ? 'Direct Charge' : 'Reservasi';
-  const all = byDate(S.dc,'tanggal');
+  const all = byDate(S.dc.filter(x=>x.fungsi===fungsiLabel),'tanggal');
   const byJenis = all.filter(x => (x.jenis||'Direct Charge') === jenis);
   const data = isDC ? byJenis.filter(d => {
     if(S.fpo && d.nomorPO !== S.fpo) return false;
@@ -933,13 +939,14 @@ const rDC = () => {
     return Object.values(map).sort((a,b)=>b.total-a.total);
   };
 
+  const badgeMap = {Hoist:'bg-blue-100 text-blue-700', Static:'bg-teal-100 text-teal-700', Rotating:'bg-emerald-100 text-emerald-700'};
   return `<div class="fade-in">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
-      <h1 class="text-lg font-bold text-gray-800">Permintaan Part <span class="text-xs font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full ml-1">Hoist</span></h1>
+      <h1 class="text-lg font-bold text-gray-800">Permintaan Part <span class="text-xs font-normal ${badgeMap[fungsiLabel]||'bg-gray-100 text-gray-700'} px-2 py-0.5 rounded-full ml-1">${fungsiLabel}</span></h1>
       <div class="flex gap-2 flex-wrap no-print items-center">
         ${fBar()}
         <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
-        <button onclick="mDC()" class="px-3 py-1.5 ${isDC?'bg-indigo-700 hover:bg-indigo-800':'bg-violet-700 hover:bg-violet-800'} text-white rounded-lg text-sm">+ Tambah ${jenis}</button>
+        <button onclick="mDC('',${JSON.stringify(fungsiLabel)})" class="px-3 py-1.5 ${isDC?'bg-indigo-700 hover:bg-indigo-800':'bg-violet-700 hover:bg-violet-800'} text-white rounded-lg text-sm">+ Tambah ${jenis}</button>
       </div>
     </div>
 
@@ -1070,6 +1077,9 @@ const rDC = () => {
     `}
   </div>`;
 };
+const rDC  = () => rDCFungsi('Hoist');
+const rDCS = () => rDCFungsi('Static');
+const rDCR = () => rDCFungsi('Rotating');
 
 // ===== MASTER KONTRAK HOIST =====
 const rMK = () => {
@@ -2311,8 +2321,9 @@ const dSSPK = async id => {
 };
 
 // ===== DIRECT CHARGE CRUD =====
-const mDC = (id=null) => {
+const mDC = (id=null, defaultFungsi='Hoist') => {
   const d=id?S.dc.find(x=>x.id===id):null;
+  const fungsiVal=d?.fungsi||defaultFungsi;
   const jenisVal=d?.jenis||(S.dcTab==='reservasi'?'Reservasi':'Direct Charge');
   _dcIsRes=jenisVal==='Reservasi';
   if(d?.items?.length) _dcItems=d.items.map(x=>({...x}));
@@ -2321,6 +2332,7 @@ const mDC = (id=null) => {
   showM(`<div class="p-6"><h2 class="text-base font-bold mb-4">${d?'Edit':'Tambah'} Permintaan Part</h2>
     <form onsubmit="svDC(event,'${id||''}')"><div class="grid grid-cols-2 gap-3">
       ${sel('Jenis','jenis',['Direct Charge','Reservasi'],jenisVal,true,false)}
+      ${sel('Fungsi','fungsi',['Hoist','Static','Rotating'],fungsiVal,true,false)}
       ${fld('Tanggal','tanggal','date',d?.tanggal,true)}
       <div class="col-span-2" id="dc-items-wrap">${dcItemsSectionInner()}</div>
       <div id="dc-fields" class="contents">
@@ -2351,7 +2363,7 @@ const svDC = async (e,id) => {
   if(!items.length){alert('Tambahkan minimal 1 item part/material.');return;}
   const grandTotal=isRes?0:items.reduce((a,x)=>a+x.total,0);
   const ex=id?S.dc.find(x=>x.id===id):null;
-  const o={id:id||uid(),jenis,tanggal:f.tanggal.value,items,
+  const o={id:id||uid(),jenis,fungsi:f.fungsi?.value||'Hoist',tanggal:f.tanggal.value,items,
     namaPart:items[0].namaPart,jumlah:items[0].jumlah,satuan:items[0].satuan,kimap:items[0].kimap,
     hargaSatuan:isRes?0:items[0].hargaSatuan,total:grandTotal,
     nomorReservasi:isRes?f.nomorReservasi.value.trim():'',
