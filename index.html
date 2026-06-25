@@ -71,11 +71,8 @@
     <button onclick="go('spk')" id="nav-spk" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
       <span class="text-base">📋</span> CoO SPK
     </button>
-    <button onclick="go('pr')" id="nav-pr" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
-      <span class="text-base">🛒</span> Purchase Request
-    </button>
-    <button onclick="go('sa')" id="nav-sa" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
-      <span class="text-base">💳</span> Penagihan SA
+    <button onclick="go('plh')" id="nav-plh" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
+      <span class="text-base">🔀</span> Pipeline PR·SA
     </button>
     <button onclick="go('dc')" id="nav-dc" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
       <span class="text-base">🔧</span> DC & Reservasi
@@ -105,6 +102,9 @@
     </button>
     <button onclick="go('spkr')" id="nav-spkr" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
       <span class="text-base">📋</span> CoO SPK
+    </button>
+    <button onclick="go('plr')" id="nav-plr" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
+      <span class="text-base">🔀</span> Pipeline SA
     </button>
     <button onclick="go('dcr')" id="nav-dcr" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
       <span class="text-base">🔧</span> DC & Reservasi
@@ -208,7 +208,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 // ===== STATE =====
-let S = { page:'dashboard', mk:[], spk:[], mkS:[], spkS:[], mkR:[], spkR:[], pr:[], sa:[], sspk:[], dc:[], tvm:[], users:[], fy:'', fm:'', fkontrak:'', dcTab:'dc', prTab:'perkontrak', saTab:'perkontrak', plsTab:'perkontrak', tvmTab:'hhe', currentUser:'', currentNama:'', isAdmin:false, fpo:'', fpart:'', fdesc:'', resView:'detail' };
+let S = { page:'dashboard', mk:[], spk:[], mkS:[], spkS:[], mkR:[], spkR:[], pr:[], sa:[], sspk:[], dc:[], tvm:[], users:[], fy:'', fm:'', fkontrak:'', dcTab:'dc', prTab:'perkontrak', saTab:'perkontrak', plsTab:'perkontrak', plhTab:'perkontrak', plrTab:'perkontrak', tvmTab:'hhe', currentUser:'', currentNama:'', isAdmin:false, fpo:'', fpart:'', fdesc:'', resView:'detail' };
 
 // ===== UTILS =====
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'x'+Math.random().toString(36).slice(2,10)+Date.now().toString(36));
@@ -372,7 +372,7 @@ const sbClose = () => {
 
 const go = page => {
   S.page=page;
-  if(!['spk','pr','sa','spks','spkr','pls'].includes(page)) S.fkontrak='';
+  if(!['spk','pr','sa','spks','spkr','pls','plh','plr'].includes(page)) S.fkontrak='';
   document.querySelectorAll('.nav-item').forEach(el=>{
     el.classList.remove('bg-blue-800','text-white','font-semibold');
     el.classList.add('text-blue-100');
@@ -385,7 +385,7 @@ const go = page => {
 
 // ===== RENDER =====
 const render = () => {
-  const pages={dashboard:rDash,sspk:rSSPK,dc:rDC,dcs:rDCS,dcr:rDCR,mk:rMK,spk:rSPK,pr:rPR,sa:rSA,tvm:rTVM,users:rUsers,mks:rMKS,spks:rSPKS,mkr:rMKR,spkr:rSPKR,pls:rPLS};
+  const pages={dashboard:rDash,sspk:rSSPK,dc:rDC,dcs:rDCS,dcr:rDCR,mk:rMK,spk:rSPK,pr:rPR,sa:rSA,tvm:rTVM,users:rUsers,mks:rMKS,spks:rSPKS,mkr:rMKR,spkr:rSPKR,pls:rPLS,plh:rPLH,plr:rPLR};
   document.getElementById('app').innerHTML=(pages[S.page]||rDash)();
 };
 const emptyRow = (icon,msg,n) => `<tr><td colspan="${n}" class="py-14 text-center text-gray-400"><div class="text-3xl mb-2">${icon}</div>${msg}</td></tr>`;
@@ -1668,6 +1668,345 @@ const rPLS = () => {
           <td class="px-3 py-3 text-right font-mono">${rp(data.reduce((a,x)=>a+rpN(x.nilaiSPK),0))}</td>
           <td></td>
           <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(data.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0))}</td>
+          <td colspan="2"></td></tr>
+        </tfoot>`:''}
+      </table>
+    </div></div>`}
+  </div>`;
+};
+
+// ===== PIPELINE HOIST (PR → SA) =====
+const rPLH = () => {
+  const prBySpk = {};
+  S.pr.forEach(p=>{ if(!prBySpk[p.idCoO]) prBySpk[p.idCoO]=[]; prBySpk[p.idCoO].push(p); });
+  const saBySpk = {};
+  S.sa.forEach(a=>{ if(!saBySpk[a.idCoO]) saBySpk[a.idCoO]=[]; saBySpk[a.idCoO].push(a); });
+
+  const hasPR = s => !!(prBySpk[s.id]?.length);
+  const hasSA = s => !!(saBySpk[s.id]?.length);
+  const isLengkap = s => hasPR(s) && hasSA(s);
+  const isPending = s => !isLengkap(s) && s.status !== 'Closed';
+
+  const all = S.spk;
+  let data = all;
+  if(S.fkontrak) data = data.filter(x=>x.idKontrak===S.fkontrak);
+
+  const nPR = all.filter(hasPR).length;
+  const nSA = all.filter(hasSA).length;
+  const nPend = all.filter(isPending).length;
+  const totReal = S.sa.reduce((a,x)=>a+rpN(x.nilaiSA),0);
+
+  const tabBtn=(t,lbl)=>{const a=S.plhTab===t;return `<button onclick="S.plhTab='${t}';render()" class="px-4 py-2 text-sm font-medium border-b-2 transition ${a?'border-blue-600 text-blue-700 bg-white font-semibold':'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${lbl}</button>`;};
+
+  const stepBar=(done,total,label,colOn,colOff)=>{const pct=total>0?Math.round(done/total*100):0;return `<div class="flex flex-col items-center gap-0.5 min-w-[52px]">
+    <span class="text-[10px] font-semibold ${done===total&&total>0?colOn:done>0?'text-blue-500':colOff}">${done}/${total}</span>
+    <div class="w-full bg-gray-100 rounded-full h-1.5"><div class="${done===total&&total>0?'bg-emerald-500':done>0?'bg-blue-400':'bg-gray-200'} h-1.5 rounded-full" style="width:${pct}%"></div></div>
+    <span class="text-[9px] text-gray-400">${label}</span>
+  </div>`;};
+
+  const docBadge=(has,label,val)=>has
+    ?`<span class="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200" title="${esc(val||'')}">✓ ${label}: ${esc((val||'').slice(-10))}</span>`
+    :`<span class="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-gray-50 text-gray-300 border border-gray-100">– ${label}</span>`;
+
+  const perKRows = S.mk.map(k=>{
+    const spks = S.spk.filter(x=>x.idKontrak===k.id);
+    if(!spks.length) return null;
+    const wPR = spks.filter(hasPR).length;
+    const wSA = spks.filter(hasSA).length;
+    const nilaiSPK = spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+    const nilaiReal = spks.flatMap(x=>saBySpk[x.id]||[]).reduce((a,x)=>a+rpN(x.nilaiSA),0);
+    const pending = spks.filter(isPending).length;
+    return {k, n:spks.length, wPR, wSA, nilaiSPK, nilaiReal, pending};
+  }).filter(Boolean);
+
+  const pendingData = data.filter(isPending);
+
+  return `<div class="fade-in">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
+      <h1 class="text-lg font-bold text-gray-800">Pipeline PR · SA <span class="text-xs font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full ml-1">Hoist</span></h1>
+      <div class="no-print flex gap-2 items-center">
+        ${fBar(true)}
+        <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-blue-500">
+        <p class="text-[10px] text-gray-400">Total SPK</p>
+        <p class="text-xl font-bold text-blue-700">${all.length}</p>
+        <p class="text-[10px] text-gray-400">${all.filter(x=>x.status!=='Closed').length} aktif</p>
+      </div>
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-purple-400">
+        <p class="text-[10px] text-gray-400">Sudah PR</p>
+        <p class="text-xl font-bold text-purple-700">${nPR}</p>
+        <p class="text-[10px] text-gray-400">${all.length-nPR} belum</p>
+      </div>
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-emerald-500">
+        <p class="text-[10px] text-gray-400">Sudah SA</p>
+        <p class="text-xl font-bold text-emerald-700">${nSA}</p>
+        <p class="text-[10px] text-gray-400">${all.length-nSA} belum</p>
+      </div>
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 ${nPend>0?'border-amber-400':'border-emerald-400'}">
+        <p class="text-[10px] text-gray-400">Pipeline Pending</p>
+        <p class="text-xl font-bold ${nPend>0?'text-amber-600':'text-emerald-600'}">${nPend}</p>
+        <p class="text-[10px] text-gray-400">SPK belum lengkap</p>
+      </div>
+    </div>
+    <div class="flex border-b border-gray-200 mb-4 bg-gray-50">
+      ${tabBtn('perkontrak','📊 Per Kontrak')}
+      ${tabBtn('pending',`${nPend>0?'⚠ ':'✅ '}Pending (${nPend})`)}
+      ${tabBtn('all','📋 Semua SPK ('+all.length+')')}
+    </div>
+
+    ${S.plhTab==='perkontrak'?`
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        ${thead([['No. Kontrak'],['Vendor'],['SPK','center'],['Pipeline PR → SA'],['Pending','center'],['Nilai SPK','right'],['Realisasi SA','right']])}
+        <tbody class="divide-y divide-gray-100">
+          ${perKRows.length===0?emptyRow('📊','Belum ada data.',7):perKRows.map(({k,n,wPR,wSA,nilaiSPK,nilaiReal,pending})=>`
+            <tr class="hover:bg-gray-50 cursor-pointer" onclick="S.fkontrak='${k.id}';S.plhTab='all';render()">
+              <td class="px-3 py-3 font-semibold text-blue-700 whitespace-nowrap text-xs">${esc(k.nomorSPB||k.customID)}</td>
+              <td class="px-3 py-3 max-w-[160px]"><div class="clamp2 text-xs text-gray-600">${esc(k.vendor)}</div></td>
+              <td class="px-3 py-3 text-center text-xs text-gray-500">${n}</td>
+              <td class="px-3 py-3"><div class="flex items-center gap-2">
+                ${stepBar(wPR,n,'PR','text-purple-700','text-gray-300')}
+                <span class="text-gray-200 text-xs">→</span>
+                ${stepBar(wSA,n,'SA','text-emerald-700','text-gray-300')}
+              </div></td>
+              <td class="px-3 py-3 text-center">
+                ${pending>0?`<span class="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">${pending}</span>`:`<span class="text-xs text-emerald-600">✓</span>`}
+              </td>
+              <td class="px-3 py-3 text-right font-mono text-xs whitespace-nowrap">${rp(nilaiSPK)}</td>
+              <td class="px-3 py-3 text-right font-mono text-xs font-semibold text-emerald-700 whitespace-nowrap">${nilaiReal?rp(nilaiReal):'-'}</td>
+            </tr>`).join('')}
+        </tbody>
+        <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
+          <tr><td colspan="6" class="px-3 py-3 text-right text-gray-500">TOTAL</td>
+          <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(totReal)}</td></tr>
+        </tfoot>
+      </table>
+    </div></div>
+
+    `:S.plhTab==='pending'?`
+    ${S.fkontrak?`<div class="mb-3 flex items-center gap-2">
+      <button onclick="S.fkontrak='';render()" class="text-xs text-blue-600 hover:underline">← Semua</button>
+      ${(()=>{const k=S.mk.find(x=>x.id===S.fkontrak);return k?`<span class="text-xs text-gray-400">|</span> <span class="text-xs font-semibold text-blue-700">${esc(k.nomorSPB||k.customID)}</span> <span class="text-xs text-gray-400">${esc(k.vendor)}</span>`:'';})()}
+    </div>`:''}
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        ${thead([['No. SPK'],['Kontrak'],['Deskripsi'],['Nilai SPK','right'],['Step Berikut','center'],['Dokumen Pipeline'],['Tgl Selesai','center'],['Status','center']])}
+        <tbody class="divide-y divide-gray-100">
+          ${pendingData.length===0?emptyRow('✅','Semua SPK sudah lengkap PR·SA.',8):pendingData.map(s=>{
+            const k=S.mk.find(x=>x.id===s.idKontrak);
+            const step=!hasPR(s)?'Belum PR':'Belum SA';
+            const stepCol=step==='Belum PR'?'bg-purple-100 text-purple-700':'bg-amber-100 text-amber-700';
+            const prs=prBySpk[s.id]||[], sas=saBySpk[s.id]||[];
+            return `<tr class="hover:bg-gray-50">
+              <td class="px-3 py-2.5 font-semibold text-blue-700 whitespace-nowrap text-xs">${esc(s.nomorSPK||s.customID)}</td>
+              <td class="px-3 py-2.5 text-xs text-blue-600 whitespace-nowrap">${k?esc(k.nomorSPB||k.customID):'-'}</td>
+              <td class="px-3 py-2.5 max-w-[220px]"><div class="clamp2 text-xs text-gray-600">${esc(s.deskripsi||'-')}</div></td>
+              <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(s.nilaiSPK)}</td>
+              <td class="px-3 py-2.5 text-center"><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${stepCol}">${step}</span></td>
+              <td class="px-3 py-2.5"><div class="flex flex-wrap gap-1">
+                ${docBadge(prs.length>0,'PR',prs[0]?.nomorPR)}
+                ${docBadge(sas.length>0,'SA',sas[0]?.nomorSA)}
+              </div></td>
+              <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(s.tglSelesai)}</td>
+              <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
+            </tr>`;}).join('')}
+        </tbody>
+        ${pendingData.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
+          <tr><td colspan="3" class="px-3 py-3 text-right text-gray-500">TOTAL (${pendingData.length})</td>
+          <td class="px-3 py-3 text-right font-mono">${rp(pendingData.reduce((a,x)=>a+rpN(x.nilaiSPK),0))}</td>
+          <td colspan="4"></td></tr>
+        </tfoot>`:''}
+      </table>
+    </div></div>
+
+    `:`
+    ${S.fkontrak?`<div class="mb-3 flex items-center gap-2">
+      <button onclick="S.fkontrak='';render()" class="text-xs text-blue-600 hover:underline">← Semua</button>
+      ${(()=>{const k=S.mk.find(x=>x.id===S.fkontrak);return k?`<span class="text-xs text-gray-400">|</span> <span class="text-xs font-semibold text-blue-700">${esc(k.nomorSPB||k.customID)}</span> <span class="text-xs text-gray-400">${esc(k.vendor)}</span>`:'';})()}
+    </div>`:''}
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        ${thead([['No. SPK'],['Kontrak'],['Deskripsi'],['Nilai SPK','right'],['Dokumen Pipeline'],['Realisasi SA','right'],['Tgl Selesai','center'],['Status','center']])}
+        <tbody class="divide-y divide-gray-100">
+          ${data.length===0?emptyRow('📋','Belum ada data.',8):data.map(s=>{
+            const k=S.mk.find(x=>x.id===s.idKontrak);
+            const prs=prBySpk[s.id]||[], sas=saBySpk[s.id]||[];
+            const real=sas.reduce((a,x)=>a+rpN(x.nilaiSA),0);
+            return `<tr class="hover:bg-gray-50 ${isLengkap(s)?'':'bg-amber-50/30'}">
+              <td class="px-3 py-2.5 font-semibold text-blue-700 whitespace-nowrap text-xs">${esc(s.nomorSPK||s.customID)}</td>
+              <td class="px-3 py-2.5 text-xs text-blue-600 whitespace-nowrap">${k?esc(k.nomorSPB||k.customID):'-'}</td>
+              <td class="px-3 py-2.5 max-w-[200px]"><div class="clamp2 text-xs text-gray-600">${esc(s.deskripsi||'-')}</div></td>
+              <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(s.nilaiSPK)}</td>
+              <td class="px-3 py-2.5"><div class="flex flex-wrap gap-1">
+                ${docBadge(prs.length>0,'PR',prs[0]?.nomorPR)}
+                ${docBadge(sas.length>0,'SA',sas[0]?.nomorSA)}
+              </div></td>
+              <td class="px-3 py-2.5 text-right font-mono text-xs font-semibold text-emerald-700 whitespace-nowrap">${real?rp(real):'-'}</td>
+              <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(s.tglSelesai)}</td>
+              <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
+            </tr>`;}).join('')}
+        </tbody>
+        ${data.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
+          <tr><td colspan="3" class="px-3 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
+          <td class="px-3 py-3 text-right font-mono">${rp(data.reduce((a,x)=>a+rpN(x.nilaiSPK),0))}</td>
+          <td></td>
+          <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(totReal)}</td>
+          <td colspan="2"></td></tr>
+        </tfoot>`:''}
+      </table>
+    </div></div>`}
+  </div>`;
+};
+
+// ===== PIPELINE ROTATING (SA) =====
+const rPLR = () => {
+  const saBySpk = {};
+  S.sa.filter(a=>S.spkR.some(x=>x.id===a.idCoO)).forEach(a=>{
+    if(!saBySpk[a.idCoO]) saBySpk[a.idCoO]=[]; saBySpk[a.idCoO].push(a);
+  });
+
+  const hasSA = s => !!(saBySpk[s.id]?.length);
+  const isPending = s => !hasSA(s) && s.status !== 'Closed';
+
+  const all = S.spkR;
+  let data = all;
+  if(S.fkontrak) data = data.filter(x=>x.idKontrak===S.fkontrak);
+
+  const nSA = all.filter(hasSA).length;
+  const nPend = all.filter(isPending).length;
+  const totReal = Object.values(saBySpk).flat().reduce((a,x)=>a+rpN(x.nilaiSA),0);
+
+  const tabBtn=(t,lbl)=>{const a=S.plrTab===t;return `<button onclick="S.plrTab='${t}';render()" class="px-4 py-2 text-sm font-medium border-b-2 transition ${a?'border-emerald-600 text-emerald-700 bg-white font-semibold':'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${lbl}</button>`;};
+
+  const docBadge=(has,label,val)=>has
+    ?`<span class="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200" title="${esc(val||'')}">✓ ${label}: ${esc((val||'').slice(-10))}</span>`
+    :`<span class="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-gray-50 text-gray-300 border border-gray-100">– ${label}</span>`;
+
+  const perKRows = S.mkR.map(k=>{
+    const spks = S.spkR.filter(x=>x.idKontrak===k.id);
+    if(!spks.length) return null;
+    const wSA = spks.filter(hasSA).length;
+    const nilaiSPK = spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+    const nilaiReal = spks.flatMap(x=>saBySpk[x.id]||[]).reduce((a,x)=>a+rpN(x.nilaiSA),0);
+    const pending = spks.filter(isPending).length;
+    return {k, n:spks.length, wSA, nilaiSPK, nilaiReal, pending};
+  }).filter(Boolean);
+
+  if(!all.length) return `<div class="fade-in">
+    <h1 class="text-lg font-bold text-gray-800 mb-4">Pipeline SA <span class="text-xs font-normal bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full ml-1">Rotating</span></h1>
+    <div class="bg-white rounded-xl p-10 text-center shadow-sm">
+      <p class="text-4xl mb-3">⚙️</p>
+      <p class="text-gray-500 text-sm">Belum ada SPK Rotating.</p>
+      <p class="text-xs text-gray-400 mt-1">Tag SPK dengan <code class="bg-gray-100 px-1 rounded">fungsi = 'Rotating'</code> pada CoO SPK HHE untuk menampilkan data.</p>
+    </div>
+  </div>`;
+
+  return `<div class="fade-in">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
+      <h1 class="text-lg font-bold text-gray-800">Pipeline SA <span class="text-xs font-normal bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full ml-1">Rotating</span></h1>
+      <div class="no-print flex gap-2 items-center">
+        ${fBar(true)}
+        <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 gap-3 mb-4">
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-emerald-500">
+        <p class="text-[10px] text-gray-400">Total SPK</p>
+        <p class="text-xl font-bold text-emerald-700">${all.length}</p>
+        <p class="text-[10px] text-gray-400">${all.filter(x=>x.status!=='Closed').length} aktif</p>
+      </div>
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-blue-400">
+        <p class="text-[10px] text-gray-400">Sudah SA</p>
+        <p class="text-xl font-bold text-blue-700">${nSA}</p>
+        <p class="text-[10px] text-gray-400">${all.length-nSA} belum</p>
+      </div>
+      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 ${nPend>0?'border-amber-400':'border-emerald-400'}">
+        <p class="text-[10px] text-gray-400">Belum SA</p>
+        <p class="text-xl font-bold ${nPend>0?'text-amber-600':'text-emerald-600'}">${nPend}</p>
+        <p class="text-[10px] text-gray-400">SPK pending tagih</p>
+      </div>
+    </div>
+    <div class="flex border-b border-gray-200 mb-4 bg-gray-50">
+      ${tabBtn('perkontrak','📊 Per Kontrak')}
+      ${tabBtn('pending',`${nPend>0?'⚠ ':'✅ '}Belum SA (${nPend})`)}
+      ${tabBtn('all','📋 Semua SPK ('+all.length+')')}
+    </div>
+
+    ${S.plrTab==='perkontrak'?`
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        ${thead([['No. Kontrak'],['Vendor'],['SPK','center'],['SA','center'],['Pending','center'],['Nilai SPK','right'],['Realisasi SA','right']])}
+        <tbody class="divide-y divide-gray-100">
+          ${perKRows.length===0?emptyRow('⚙️','Belum ada data.',7):perKRows.map(({k,n,wSA,nilaiSPK,nilaiReal,pending})=>`
+            <tr class="hover:bg-gray-50 cursor-pointer" onclick="S.fkontrak='${k.id}';S.plrTab='all';render()">
+              <td class="px-3 py-3 font-semibold text-emerald-700 whitespace-nowrap text-xs">${esc(k.nomorSPB||k.customID)}</td>
+              <td class="px-3 py-3 max-w-[160px]"><div class="clamp2 text-xs text-gray-600">${esc(k.vendor)}</div></td>
+              <td class="px-3 py-3 text-center text-xs text-gray-500">${n}</td>
+              <td class="px-3 py-3 text-center text-xs"><span class="${wSA===n?'text-emerald-600 font-bold':'text-gray-500'}">${wSA}/${n}</span></td>
+              <td class="px-3 py-3 text-center">
+                ${pending>0?`<span class="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">${pending}</span>`:`<span class="text-xs text-emerald-600">✓</span>`}
+              </td>
+              <td class="px-3 py-3 text-right font-mono text-xs whitespace-nowrap">${rp(nilaiSPK)}</td>
+              <td class="px-3 py-3 text-right font-mono text-xs font-semibold text-emerald-700 whitespace-nowrap">${nilaiReal?rp(nilaiReal):'-'}</td>
+            </tr>`).join('')}
+        </tbody>
+        <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
+          <tr><td colspan="6" class="px-3 py-3 text-right text-gray-500">TOTAL</td>
+          <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(totReal)}</td></tr>
+        </tfoot>
+      </table>
+    </div></div>
+
+    `:S.plrTab==='pending'?`
+    ${S.fkontrak?`<div class="mb-3"><button onclick="S.fkontrak='';render()" class="text-xs text-emerald-600 hover:underline">← Semua</button></div>`:''}
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        ${thead([['ID CoO'],['Kontrak'],['Deskripsi'],['Nilai SPK','right'],['Status SA','center'],['Tgl Selesai','center'],['Status','center']])}
+        <tbody class="divide-y divide-gray-100">
+          ${data.filter(isPending).length===0?emptyRow('✅','Semua SPK sudah ada SA.',7):data.filter(isPending).map(s=>{
+            const k=S.mkR.find(x=>x.id===s.idKontrak);
+            return `<tr class="hover:bg-gray-50 bg-amber-50/30">
+              <td class="px-3 py-2.5 font-semibold text-emerald-700 whitespace-nowrap text-xs">${esc(s.customID)}</td>
+              <td class="px-3 py-2.5 text-xs text-emerald-600 whitespace-nowrap">${k?esc(k.nomorSPB||k.customID):'-'}</td>
+              <td class="px-3 py-2.5 max-w-[220px]"><div class="clamp2 text-xs text-gray-600">${esc(s.deskripsi||'-')}</div></td>
+              <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(s.nilaiSPK)}</td>
+              <td class="px-3 py-2.5 text-center">${docBadge(false,'SA','')}</td>
+              <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(s.tglSelesai)}</td>
+              <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
+            </tr>`;}).join('')}
+        </tbody>
+      </table>
+    </div></div>
+
+    `:`
+    ${S.fkontrak?`<div class="mb-3"><button onclick="S.fkontrak='';render()" class="text-xs text-emerald-600 hover:underline">← Semua</button></div>`:''}
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        ${thead([['ID CoO'],['Kontrak'],['Deskripsi'],['Nilai SPK','right'],['SA Pipeline'],['Realisasi SA','right'],['Tgl Selesai','center'],['Status','center']])}
+        <tbody class="divide-y divide-gray-100">
+          ${data.length===0?emptyRow('⚙️','Belum ada data.',8):data.map(s=>{
+            const k=S.mkR.find(x=>x.id===s.idKontrak);
+            const sas=saBySpk[s.id]||[];
+            const real=sas.reduce((a,x)=>a+rpN(x.nilaiSA),0);
+            return `<tr class="hover:bg-gray-50 ${hasSA(s)?'':'bg-amber-50/30'}">
+              <td class="px-3 py-2.5 font-semibold text-emerald-700 whitespace-nowrap text-xs">${esc(s.customID)}</td>
+              <td class="px-3 py-2.5 text-xs text-emerald-600 whitespace-nowrap">${k?esc(k.nomorSPB||k.customID):'-'}</td>
+              <td class="px-3 py-2.5 max-w-[200px]"><div class="clamp2 text-xs text-gray-600">${esc(s.deskripsi||'-')}</div></td>
+              <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(s.nilaiSPK)}</td>
+              <td class="px-3 py-2.5">${docBadge(sas.length>0,'SA',sas[0]?.nomorSA)}</td>
+              <td class="px-3 py-2.5 text-right font-mono text-xs font-semibold text-emerald-700 whitespace-nowrap">${real?rp(real):'-'}</td>
+              <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(s.tglSelesai)}</td>
+              <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
+            </tr>`;}).join('')}
+        </tbody>
+        ${data.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
+          <tr><td colspan="3" class="px-3 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
+          <td class="px-3 py-3 text-right font-mono">${rp(data.reduce((a,x)=>a+rpN(x.nilaiSPK),0))}</td>
+          <td></td>
+          <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(totReal)}</td>
           <td colspan="2"></td></tr>
         </tfoot>`:''}
       </table>
