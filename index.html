@@ -85,6 +85,14 @@
       <span class="text-base">🔩</span> TVM Trakindo
     </button>
 
+    <p class="text-[10px] font-semibold text-blue-500 uppercase tracking-wider px-2 mt-4 mb-1">Kontrak Static</p>
+    <button onclick="go('mks')" id="nav-mks" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
+      <span class="text-base">📑</span> Master Kontrak
+    </button>
+    <button onclick="go('spks')" id="nav-spks" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
+      <span class="text-base">📋</span> CoO SPK
+    </button>
+
     <p class="text-[10px] font-semibold text-blue-500 uppercase tracking-wider px-2 mt-4 mb-1 admin-only hidden">Administrasi</p>
     <button onclick="go('users')" id="nav-users" class="nav-item admin-only hidden flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
       <span class="text-base">👥</span> Pengguna
@@ -235,8 +243,8 @@ const F = {
   from: {
     spk:  r => ({id:r.id,noSPK:r.no_spk,tanggal:r.tanggal,vendor:r.vendor,uraian:r.uraian,nilaiKontrak:r.nilai_kontrak,realisasi:r.realisasi,progress:r.progress,status:r.status,jenisAnggaran:r.jenis_anggaran,keterangan:r.keterangan,createdBy:r.created_by,updatedBy:r.updated_by}),
     dc:   r => ({id:r.id,jenis:r.jenis||'Direct Charge',noPerm:r.no_perm,tanggal:r.tanggal,namaPart:r.nama_part,jumlah:r.jumlah,satuan:r.satuan,hargaSatuan:r.harga_satuan,total:r.total,kimap:r.kimap,nomorPR:r.nomor_pr,nomorPO:r.nomor_po,nomorMemo:r.nomor_memo,nomorMR:r.nomor_mr,nomorReservasi:r.nomor_reservasi,nomorGR:r.nomor_gr,tglGR:r.tgl_gr,diambilOleh:r.diambil_oleh,status:r.status,keterangan:r.keterangan,items:r.items||[],createdBy:r.created_by,updatedBy:r.updated_by}),
-    mk:   r => ({id:r.id,customID:r.custom_id,nomorSPB:r.nomor_spb,vendor:r.vendor,judulKontrak:r.judul_kontrak,nilaiKontrak:r.nilai_kontrak,tglMulai:r.tgl_mulai,tglBerakhir:r.tgl_berakhir,pic:r.pic,status:r.status,createdBy:r.created_by,updatedBy:r.updated_by}),
-    coo:  r => ({id:r.id,idKontrak:r.id_kontrak,customID:r.custom_id,nomorSPK:r.nomor_spk,deskripsi:r.deskripsi,nilaiSPK:r.nilai_spk,tglTerbit:r.tgl_terbit,tglMulai:r.tgl_mulai,tglSelesai:r.tgl_selesai,status:r.status,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
+    mk:   r => ({id:r.id,customID:r.custom_id,nomorSPB:r.nomor_spb,vendor:r.vendor,judulKontrak:r.judul_kontrak,nilaiKontrak:r.nilai_kontrak,tglMulai:r.tgl_mulai,tglBerakhir:r.tgl_berakhir,pic:r.pic,status:r.status,jenis:r.jenis||'HHE',createdBy:r.created_by,updatedBy:r.updated_by}),
+    coo:  r => ({id:r.id,idKontrak:r.id_kontrak,customID:r.custom_id,nomorSPK:r.nomor_spk,deskripsi:r.deskripsi,nilaiSPK:r.nilai_spk,tglTerbit:r.tgl_terbit,tglMulai:r.tgl_mulai,tglSelesai:r.tgl_selesai,status:r.status,catatan:r.catatan,jenis:r.jenis||'HHE',createdBy:r.created_by,updatedBy:r.updated_by}),
     pr:   r => ({id:r.id,idCoO:r.id_coo,customID:r.custom_id,nomorPR:r.nomor_pr,tglPR:r.tgl_pr,deskripsi:r.deskripsi,estimasiNilai:r.estimasi_nilai,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
     sa:   r => ({id:r.id,idCoO:r.id_coo,customID:r.custom_id,nomorSA:r.nomor_sa,tglSA:r.tgl_sa,deskripsi:r.deskripsi,nilaiSA:r.nilai_sa,nomorInvoice:r.nomor_invoice,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
     tvm:  r => ({id:r.id,nomorCOO:r.nomor_coo,nomorPR:r.nomor_pr,tanggal:r.tanggal,fungsi:r.fungsi||'Hoist & Heavy Equipment',deskripsi:r.deskripsi,nilai:r.nilai,tglMulai:r.tgl_mulai,tglSelesai:r.tgl_selesai,status:r.status,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
@@ -245,8 +253,8 @@ const F = {
   to: {
     spk:  o => ({id:o.id,no_spk:o.noSPK,tanggal:dn(o.tanggal),vendor:o.vendor,uraian:o.uraian,nilai_kontrak:rpN(o.nilaiKontrak),realisasi:rpN(o.realisasi),progress:+o.progress||0,status:o.status,jenis_anggaran:o.jenisAnggaran||null,keterangan:o.keterangan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     dc:   o => ({id:o.id,jenis:o.jenis||'Direct Charge',no_perm:o.noPerm,tanggal:dn(o.tanggal),nama_part:o.namaPart,jumlah:rpN(o.jumlah),satuan:o.satuan,harga_satuan:rpN(o.hargaSatuan),total:rpN(o.total),kimap:o.kimap||null,nomor_pr:o.nomorPR||null,nomor_po:o.nomorPO||null,nomor_memo:o.nomorMemo||null,nomor_mr:o.nomorMR||null,nomor_reservasi:o.nomorReservasi||null,nomor_gr:o.nomorGR||null,tgl_gr:dn(o.tglGR),diambil_oleh:o.diambilOleh||null,status:o.status,keterangan:o.keterangan,items:o.items||[],created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
-    mk:   o => ({id:o.id,custom_id:o.customID,nomor_spb:o.nomorSPB,vendor:o.vendor,judul_kontrak:o.judulKontrak,nilai_kontrak:rpN(o.nilaiKontrak),tgl_mulai:dn(o.tglMulai),tgl_berakhir:dn(o.tglBerakhir),pic:o.pic,status:o.status,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
-    coo:  o => ({id:o.id,id_kontrak:o.idKontrak,custom_id:o.customID,nomor_spk:o.nomorSPK,deskripsi:o.deskripsi,nilai_spk:rpN(o.nilaiSPK),tgl_terbit:dn(o.tglTerbit),tgl_mulai:dn(o.tglMulai),tgl_selesai:dn(o.tglSelesai),status:o.status,catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
+    mk:   o => ({id:o.id,custom_id:o.customID,nomor_spb:o.nomorSPB,vendor:o.vendor,judul_kontrak:o.judulKontrak,nilai_kontrak:rpN(o.nilaiKontrak),tgl_mulai:dn(o.tglMulai),tgl_berakhir:dn(o.tglBerakhir),pic:o.pic,status:o.status,jenis:o.jenis||'HHE',created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
+    coo:  o => ({id:o.id,id_kontrak:o.idKontrak,custom_id:o.customID,nomor_spk:o.nomorSPK,deskripsi:o.deskripsi,nilai_spk:rpN(o.nilaiSPK),tgl_terbit:dn(o.tglTerbit),tgl_mulai:dn(o.tglMulai),tgl_selesai:dn(o.tglSelesai),status:o.status,catatan:o.catatan,jenis:o.jenis||'HHE',created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     pr:   o => ({id:o.id,id_coo:o.idCoO,custom_id:o.customID,nomor_pr:o.nomorPR,tgl_pr:dn(o.tglPR),deskripsi:o.deskripsi,estimasi_nilai:rpN(o.estimasiNilai),catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     sa:   o => ({id:o.id,id_coo:o.idCoO,custom_id:o.customID,nomor_sa:o.nomorSA,tgl_sa:dn(o.tglSA),deskripsi:o.deskripsi,nilai_sa:rpN(o.nilaiSA),nomor_invoice:o.nomorInvoice,catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     tvm:  o => ({id:o.id,nomor_coo:o.nomorCOO,nomor_pr:o.nomorPR||null,tanggal:dn(o.tanggal),fungsi:o.fungsi,deskripsi:o.deskripsi,nilai:rpN(o.nilai),tgl_mulai:dn(o.tglMulai),tgl_selesai:dn(o.tglSelesai),status:o.status,catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
@@ -256,11 +264,13 @@ const F = {
 // ===== LOAD ALL DATA =====
 const loadAll = async () => {
   setLoad(true,'Memuat data dari Supabase...');
-  const [r1,r2,r3,r4,r5,r6,r7,r8] = await Promise.all([
+  const [r1,r2,r3,r4,r5,r6,r7,r8,r9,r10] = await Promise.all([
     sb.from('spk').select('*').order('tanggal',{ascending:false}),
     sb.from('direct_charge').select('*').order('tanggal',{ascending:false}),
-    sb.from('master_kontrak').select('*').order('custom_id'),
-    sb.from('coo_spk').select('*').order('tgl_terbit',{ascending:false}),
+    sb.from('master_kontrak').select('*').eq('jenis','HHE').order('custom_id'),
+    sb.from('coo_spk').select('*').eq('jenis','HHE').order('tgl_terbit',{ascending:false}),
+    sb.from('master_kontrak').select('*').eq('jenis','Static').order('custom_id'),
+    sb.from('coo_spk').select('*').eq('jenis','Static').order('tgl_terbit',{ascending:false}),
     sb.from('purchase_request').select('*').order('tgl_pr',{ascending:false}),
     sb.from('penagihan_sa').select('*').order('tgl_sa',{ascending:false}),
     sb.from('user_profiles').select('*').order('email'),
@@ -270,10 +280,12 @@ const loadAll = async () => {
   S.dc    = (r2.data||[]).map(F.from.dc);
   S.mk    = (r3.data||[]).map(F.from.mk);
   S.spk   = (r4.data||[]).map(F.from.coo);
-  S.pr    = (r5.data||[]).map(F.from.pr);
-  S.sa    = (r6.data||[]).map(F.from.sa);
-  S.users = (r7.data||[]);
-  S.tvm   = (r8.data||[]).map(F.from.tvm);
+  S.mkS   = (r5.data||[]).map(F.from.mk);
+  S.spkS  = (r6.data||[]).map(F.from.coo);
+  S.pr    = (r7.data||[]).map(F.from.pr);
+  S.sa    = (r8.data||[]).map(F.from.sa);
+  S.users = (r9.data||[]);
+  S.tvm   = (r10.data||[]).map(F.from.tvm);
   const myProfile = S.users.find(u=>u.email===S.currentUser);
   S.currentNama = myProfile?.nama || '';
   S.isAdmin = myProfile?.role === 'admin';
@@ -339,7 +351,7 @@ const go = page => {
 
 // ===== RENDER =====
 const render = () => {
-  const pages={dashboard:rDash,sspk:rSSPK,dc:rDC,mk:rMK,spk:rSPK,pr:rPR,sa:rSA,tvm:rTVM,users:rUsers};
+  const pages={dashboard:rDash,sspk:rSSPK,dc:rDC,mk:rMK,spk:rSPK,pr:rPR,sa:rSA,tvm:rTVM,users:rUsers,mks:rMKS,spks:rSPKS};
   document.getElementById('app').innerHTML=(pages[S.page]||rDash)();
 };
 const emptyRow = (icon,msg,n) => `<tr><td colspan="${n}" class="py-14 text-center text-gray-400"><div class="text-3xl mb-2">${icon}</div>${msg}</td></tr>`;
@@ -922,6 +934,90 @@ const rSPK = () => {
         </tbody>
         <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
           <tr><td colspan="4" class="px-4 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
+          <td class="px-4 py-3 text-right font-mono">${rp(total)}</td><td colspan="4"></td></tr>
+        </tfoot>
+      </table>
+    </div></div>
+  </div>`;
+};
+
+// ===== MASTER KONTRAK STATIC =====
+const rMKS = () => {
+  const data = byDate(S.mkS,'tglMulai');
+  const totalNilai = data.reduce((a,x) => a+rpN(x.nilaiKontrak), 0);
+  return `<div class="fade-in">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <h1 class="text-lg font-bold text-gray-800">Master Kontrak <span class="text-xs font-normal bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full ml-1">Static</span> <span class="text-sm font-normal text-gray-400">(${data.length})</span></h1>
+      <div class="flex gap-2 flex-wrap no-print items-center">
+        ${fBar()}
+        <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        ${thead([['ID'],['No. Kontrak'],['Vendor'],['Judul Kontrak'],['Nilai Kontrak','right'],['Tgl Mulai','center'],['Tgl Berakhir','center'],['Sisa Hari','center'],['Status','center']])}
+        <tbody class="divide-y divide-gray-100">
+          ${data.length===0?emptyRow('📑','Belum ada Master Kontrak Static.',9):data.map(k=>{
+            const n=daysLeft(k.tglBerakhir);
+            const rowCls=n!==null&&n<=30?'bg-red-50 hover:bg-red-100':n!==null&&n<=100?'bg-amber-50 hover:bg-amber-100':'hover:bg-gray-50';
+            return `<tr class="${rowCls}">
+              <td class="px-4 py-3 font-semibold text-teal-700 whitespace-nowrap">${esc(k.customID)}</td>
+              <td class="px-4 py-3 text-gray-500 whitespace-nowrap">${esc(k.nomorSPB||'-')}</td>
+              <td class="px-4 py-3 max-w-xs"><div class="clamp2" title="${esc(k.vendor)}">${esc(k.vendor)}</div></td>
+              <td class="px-4 py-3 text-gray-600 max-w-sm"><div class="clamp2" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak||'-')}</div></td>
+              <td class="px-4 py-3 text-right font-mono whitespace-nowrap">${rp(k.nilaiKontrak)}</td>
+              <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(k.tglMulai)}</td>
+              <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(k.tglBerakhir)}</td>
+              <td class="px-4 py-3 text-center whitespace-nowrap">${sisaHari(k.tglBerakhir)}</td>
+              <td class="px-4 py-3 text-center">${badge(k.status)}</td>
+            </tr>`;}).join('')}
+        </tbody>
+        <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
+          <tr><td colspan="4" class="px-4 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
+          <td class="px-4 py-3 text-right font-mono whitespace-nowrap">${rp(totalNilai)}</td>
+          <td colspan="4"></td></tr>
+        </tfoot>
+      </table>
+    </div></div>
+  </div>`;
+};
+
+// ===== COO SPK STATIC =====
+const rSPKS = () => {
+  let data = byDate(S.spkS,'tglTerbit');
+  if(S.fkontrak) data = data.filter(x=>x.idKontrak===S.fkontrak);
+  const total = data.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+  const filterMKS = `<select onchange="S.fkontrak=this.value;render()" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white">
+    <option value="">Semua Kontrak</option>
+    ${S.mkS.map(k=>`<option value="${k.id}" ${S.fkontrak===k.id?'selected':''}>${esc(k.nomorSPB||k.customID)} – ${esc(k.vendor)}</option>`).join('')}
+  </select>`;
+  return `<div class="fade-in">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <h1 class="text-lg font-bold text-gray-800">CoO SPK <span class="text-xs font-normal bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full ml-1">Static</span> <span class="text-sm font-normal text-gray-400">(${data.length})</span></h1>
+      <div class="flex gap-2 flex-wrap no-print">
+        ${filterMKS}
+        <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        ${thead([['No. SPK'],['Kontrak'],['Deskripsi'],['Nilai SPK','right'],['Tgl Mulai','center'],['Tgl Selesai','center'],['Status','center'],['Catatan']])}
+        <tbody class="divide-y divide-gray-100">
+          ${data.length===0?emptyRow('📋','Belum ada CoO SPK Static.',8):data.map(s=>{
+            const k=S.mkS.find(x=>x.id===s.idKontrak);
+            return `<tr class="hover:bg-gray-50">
+              <td class="px-4 py-3 font-semibold text-teal-700 whitespace-nowrap">${esc(s.nomorSPK||'-')}</td>
+              <td class="px-4 py-3 text-xs text-teal-600 whitespace-nowrap">${k?esc(k.nomorSPB||k.customID):'-'}</td>
+              <td class="px-4 py-3 text-gray-600 max-w-sm"><div class="clamp2" title="${esc(s.deskripsi)}">${esc(s.deskripsi||'-')}</div></td>
+              <td class="px-4 py-3 text-right font-mono whitespace-nowrap">${rp(s.nilaiSPK)}</td>
+              <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(s.tglMulai)}</td>
+              <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(s.tglSelesai)}</td>
+              <td class="px-4 py-3 text-center">${badge(s.status)}</td>
+              <td class="px-4 py-3 text-gray-500 text-xs max-w-xs"><div class="clamp2">${esc(s.catatan||'-')}</div></td>
+            </tr>`;}).join('')}
+        </tbody>
+        <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
+          <tr><td colspan="3" class="px-4 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
           <td class="px-4 py-3 text-right font-mono">${rp(total)}</td><td colspan="4"></td></tr>
         </tfoot>
       </table>
