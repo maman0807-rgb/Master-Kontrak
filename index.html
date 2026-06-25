@@ -2841,9 +2841,10 @@ const mSPKR = (id=null) => {
       ${fld('Nilai SPK (Rp)','nilaiSPK','number',s?.nilaiSPK)} ${fld('Tgl Mulai','tglMulai','date',s?.tglMulai)}
       ${fld('Tgl Selesai','tglSelesai','date',s?.tglSelesai)} ${sel('Status','status',['Open','In Progress','Closed'],s?.status||'Open')}
       <div class="col-span-2">${fld('Catatan','catatan','text',s?.catatan)}</div>
-      ${secDiv('Referensi Dokumen','text-emerald-600')}
+      ${secDiv('Dokumen Pengadaan','text-emerald-600')}
       ${fld('Nomor PR','nomorPR','text',s?.nomorPR)} ${fld('Nomor PO','nomorPO','text',s?.nomorPO)}
-      ${fld('Nomor SA','nomorSA','text',s?.nomorSA)} ${fld('No. WO','noWO','text',s?.noWO)}
+      ${fld('Nomor SA','nomorSA','text',s?.nomorSA)} ${fld('Nilai Realisasi (Rp)','nilaiRealisasi','number',s?.nilaiRealisasi)}
+      ${fld('No. WO','noWO','text',s?.noWO)} ${sel('Remarks Invoice','remarksInvoice',['','DITAGIHKAN','CANCEL','PROSES','MENUNGGU'],s?.remarksInvoice||'')}
     </div>${mFoot()}</form></div>`);
 };
 const svSPKR = async (e,id) => {
@@ -2855,7 +2856,8 @@ const svSPKR = async (e,id) => {
     status:f.status.value,catatan:f.catatan.value.trim(),
     jenis:'HHE',fungsi:'Rotating',
     nomorPR:f.nomorPR.value.trim()||null,nomorPO:f.nomorPO.value.trim()||null,
-    nomorSA:f.nomorSA.value.trim()||null,noWO:f.noWO.value.trim()||null,
+    nomorSA:f.nomorSA.value.trim()||null,nilaiRealisasi:f.nilaiRealisasi.value||null,
+    noWO:f.noWO.value.trim()||null,remarksInvoice:f.remarksInvoice.value||null,
     createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
   setLoad(true,'Menyimpan...'); const {error}=await sb.from('coo_spk').upsert(F.to.coo(o));
   setLoad(false); if(dbErr(error)) return;
@@ -2890,9 +2892,10 @@ const mSPK = (id=null) => {
       ${fld('Nilai SPK (Rp)','nilaiSPK','number',s?.nilaiSPK)} ${fld('Tgl Mulai','tglMulai','date',s?.tglMulai)}
       ${fld('Tgl Selesai','tglSelesai','date',s?.tglSelesai)} ${sel('Status','status',['Open','In Progress','Closed'],s?.status||'Open')}
       <div class="col-span-2">${fld('Catatan','catatan','text',s?.catatan)}</div>
-      ${secDiv('Referensi Dokumen','text-blue-600')}
+      ${secDiv('Dokumen Pengadaan','text-blue-600')}
       ${fld('Nomor PR','nomorPR','text',s?.nomorPR)} ${fld('Nomor PO','nomorPO','text',s?.nomorPO)}
-      ${fld('Nomor SA','nomorSA','text',s?.nomorSA)} ${fld('No. WO','noWO','text',s?.noWO)}
+      ${fld('Nomor SA','nomorSA','text',s?.nomorSA)} ${fld('Nilai Realisasi (Rp)','nilaiRealisasi','number',s?.nilaiRealisasi)}
+      ${fld('No. WO','noWO','text',s?.noWO)} ${sel('Remarks Invoice','remarksInvoice',['','DITAGIHKAN','CANCEL','PROSES','MENUNGGU'],s?.remarksInvoice||'')}
     </div>${mFoot()}</form></div>`);
 };
 const svSPK = async (e,id) => {
@@ -2902,7 +2905,7 @@ const svSPK = async (e,id) => {
     alert('ID duplikat terdeteksi, ID baru telah di-generate. Periksa lalu simpan ulang.');return;
   }
   const ex=id?S.spk.find(x=>x.id===id):null;
-  const o={id:id||uid(),customID:f.customID.value.trim(),nomorSPK:f.nomorSPK.value.trim(),idKontrak:f.idKontrak.value,tglTerbit:f.tglTerbit.value,deskripsi:f.deskripsi.value.trim(),nilaiSPK:f.nilaiSPK.value,tglMulai:f.tglMulai.value,tglSelesai:f.tglSelesai.value,status:f.status.value,catatan:f.catatan.value.trim(),jenis:'HHE',fungsi:ex?.fungsi||null,nomorPR:f.nomorPR.value.trim()||null,nomorPO:f.nomorPO.value.trim()||null,nomorSA:f.nomorSA.value.trim()||null,noWO:f.noWO.value.trim()||null,nilaiRealisasi:ex?.nilaiRealisasi||null,remarksInvoice:ex?.remarksInvoice||null,createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
+  const o={id:id||uid(),customID:f.customID.value.trim(),nomorSPK:f.nomorSPK.value.trim(),idKontrak:f.idKontrak.value,tglTerbit:f.tglTerbit.value,deskripsi:f.deskripsi.value.trim(),nilaiSPK:f.nilaiSPK.value,tglMulai:f.tglMulai.value,tglSelesai:f.tglSelesai.value,status:f.status.value,catatan:f.catatan.value.trim(),jenis:'HHE',fungsi:ex?.fungsi||null,nomorPR:f.nomorPR.value.trim()||null,nomorPO:f.nomorPO.value.trim()||null,nomorSA:f.nomorSA.value.trim()||null,nilaiRealisasi:f.nilaiRealisasi.value||null,noWO:f.noWO.value.trim()||null,remarksInvoice:f.remarksInvoice.value||null,createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
   setLoad(true,'Menyimpan...'); const {error}=await sb.from('coo_spk').upsert(F.to.coo(o));
   setLoad(false); if(dbErr(error)) return;
   if(id) S.spk[S.spk.findIndex(x=>x.id===id)]=o; else S.spk.unshift(o);
