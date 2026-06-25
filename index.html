@@ -267,7 +267,7 @@ const F = {
     spk:  r => ({id:r.id,noSPK:r.no_spk,tanggal:r.tanggal,vendor:r.vendor,uraian:r.uraian,nilaiKontrak:r.nilai_kontrak,realisasi:r.realisasi,progress:r.progress,status:r.status,jenisAnggaran:r.jenis_anggaran,keterangan:r.keterangan,createdBy:r.created_by,updatedBy:r.updated_by}),
     dc:   r => ({id:r.id,jenis:r.jenis||'Direct Charge',noPerm:r.no_perm,tanggal:r.tanggal,namaPart:r.nama_part,jumlah:r.jumlah,satuan:r.satuan,hargaSatuan:r.harga_satuan,total:r.total,kimap:r.kimap,nomorPR:r.nomor_pr,nomorPO:r.nomor_po,nomorMemo:r.nomor_memo,nomorMR:r.nomor_mr,nomorReservasi:r.nomor_reservasi,nomorGR:r.nomor_gr,tglGR:r.tgl_gr,diambilOleh:r.diambil_oleh,status:r.status,keterangan:r.keterangan,items:r.items||[],createdBy:r.created_by,updatedBy:r.updated_by}),
     mk:   r => ({id:r.id,customID:r.custom_id,nomorSPB:r.nomor_spb,vendor:r.vendor,judulKontrak:r.judul_kontrak,nilaiKontrak:r.nilai_kontrak,tglMulai:r.tgl_mulai,tglBerakhir:r.tgl_berakhir,pic:r.pic,status:r.status,jenis:r.jenis||'HHE',createdBy:r.created_by,updatedBy:r.updated_by}),
-    coo:  r => ({id:r.id,idKontrak:r.id_kontrak,customID:r.custom_id,nomorSPK:r.nomor_spk,deskripsi:r.deskripsi,nilaiSPK:r.nilai_spk,tglTerbit:r.tgl_terbit,tglMulai:r.tgl_mulai,tglSelesai:r.tgl_selesai,status:r.status,catatan:r.catatan,jenis:r.jenis||'HHE',nomorPR:r.nomor_pr,nomorPO:r.nomor_po,nomorSA:r.nomor_sa,nilaiRealisasi:r.nilai_realisasi,noWO:r.no_wo,remarksInvoice:r.remarks_invoice,createdBy:r.created_by,updatedBy:r.updated_by}),
+    coo:  r => ({id:r.id,idKontrak:r.id_kontrak,customID:r.custom_id,nomorSPK:r.nomor_spk,deskripsi:r.deskripsi,nilaiSPK:r.nilai_spk,tglTerbit:r.tgl_terbit,tglMulai:r.tgl_mulai,tglSelesai:r.tgl_selesai,status:r.status,catatan:r.catatan,jenis:r.jenis||'HHE',fungsi:r.fungsi||null,nomorPR:r.nomor_pr,nomorPO:r.nomor_po,nomorSA:r.nomor_sa,nilaiRealisasi:r.nilai_realisasi,noWO:r.no_wo,remarksInvoice:r.remarks_invoice,createdBy:r.created_by,updatedBy:r.updated_by}),
     pr:   r => ({id:r.id,idCoO:r.id_coo,customID:r.custom_id,nomorPR:r.nomor_pr,tglPR:r.tgl_pr,deskripsi:r.deskripsi,estimasiNilai:r.estimasi_nilai,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
     sa:   r => ({id:r.id,idCoO:r.id_coo,customID:r.custom_id,nomorSA:r.nomor_sa,tglSA:r.tgl_sa,deskripsi:r.deskripsi,nilaiSA:r.nilai_sa,nomorInvoice:r.nomor_invoice,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
     tvm:  r => ({id:r.id,nomorCOO:r.nomor_coo,nomorPR:r.nomor_pr,tanggal:r.tanggal,fungsi:r.fungsi||'Hoist & Heavy Equipment',deskripsi:r.deskripsi,nilai:r.nilai,tglMulai:r.tgl_mulai,tglSelesai:r.tgl_selesai,status:r.status,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
@@ -287,17 +287,18 @@ const F = {
 // ===== LOAD ALL DATA =====
 const loadAll = async () => {
   setLoad(true,'Memuat data dari Supabase...');
-  const [r1,r2,r3,r4,r5,r6,r7,r8,r9,r10] = await Promise.all([
+  const [r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11] = await Promise.all([
     sb.from('spk').select('*').order('tanggal',{ascending:false}),
     sb.from('direct_charge').select('*').order('tanggal',{ascending:false}),
     sb.from('master_kontrak').select('*').eq('jenis','HHE').order('custom_id'),
-    sb.from('coo_spk').select('*').eq('jenis','HHE').order('tgl_terbit',{ascending:false}),
+    sb.from('coo_spk').select('*').eq('jenis','HHE').or('fungsi.is.null,fungsi.eq.Hoist').order('tgl_terbit',{ascending:false}),
     sb.from('master_kontrak').select('*').eq('jenis','Static').order('custom_id'),
     sb.from('coo_spk').select('*').eq('jenis','Static').order('tgl_terbit',{ascending:false}),
     sb.from('purchase_request').select('*').order('tgl_pr',{ascending:false}),
     sb.from('penagihan_sa').select('*').order('tgl_sa',{ascending:false}),
     sb.from('user_profiles').select('*').order('email'),
     sb.from('tvm_coo').select('*').order('tgl_mulai',{ascending:false}),
+    sb.from('coo_spk').select('*').eq('fungsi','Rotating').order('tgl_terbit',{ascending:false}),
   ]);
   S.sspk  = (r1.data||[]).map(F.from.spk);
   S.dc    = (r2.data||[]).map(F.from.dc);
@@ -309,6 +310,10 @@ const loadAll = async () => {
   S.sa    = (r8.data||[]).map(F.from.sa);
   S.users = (r9.data||[]);
   S.tvm   = (r10.data||[]).map(F.from.tvm);
+  S.spkR  = (r11.data||[]).map(F.from.coo);
+  // MK Rotating = kontrak HHE yang punya SPK dengan fungsi='Rotating'
+  const rotKIds = new Set(S.spkR.map(x=>x.idKontrak));
+  S.mkR   = S.mk.filter(k=>rotKIds.has(k.id));
   const myProfile = S.users.find(u=>u.email===S.currentUser);
   S.currentNama = myProfile?.nama || '';
   S.isAdmin = myProfile?.role === 'admin';
@@ -416,6 +421,14 @@ const rDash = () => {
   const spkNoRealS = spkSt.filter(x=>!rpN(x.nilaiRealisasi)&&x.status!=='Closed').length;
   const warnS = mkS.filter(k=>{ const n=daysLeft(k.tglBerakhir); return n!==null&&n<=90&&k.status==='Aktif'; }).sort((a,b)=>daysLeft(a.tglBerakhir)-daysLeft(b.tglBerakhir));
 
+  // ─ Rotating stats ─
+  const mkR = S.mkR||[], spkR = S.spkR||[];
+  const spkRNilai = spkR.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+  const saRBySpk  = {};
+  saF.forEach(a=>{ saRBySpk[a.idCoO]=(saRBySpk[a.idCoO]||0)+rpN(a.nilaiSA); });
+  const saRNilai  = spkR.reduce((a,x)=>a+(saRBySpk[x.id]||0),0);
+  const pctR      = spkRNilai>0?Math.round(saRNilai/spkRNilai*100):0;
+
   // ─ DC stats ─
   const dcAll   = byDate(S.dc,'tanggal');
   const dcOnly  = dcAll.filter(x=>(x.jenis||'Direct Charge')==='Direct Charge');
@@ -433,8 +446,8 @@ const rDash = () => {
 
   // ─ Grand totals ─
   const totNilaiKontrak = mkHNilai + mkSNilai;
-  const totNilaiSPK     = spkHNilai + spkSNilai;
-  const totRealisasi    = saHNilai + realSNilai;
+  const totNilaiSPK     = spkHNilai + spkSNilai + spkRNilai;
+  const totRealisasi    = saHNilai + realSNilai + saRNilai;
   const totSisa         = totNilaiSPK - totRealisasi;
   const totPct          = totNilaiSPK>0 ? Math.round(totRealisasi/totNilaiSPK*100) : 0;
   const totBar          = totPct>=80?'bg-emerald-500':totPct>=50?'bg-blue-500':'bg-amber-400';
@@ -462,6 +475,7 @@ const rDash = () => {
   // ─ Realisasi per kontrak rows (shared) ─
   const perKH = mkH.map(k=>{ const spks=spkH.filter(x=>x.idKontrak===k.id); return {...k,spkCount:spks.length,nilaiSpk:spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0),real:saIds(k.id)}; });
   const perKS = mkS.map(k=>{ const spks=spkSt.filter(x=>x.idKontrak===k.id); return {...k,spkCount:spks.length,nilaiSpk:spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0),real:spks.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0)}; });
+  const perKR = mkR.map(k=>{ const spks=spkR.filter(x=>x.idKontrak===k.id); return {...k,spkCount:spks.length,nilaiSpk:spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0),real:spks.reduce((a,x)=>a+(saRBySpk[x.id]||0),0)}; });
   const perKRow=(k,colorCls,fungiLabel,fungiColor,goPage)=>{
     const pct=k.nilaiSpk>0?Math.min(Math.round(k.real/k.nilaiSpk*100),100):0;
     const n=daysLeft(k.tglBerakhir);
@@ -500,7 +514,7 @@ const rDash = () => {
 
     <!-- GRAND SUMMARY STRIP -->
     <div class="bg-gradient-to-r from-blue-800 to-blue-700 text-white rounded-xl shadow-md p-4 mb-5">
-      <p class="text-[10px] font-semibold tracking-widest text-blue-200 mb-3">RINGKASAN KESELURUHAN — HOIST + STATIC</p>
+      <p class="text-[10px] font-semibold tracking-widest text-blue-200 mb-3">RINGKASAN KESELURUHAN — HOIST + STATIC${spkR.length?' + ROTATING':''}</p>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div>
           <p class="text-[10px] text-blue-200">Nilai Kontrak Aktif</p>
@@ -576,16 +590,27 @@ const rDash = () => {
       </div>
 
       <!-- ROTATING -->
-      <div class="bg-white rounded-xl shadow-sm overflow-hidden border-t-4 border-gray-300">
+      <div class="bg-white rounded-xl shadow-sm overflow-hidden border-t-4 ${spkR.length?'border-emerald-500':'border-gray-300'}">
         <div class="px-4 py-3 flex items-center justify-between">
-          <span class="text-sm font-bold text-gray-500">ROTATING</span>
-          <button onclick="go('mkr')" class="text-xs text-blue-600 hover:underline no-print">Detail →</button>
+          <span class="text-sm font-bold ${spkR.length?'text-emerald-800':'text-gray-500'}">ROTATING</span>
+          <div class="flex gap-2 no-print">
+            <button onclick="go('mkr')" class="text-xs text-blue-600 hover:underline">Kontrak</button>
+            <button onclick="go('spkr')" class="text-xs text-emerald-600 hover:underline">SPK →</button>
+          </div>
         </div>
+        ${spkR.length?`
+        <div class="px-4 pb-4 flex flex-col gap-1.5">
+          ${sRow('Kontrak (shared Hoist)', mkR.length+' kontrak')}
+          ${sRow('SPK Rotating ter-tag', spkR.length+' SPK · '+rp(spkRNilai))}
+          ${sRow('Realisasi SA', rp(saRNilai),'text-emerald-700')}
+          ${pBar(pctR,'bg-emerald-500')}
+          <p class="text-[10px] text-blue-400 hover:underline cursor-pointer mt-1" onclick="go('tvm')">TVM Rotating → lihat menu TVM</p>
+        </div>`:`
         <div class="px-4 pb-4 flex flex-col items-center justify-center gap-2 h-36 text-center">
           <span class="text-3xl">⚙️</span>
-          <p class="text-xs text-gray-400">Data kontrak Rotating belum tersedia</p>
+          <p class="text-xs text-gray-400">Belum ada SPK Rotating ter-tag</p>
           <p class="text-[10px] text-blue-400 hover:underline cursor-pointer" onclick="go('tvm')">TVM Rotating → lihat menu TVM</p>
-        </div>
+        </div>`}
       </div>
     </div>
 
@@ -618,7 +643,8 @@ const rDash = () => {
           ${perKThead}
           <tbody class="divide-y divide-gray-100">
             ${[...perKH.map(k=>perKRow(k,'text-blue-700','HOIST','bg-blue-100 text-blue-700','mk')),
-               ...perKS.map(k=>perKRow(k,'text-teal-700','STATIC','bg-teal-100 text-teal-700','mks'))].join('')||emptyRow('📑','Belum ada data.',8)}
+               ...perKS.map(k=>perKRow(k,'text-teal-700','STATIC','bg-teal-100 text-teal-700','mks')),
+               ...perKR.map(k=>perKRow(k,'text-emerald-700','ROTATING','bg-emerald-100 text-emerald-700','spkr'))].join('')||emptyRow('📑','Belum ada data.',8)}
           </tbody>
           <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
             <tr>
@@ -1633,36 +1659,167 @@ const rPLS = () => {
 };
 
 // ===== MASTER KONTRAK ROTATING (placeholder) =====
-const rMKR = () => `<div class="fade-in">
-  <div class="flex items-center gap-3 mb-6">
-    <h1 class="text-lg font-bold text-gray-800">Master Kontrak — <span class="text-emerald-700">Rotating</span></h1>
-  </div>
-  <div class="bg-white rounded-xl shadow-sm p-12 text-center border-2 border-dashed border-gray-200">
-    <div class="text-5xl mb-4">⚙️</div>
-    <h2 class="text-base font-semibold text-gray-600 mb-2">Data Kontrak Rotating Belum Tersedia</h2>
-    <p class="text-sm text-gray-400 max-w-sm mx-auto">Data kontrak COO Rotating akan ditambahkan setelah file Excel diterima dari tim.</p>
-    <div class="mt-6 p-4 bg-blue-50 rounded-lg inline-block text-left">
-      <p class="text-xs font-semibold text-blue-700 mb-1">Yang akan ditampilkan:</p>
-      <ul class="text-xs text-blue-600 space-y-1">
-        <li>• Master kontrak Rotating aktif & nilai</li>
-        <li>• CoO SPK per kontrak</li>
-        <li>• Pipeline PR → PO → SA per SPK</li>
-        <li>• Realisasi vs nilai kontrak</li>
-      </ul>
+const rMKR = () => {
+  if(!S.mkR.length) return `<div class="fade-in">
+    <div class="flex items-center gap-3 mb-6">
+      <h1 class="text-lg font-bold text-gray-800">Master Kontrak <span class="text-xs font-normal bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full ml-1">Rotating</span></h1>
     </div>
-  </div>
-</div>`;
+    <div class="bg-white rounded-xl shadow-sm p-12 text-center border-2 border-dashed border-gray-200">
+      <div class="text-5xl mb-4">⚙️</div>
+      <h2 class="text-base font-semibold text-gray-600 mb-2">Belum Ada SPK Rotating</h2>
+      <p class="text-sm text-gray-400 max-w-sm mx-auto">SPK Rotating dari kontrak 4710001920 / 4710001991 akan muncul di sini setelah data di-tag <code class="bg-gray-100 px-1 rounded">fungsi='Rotating'</code>.</p>
+    </div>
+  </div>`;
 
-const rSPKR = () => `<div class="fade-in">
-  <div class="flex items-center gap-3 mb-6">
-    <h1 class="text-lg font-bold text-gray-800">CoO SPK — <span class="text-emerald-700">Rotating</span></h1>
-  </div>
-  <div class="bg-white rounded-xl shadow-sm p-12 text-center border-2 border-dashed border-gray-200">
-    <div class="text-5xl mb-4">📋</div>
-    <h2 class="text-base font-semibold text-gray-600 mb-2">Data SPK Rotating Belum Tersedia</h2>
-    <p class="text-sm text-gray-400 max-w-sm mx-auto">SPK dari kontrak Rotating akan tampil setelah import data selesai.<br>SPK Rotating yang menggunakan kontrak Hoist tersedia di menu <button onclick="go('spk')" class="text-blue-600 hover:underline">CoO SPK Hoist</button>.</p>
-  </div>
-</div>`;
+  // Build per-kontrak stats
+  const saBySpkR = {};
+  S.sa.forEach(a=>{ saBySpkR[a.idCoO]=(saBySpkR[a.idCoO]||0)+rpN(a.nilaiSA); });
+  const perKR = S.mkR.map(k=>{
+    const spks = S.spkR.filter(x=>x.idKontrak===k.id);
+    const nilaiSPK = spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+    const real     = spks.reduce((a,x)=>a+(saBySpkR[x.id]||0),0);
+    const pct      = nilaiSPK>0?Math.min(Math.round(real/nilaiSPK*100),100):0;
+    const bar      = pct>=100?'bg-emerald-500':pct>=50?'bg-blue-500':'bg-amber-400';
+    return {...k, spkCount:spks.length, nilaiSPK, real, pct, bar};
+  });
+  const totNilaiSPK = perKR.reduce((a,x)=>a+x.nilaiSPK,0);
+  const totReal     = perKR.reduce((a,x)=>a+x.real,0);
+
+  return `<div class="fade-in">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <h1 class="text-lg font-bold text-gray-800">Master Kontrak <span class="text-xs font-normal bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full ml-1">Rotating</span></h1>
+      <p class="text-xs text-gray-400">Kontrak HHE yang digunakan Rotating — ${S.spkR.length} SPK ter-tag</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          ${thead([['No. Kontrak'],['Vendor'],['Nilai Kontrak','right'],['SPK','center'],['Nilai SPK','right'],['Realisasi SA','right'],['Progress','center'],['Sisa Hari','center'],['','center']])}
+          <tbody class="divide-y divide-gray-100">
+            ${perKR.map(k=>{
+              const n=daysLeft(k.tglBerakhir);
+              const rowCls=n!==null&&n<=30?'bg-red-50':n!==null&&n<=90?'bg-amber-50':'';
+              return `<tr class="${rowCls} hover:bg-gray-50">
+                <td class="px-4 py-3 font-semibold text-emerald-700 whitespace-nowrap text-xs">${esc(k.nomorSPB||k.customID)}</td>
+                <td class="px-4 py-3 max-w-[180px]"><div class="clamp2 text-xs text-gray-600">${esc(k.vendor)}</div></td>
+                <td class="px-4 py-3 text-right font-mono text-xs whitespace-nowrap">${rp(k.nilaiKontrak)}</td>
+                <td class="px-4 py-3 text-center text-xs text-gray-500">${k.spkCount}</td>
+                <td class="px-4 py-3 text-right font-mono text-xs whitespace-nowrap">${rp(k.nilaiSPK)}</td>
+                <td class="px-4 py-3 text-right font-mono text-xs font-semibold text-emerald-700 whitespace-nowrap">${rp(k.real)}</td>
+                <td class="px-4 py-3 w-28"><div class="flex items-center gap-1">
+                  <div class="flex-1 bg-gray-200 rounded-full h-1.5"><div class="${k.bar} h-1.5 rounded-full" style="width:${k.pct}%"></div></div>
+                  <span class="text-[10px] text-gray-500 w-7 text-right">${k.pct}%</span>
+                </div></td>
+                <td class="px-4 py-3 text-center whitespace-nowrap">${sisaHari(k.tglBerakhir)}</td>
+                <td class="px-4 py-3 text-center no-print">
+                  <button onclick="S.fkontrak='${k.id}';go('spkr')" class="text-xs text-emerald-600 hover:underline">SPK →</button>
+                </td>
+              </tr>`;}).join('')}
+          </tbody>
+          <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
+            <tr><td colspan="4" class="px-4 py-3 text-right text-gray-500">TOTAL</td>
+            <td class="px-4 py-3 text-right font-mono">${rp(totNilaiSPK)}</td>
+            <td class="px-4 py-3 text-right font-mono text-emerald-700">${rp(totReal)}</td>
+            <td colspan="3"></td></tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>`;
+};
+
+const rSPKR = () => {
+  let data = S.spkR;
+  if(S.fkontrak) data = data.filter(x=>x.idKontrak===S.fkontrak);
+  if(!S.spkR.length) return `<div class="fade-in">
+    <div class="flex items-center gap-3 mb-6">
+      <h1 class="text-lg font-bold text-gray-800">CoO SPK <span class="text-xs font-normal bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full ml-1">Rotating</span></h1>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-12 text-center border-2 border-dashed border-gray-200">
+      <div class="text-5xl mb-4">⚙️</div>
+      <h2 class="text-base font-semibold text-gray-600 mb-2">Belum Ada SPK Rotating</h2>
+      <p class="text-sm text-gray-400 max-w-sm mx-auto">SPK dari kontrak 4710001920 / 4710001991 yang digunakan Rotating akan muncul di sini setelah di-tag <code class="bg-gray-100 px-1 rounded">fungsi='Rotating'</code> di database.</p>
+    </div>
+  </div>`;
+
+  const saBySpk = {};
+  S.sa.forEach(a=>{ saBySpk[a.idCoO]=(saBySpk[a.idCoO]||0)+rpN(a.nilaiSA); });
+
+  // Summary per kontrak
+  const perK = S.mkR.map(k=>{
+    const spks = S.spkR.filter(x=>x.idKontrak===k.id);
+    const nilaiSPK=spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+    const real=spks.reduce((a,x)=>a+(saBySpk[x.id]||0),0);
+    const pct=nilaiSPK>0?Math.min(Math.round(real/nilaiSPK*100),100):0;
+    const bar=pct>=100?'bg-emerald-500':pct>=50?'bg-blue-500':'bg-amber-400';
+    const isActive=!S.fkontrak||S.fkontrak===k.id;
+    return {k,spks,nilaiSPK,real,pct,bar,isActive};
+  }).filter(x=>x.isActive&&x.spks.length);
+
+  return `<div class="fade-in">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+      <h1 class="text-lg font-bold text-gray-800">CoO SPK <span class="text-xs font-normal bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full ml-1">Rotating</span></h1>
+      <div class="no-print flex gap-2 items-center">
+        ${fBar(true)}
+        <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
+      </div>
+    </div>
+
+    <!-- Summary per kontrak -->
+    <div class="flex flex-wrap gap-3 mb-4">
+      ${S.mkR.map(k=>{
+        const spks=S.spkR.filter(x=>x.idKontrak===k.id);
+        const nilaiSPK=spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+        const real=spks.reduce((a,x)=>a+(saBySpk[x.id]||0),0);
+        const pct=nilaiSPK>0?Math.min(Math.round(real/nilaiSPK*100),100):0;
+        const isActive=S.fkontrak===k.id;
+        return `<div class="bg-white rounded-xl shadow-sm p-3 border-2 cursor-pointer transition ${isActive?'border-emerald-500':'border-transparent hover:border-gray-200'} min-w-[180px]"
+          onclick="S.fkontrak=S.fkontrak==='${k.id}'?'':'${k.id}';render()">
+          <p class="text-xs font-bold text-emerald-700">${esc(k.nomorSPB||k.customID)}</p>
+          <p class="text-[10px] text-gray-400 mb-1">${esc(k.vendor)}</p>
+          <div class="flex items-center gap-1">
+            <div class="flex-1 bg-gray-100 rounded-full h-1.5"><div class="${pct>=100?'bg-emerald-500':'bg-blue-400'} h-1.5 rounded-full" style="width:${pct}%"></div></div>
+            <span class="text-[10px] font-bold text-gray-600">${pct}%</span>
+          </div>
+          <p class="text-[10px] text-gray-400 mt-0.5">${spks.length} SPK · Realisasi ${rp(real)}</p>
+        </div>`;}).join('')}
+    </div>
+
+    ${S.fkontrak?`<div class="mb-3 flex items-center gap-2">
+      <button onclick="S.fkontrak='';render()" class="text-xs text-blue-600 hover:underline">← Semua Kontrak</button>
+    </div>`:''}
+
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        ${thead([['ID CoO'],['No. SPK'],['Kontrak'],['Deskripsi'],['Nilai SPK','right'],['Realisasi SA','right'],['Tgl Selesai','center'],['Status','center']])}
+        <tbody class="divide-y divide-gray-100">
+          ${data.length===0?emptyRow('⚙️','Belum ada SPK Rotating.',8):data.map(s=>{
+            const k=S.mkR.find(x=>x.id===s.idKontrak);
+            const real=saBySpk[s.id]||0;
+            const pct=rpN(s.nilaiSPK)>0?Math.min(Math.round(real/rpN(s.nilaiSPK)*100),100):0;
+            return `<tr class="hover:bg-gray-50">
+              <td class="px-4 py-3 font-semibold text-emerald-700 whitespace-nowrap text-xs">${esc(s.customID)}</td>
+              <td class="px-4 py-3 text-xs whitespace-nowrap">${esc(s.nomorSPK||'-')}</td>
+              <td class="px-4 py-3 text-xs text-emerald-600 whitespace-nowrap">${k?esc(k.nomorSPB||k.customID):'-'}</td>
+              <td class="px-4 py-3 max-w-xs"><div class="clamp2 text-xs text-gray-600">${esc(s.deskripsi||'-')}</div></td>
+              <td class="px-4 py-3 text-right font-mono text-xs whitespace-nowrap">${rp(s.nilaiSPK)}</td>
+              <td class="px-4 py-3 text-right text-xs">
+                <span class="font-mono font-semibold text-emerald-700">${real?rp(real):'-'}</span>
+                ${real?`<span class="text-gray-400 ml-1">${pct}%</span>`:''}
+              </td>
+              <td class="px-4 py-3 text-center whitespace-nowrap">${sisaHari(s.tglSelesai)}</td>
+              <td class="px-4 py-3 text-center">${badge(s.status)}</td>
+            </tr>`;}).join('')}
+        </tbody>
+        ${data.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
+          <tr><td colspan="4" class="px-4 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
+          <td class="px-4 py-3 text-right font-mono">${rp(data.reduce((a,x)=>a+rpN(x.nilaiSPK),0))}</td>
+          <td class="px-4 py-3 text-right font-mono text-emerald-700">${rp(data.reduce((a,x)=>a+(saBySpk[x.id]||0),0))}</td>
+          <td colspan="2"></td></tr>
+        </tfoot>`:''}
+      </table>
+    </div></div>
+  </div>`;
+};
 
 // ===== PURCHASE REQUEST =====
 const rPR = () => {
