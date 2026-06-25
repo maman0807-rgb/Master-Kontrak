@@ -914,13 +914,20 @@ const rDC = () => {
   </div>`;
 };
 
-// ===== MASTER KONTRAK =====
+// ===== MASTER KONTRAK HOIST =====
 const rMK = () => {
   const data = byDate(S.mk,'tglMulai');
   const totalNilai = data.reduce((a,x) => a+rpN(x.nilaiKontrak), 0);
+  // hitung realisasi SA per kontrak
+  const saPerK = {};
+  S.sa.forEach(a=>{ const s=S.spk.find(x=>x.id===a.idCoO); if(s){ saPerK[s.idKontrak]=(saPerK[s.idKontrak]||0)+rpN(a.nilaiSA); } });
+  const spkPerK = {};
+  S.spk.forEach(s=>{ spkPerK[s.idKontrak]=(spkPerK[s.idKontrak]||0)+rpN(s.nilaiSPK); });
+  const totalSA = Object.values(saPerK).reduce((a,v)=>a+v,0);
+
   return `<div class="fade-in">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-      <h1 class="text-lg font-bold text-gray-800">Master Kontrak COO <span class="text-sm font-normal text-gray-400">(${data.length})</span></h1>
+      <h1 class="text-lg font-bold text-gray-800">Master Kontrak <span class="text-xs font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full ml-1">Hoist</span> <span class="text-sm font-normal text-gray-400">(${data.length})</span></h1>
       <div class="flex gap-2 flex-wrap no-print items-center">
         ${fBar()}
         <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
@@ -929,78 +936,170 @@ const rMK = () => {
     </div>
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
-        ${thead([['ID'],['No. SPB'],['Vendor'],['Judul Kontrak'],['Nilai Kontrak','right'],['Tgl Mulai','center'],['Tgl Berakhir','center'],['Sisa Hari','center'],['PIC','center'],['Status','center'],['Aksi','center']])}
+        ${thead([['ID'],['No. SPB'],['Vendor'],['Judul Kontrak'],['Nilai Kontrak','right'],['SPK','center'],['Nilai SPK','right'],['Realisasi SA','right'],['Sisa Nilai','right'],['Sisa Hari','center'],['Status','center'],['Aksi','center']])}
         <tbody class="divide-y divide-gray-100">
-          ${data.length===0?emptyRow('📑','Belum ada Master Kontrak.',11):data.map(k=>{
+          ${data.length===0?emptyRow('📑','Belum ada Master Kontrak.',12):data.map(k=>{
             const n=daysLeft(k.tglBerakhir);
             const rowCls=n!==null&&n<=30?'bg-red-50 hover:bg-red-100':n!==null&&n<=100?'bg-amber-50 hover:bg-amber-100':'hover:bg-gray-50';
+            const spkNilai=spkPerK[k.id]||0, saNilai=saPerK[k.id]||0;
+            const spkCount=S.spk.filter(s=>s.idKontrak===k.id).length;
+            const pct=spkNilai>0?Math.min(Math.round(saNilai/spkNilai*100),100):0;
+            const bar=pct>=100?'bg-emerald-500':pct>=50?'bg-blue-500':'bg-amber-400';
             return `<tr class="${rowCls}">
-              <td class="px-4 py-3 font-semibold text-blue-700 whitespace-nowrap">${esc(k.customID)}</td>
-              <td class="px-4 py-3 text-gray-500 whitespace-nowrap">${esc(k.nomorSPB||'-')}</td>
-              <td class="px-4 py-3 max-w-xs"><div class="clamp2" title="${esc(k.vendor)}">${esc(k.vendor)}</div></td>
-              <td class="px-4 py-3 text-gray-600 max-w-sm"><div class="clamp2" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak||'-')}</div></td>
-              <td class="px-4 py-3 text-right font-mono whitespace-nowrap">${rp(k.nilaiKontrak)}</td>
-              <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(k.tglMulai)}</td>
-              <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(k.tglBerakhir)}</td>
-              <td class="px-4 py-3 text-center whitespace-nowrap">${sisaHari(k.tglBerakhir)}</td>
-              <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${esc(k.pic||'-')}</td>
-              <td class="px-4 py-3 text-center">${badge(k.status)}</td>
-              <td class="px-4 py-3 text-center whitespace-nowrap no-print">
-                <button onclick="mMK('${k.id}')" class="text-blue-600 hover:underline mr-2">Edit</button>
-                <button onclick="dMK('${k.id}')" class="text-red-500 hover:underline">Hapus</button>
+              <td class="px-3 py-2.5 font-semibold text-blue-700 whitespace-nowrap text-xs">${esc(k.customID)}</td>
+              <td class="px-3 py-2.5 text-gray-500 whitespace-nowrap text-xs">${esc(k.nomorSPB||'-')}</td>
+              <td class="px-3 py-2.5 max-w-[150px]"><div class="clamp2 text-xs" title="${esc(k.vendor)}">${esc(k.vendor)}</div></td>
+              <td class="px-3 py-2.5 text-gray-600 max-w-[180px]"><div class="clamp2 text-xs" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak||'-')}</div></td>
+              <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs">${rp(k.nilaiKontrak)}</td>
+              <td class="px-3 py-2.5 text-center text-gray-500 text-xs">${spkCount}</td>
+              <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs">${rp(spkNilai)}</td>
+              <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs text-emerald-700 font-semibold">${saNilai?rp(saNilai):'-'}</td>
+              <td class="px-3 py-2.5 text-right whitespace-nowrap text-xs">
+                ${spkNilai>0?`<div class="flex items-center gap-1 justify-end">
+                  <div class="w-14 bg-gray-200 rounded-full h-1.5"><div class="${bar} h-1.5 rounded-full" style="width:${pct}%"></div></div>
+                  <span class="text-gray-500 w-8">${pct}%</span>
+                </div>`:'<span class="text-gray-300">—</span>'}
+              </td>
+              <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(k.tglBerakhir)}</td>
+              <td class="px-3 py-2.5 text-center">${badge(k.status)}</td>
+              <td class="px-3 py-2.5 text-center whitespace-nowrap no-print">
+                <button onclick="S.fkontrak='${k.id}';go('spk')" class="text-indigo-600 hover:underline text-xs mr-1">SPK</button>
+                <button onclick="mMK('${k.id}')" class="text-blue-600 hover:underline text-xs mr-1">Edit</button>
+                <button onclick="dMK('${k.id}')" class="text-red-500 hover:underline text-xs">Hapus</button>
                 ${byLine(k)}
               </td>
             </tr>`;}).join('')}
         </tbody>
         <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
-          <tr><td colspan="4" class="px-4 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
-          <td class="px-4 py-3 text-right font-mono whitespace-nowrap">${rp(totalNilai)}</td>
-          <td colspan="6"></td></tr>
+          <tr><td colspan="4" class="px-3 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
+          <td class="px-3 py-3 text-right font-mono whitespace-nowrap">${rp(totalNilai)}</td>
+          <td class="px-3 py-3 text-center">${S.spk.length}</td>
+          <td class="px-3 py-3 text-right font-mono whitespace-nowrap">${rp(Object.values(spkPerK).reduce((a,v)=>a+v,0))}</td>
+          <td class="px-3 py-3 text-right font-mono text-emerald-700 whitespace-nowrap">${rp(totalSA)}</td>
+          <td colspan="4"></td></tr>
         </tfoot>
       </table>
     </div></div>
   </div>`;
 };
 
-// ===== COO SPK =====
+// ===== COO SPK HOIST =====
 const rSPK = () => {
-  let data=byDate(S.spk,'tglTerbit');
-  if(S.fkontrak) data=data.filter(x=>x.idKontrak===S.fkontrak);
-  const total=data.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+  let data = byDate(S.spk,'tglTerbit');
+  if(S.fkontrak) data = data.filter(x=>x.idKontrak===S.fkontrak);
+
+  // Hitung PR & SA per SPK
+  const prMap = {}; S.pr.forEach(p=>{ prMap[p.idCoO]=p; });
+  const saMap = {}; S.sa.forEach(a=>{ if(!saMap[a.idCoO]) saMap[a.idCoO]=[]; saMap[a.idCoO].push(a); });
+
+  const totalSPK  = data.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+  const totalSA   = data.reduce((a,s)=>{
+    const sa=saMap[s.id]||[]; return a+sa.reduce((b,x)=>b+rpN(x.nilaiSA),0);
+  },0);
+  const pctReal   = totalSPK>0 ? (totalSA/totalSPK*100).toFixed(1) : 0;
+
+  // Summary cards per kontrak
+  const mkMap = {};
+  S.mk.forEach(k=>{ mkMap[k.id]={...k,countSPK:0,totalSPK:0,totalSA:0}; });
+  S.spk.forEach(s=>{
+    if(!mkMap[s.idKontrak]) return;
+    const sa=saMap[s.id]||[];
+    mkMap[s.idKontrak].countSPK++;
+    mkMap[s.idKontrak].totalSPK += rpN(s.nilaiSPK);
+    mkMap[s.idKontrak].totalSA  += sa.reduce((b,x)=>b+rpN(x.nilaiSA),0);
+  });
+
+  const summaryCards = !S.fkontrak ? `
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mb-5">
+      ${Object.values(mkMap).map(k=>{
+        const pct = k.totalSPK>0 ? (k.totalSA/k.totalSPK*100) : 0;
+        const barColor = pct>=90?'bg-green-500':pct>=50?'bg-blue-500':'bg-amber-400';
+        const n = daysLeft(k.tglBerakhir);
+        const expCls = n!==null&&n<=30?'text-red-600 font-bold':n!==null&&n<=90?'text-amber-600':'text-gray-400';
+        return `<div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500 cursor-pointer hover:shadow-md transition" onclick="S.fkontrak='${k.id}';render()">
+          <div class="flex justify-between items-start mb-1">
+            <div class="text-xs font-bold text-blue-700 truncate max-w-[60%]">${esc(k.customID)}</div>
+            <div class="text-[10px] ${expCls}">${n!==null?n+' hari':''}</div>
+          </div>
+          <div class="text-xs text-gray-500 mb-2 clamp2">${esc(k.vendor)}</div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-gray-400">${k.countSPK} SPK</span>
+            <span class="font-mono font-semibold">${rp(k.totalSPK)}</span>
+          </div>
+          <div class="flex justify-between text-xs mb-2">
+            <span class="text-gray-400">Realisasi SA</span>
+            <span class="font-mono font-semibold text-emerald-700">${rp(k.totalSA)}</span>
+          </div>
+          <div class="w-full bg-gray-100 rounded-full h-1.5">
+            <div class="${barColor} h-1.5 rounded-full" style="width:${Math.min(pct,100).toFixed(1)}%"></div>
+          </div>
+          <div class="text-right text-[10px] text-gray-400 mt-0.5">${pct.toFixed(1)}%</div>
+        </div>`;
+      }).join('')}
+    </div>` : `
+    <div class="mb-4 flex items-center gap-2">
+      <button onclick="S.fkontrak='';render()" class="text-xs text-blue-600 hover:underline no-print">← Semua Kontrak</button>
+      ${(()=>{ const k=S.mk.find(x=>x.id===S.fkontrak); return k?`<span class="text-xs text-gray-500">|</span><span class="text-xs font-semibold text-blue-700">${esc(k.customID)}</span><span class="text-xs text-gray-400">— ${esc(k.vendor)}</span>`:''; })()}
+    </div>`;
+
+  const stepBadge=(has,label,val,colorOn,colorOff)=>`
+    <span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-medium ${has?colorOn:colorOff}" title="${val||''}">
+      ${has?'✓':'–'} ${label}${has&&val?': '+String(val).slice(-8):''}
+    </span>`;
+
   return `<div class="fade-in">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-      <h1 class="text-lg font-bold text-gray-800">CoO SPK <span class="text-sm font-normal text-gray-400">(${data.length})</span></h1>
-      <div class="flex gap-2 flex-wrap no-print">
+      <h1 class="text-lg font-bold text-gray-800">CoO SPK <span class="text-xs font-normal bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full ml-1">Hoist</span> <span class="text-sm font-normal text-gray-400">(${data.length})</span></h1>
+      <div class="flex gap-2 flex-wrap no-print items-center">
         ${fBar(true)}
         <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
         <button onclick="mSPK()" class="px-3 py-1.5 bg-blue-800 text-white rounded-lg text-sm hover:bg-blue-900">+ Tambah SPK</button>
       </div>
     </div>
+    ${summaryCards}
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
-        ${thead([['ID CoO'],['No. SPK'],['Kontrak'],['Deskripsi'],['Nilai SPK','right'],['Tgl Terbit','center'],['Tgl Selesai','center'],['Status','center'],['Aksi','center']])}
+        ${thead([['ID CoO'],['No. SPK'],['Kontrak'],['Deskripsi'],['Nilai SPK','right'],['Realisasi SA','right'],['Pipeline'],['Tgl Selesai','center'],['Status','center'],['Aksi','center']])}
         <tbody class="divide-y divide-gray-100">
-          ${data.length===0?emptyRow('📋','Belum ada CoO SPK.',9):data.map(s=>{
-            const k=S.mk.find(x=>x.id===s.idKontrak);
+          ${data.length===0?emptyRow('📋','Belum ada CoO SPK.',10):data.map(s=>{
+            const k  = S.mk.find(x=>x.id===s.idKontrak);
+            const pr = prMap[s.id];
+            const sa = saMap[s.id]||[];
+            const nilaiSA = sa.reduce((a,x)=>a+rpN(x.nilaiSA),0);
+            const pct = rpN(s.nilaiSPK)>0 ? (nilaiSA/rpN(s.nilaiSPK)*100).toFixed(0) : 0;
+            const realCls = nilaiSA>=rpN(s.nilaiSPK)?'text-green-600':nilaiSA>0?'text-blue-600':'text-gray-400';
             return `<tr class="hover:bg-gray-50">
-              <td class="px-4 py-3 font-semibold text-indigo-700 whitespace-nowrap">${esc(s.customID)}</td>
-              <td class="px-4 py-3 whitespace-nowrap">${esc(s.nomorSPK||'-')}</td>
-              <td class="px-4 py-3 text-xs text-blue-600 whitespace-nowrap">${k?esc(k.customID):'-'}</td>
-              <td class="px-4 py-3 text-gray-600 max-w-sm"><div class="clamp2" title="${esc(s.deskripsi)}">${esc(s.deskripsi||'-')}</div></td>
-              <td class="px-4 py-3 text-right font-mono whitespace-nowrap">${rp(s.nilaiSPK)}</td>
-              <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(s.tglTerbit)}</td>
-              <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(s.tglSelesai)}</td>
-              <td class="px-4 py-3 text-center">${badge(s.status)}</td>
-              <td class="px-4 py-3 text-center whitespace-nowrap no-print">
-                <button onclick="mSPK('${s.id}')" class="text-blue-600 hover:underline mr-2">Edit</button>
-                <button onclick="dSPK('${s.id}')" class="text-red-500 hover:underline">Hapus</button>
+              <td class="px-3 py-2.5 font-semibold text-indigo-700 whitespace-nowrap text-xs">${esc(s.customID)}</td>
+              <td class="px-3 py-2.5 whitespace-nowrap text-xs">${esc(s.nomorSPK||'-')}</td>
+              <td class="px-3 py-2.5 text-xs text-blue-600 whitespace-nowrap">${k?esc(k.customID):'-'}</td>
+              <td class="px-3 py-2.5 text-gray-600 max-w-xs"><div class="clamp2 text-xs" title="${esc(s.deskripsi)}">${esc(s.deskripsi||'-')}</div></td>
+              <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(s.nilaiSPK)}</td>
+              <td class="px-3 py-2.5 text-right text-xs whitespace-nowrap">
+                <span class="font-mono font-semibold ${realCls}">${nilaiSA?rp(nilaiSA):'-'}</span>
+                ${nilaiSA?`<div class="text-[10px] text-gray-400">${pct}%</div>`:''}
+              </td>
+              <td class="px-3 py-2.5">
+                <div class="flex flex-col gap-0.5">
+                  ${stepBadge(!!pr,'PR',pr?.nomorPR,'bg-purple-50 text-purple-700','bg-gray-50 text-gray-300')}
+                  ${stepBadge(sa.length>0,'SA',sa[0]?.nomorSA,'bg-emerald-50 text-emerald-700','bg-gray-50 text-gray-300')}
+                </div>
+              </td>
+              <td class="px-3 py-2.5 text-center whitespace-nowrap">${s.status==='Closed'?`<span class="text-xs text-gray-400">${df(s.tglSelesai)}</span>`:sisaHari(s.tglSelesai)}</td>
+              <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
+              <td class="px-3 py-2.5 text-center whitespace-nowrap no-print">
+                <button onclick="mSPK('${s.id}')" class="text-blue-600 hover:underline mr-2 text-xs">Edit</button>
+                <button onclick="dSPK('${s.id}')" class="text-red-500 hover:underline text-xs">Hapus</button>
                 ${byLine(s)}
               </td>
             </tr>`;}).join('')}
         </tbody>
         <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
-          <tr><td colspan="4" class="px-4 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
-          <td class="px-4 py-3 text-right font-mono">${rp(total)}</td><td colspan="4"></td></tr>
+          <tr>
+            <td colspan="4" class="px-3 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
+            <td class="px-3 py-3 text-right font-mono">${rp(totalSPK)}</td>
+            <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(totalSA)} <span class="text-gray-400 font-normal">(${pctReal}%)</span></td>
+            <td colspan="4"></td>
+          </tr>
         </tfoot>
       </table>
     </div></div>
