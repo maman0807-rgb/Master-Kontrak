@@ -387,115 +387,105 @@ const tfoot_total = (label, cols, vals) => `<tfoot class="bg-gray-50 text-xs fon
 
 // ===== DASHBOARD =====
 const rDash = () => {
-  const saF   = byDate(S.sa,'tglSA');
-  const saIds = id => saF.filter(x=>{ const sp=S.spk.find(s=>s.id===x.idCoO); return sp&&sp.idKontrak===id; }).reduce((a,x)=>a+rpN(x.nilaiSA),0);
+  const saF     = byDate(S.sa,'tglSA');
+  const saBySpk = {};
+  saF.forEach(x=>{ saBySpk[x.idCoO]=(saBySpk[x.idCoO]||0)+rpN(x.nilaiSA); });
+  const saIds = id => S.spk.filter(x=>x.idKontrak===id).reduce((a,x)=>a+(saBySpk[x.id]||0),0);
 
   // ─ Hoist stats ─
   const mkH  = S.mk, spkH = S.spk;
-  const mkHNilai  = mkH.reduce((a,x)=>a+rpN(x.nilaiKontrak),0);
-  const spkHNilai = spkH.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
-  const saHNilai  = saF.reduce((a,x)=>a+rpN(x.nilaiSA),0);
-  const pctH  = spkHNilai>0 ? Math.round(saHNilai/spkHNilai*100) : 0;
+  const mkHNilai   = mkH.reduce((a,x)=>a+rpN(x.nilaiKontrak),0);
+  const spkHNilai  = spkH.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+  const saHNilai   = saF.reduce((a,x)=>a+rpN(x.nilaiSA),0);
+  const pctH       = spkHNilai>0 ? Math.round(saHNilai/spkHNilai*100) : 0;
+  const spkWithSA  = new Set(saF.map(x=>x.idCoO));
+  const spkNoSAH   = spkH.filter(x=>!spkWithSA.has(x.id)&&x.status!=='Closed').length;
+  const spkWithPR  = new Set(S.pr.map(x=>x.idCoO));
+  const spkNoPRH   = spkH.filter(x=>!spkWithPR.has(x.id)&&x.status!=='Closed').length;
   const warnH = mkH.filter(k=>{ const n=daysLeft(k.tglBerakhir); return n!==null&&n<=90&&k.status==='Aktif'; }).sort((a,b)=>daysLeft(a.tglBerakhir)-daysLeft(b.tglBerakhir));
 
   // ─ Static stats ─
-  const mkS  = S.mkS, spkSt = S.spkS;
-  const mkSNilai  = mkS.reduce((a,x)=>a+rpN(x.nilaiKontrak),0);
-  const spkSNilai = spkSt.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
-  const realSNilai= spkSt.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0);
-  const pctS  = spkSNilai>0 ? Math.round(realSNilai/spkSNilai*100) : 0;
+  const mkS = S.mkS, spkSt = S.spkS;
+  const mkSNilai   = mkS.reduce((a,x)=>a+rpN(x.nilaiKontrak),0);
+  const spkSNilai  = spkSt.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+  const realSNilai = spkSt.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0);
+  const pctS       = spkSNilai>0 ? Math.round(realSNilai/spkSNilai*100) : 0;
+  const spkNoRealS = spkSt.filter(x=>!rpN(x.nilaiRealisasi)&&x.status!=='Closed').length;
   const warnS = mkS.filter(k=>{ const n=daysLeft(k.tglBerakhir); return n!==null&&n<=90&&k.status==='Aktif'; }).sort((a,b)=>daysLeft(a.tglBerakhir)-daysLeft(b.tglBerakhir));
 
-  // ─ Rotating stats ─
-  const mkR  = S.mkR||[], spkR = S.spkR||[];
-
   // ─ DC stats ─
-  const dcAll  = byDate(S.dc,'tanggal');
-  const dcOnly = dcAll.filter(x=>(x.jenis||'Direct Charge')==='Direct Charge');
-  const resOnly= dcAll.filter(x=>x.jenis==='Reservasi');
-  const dcProses=dcOnly.filter(x=>!['Diterima','Ditolak'].includes(x.status)).length;
-  const dcDone =dcOnly.filter(x=>x.status==='Diterima').length;
-  const dcPO   =dcOnly.filter(x=>x.status==='PO Terbit').length;
+  const dcAll   = byDate(S.dc,'tanggal');
+  const dcOnly  = dcAll.filter(x=>(x.jenis||'Direct Charge')==='Direct Charge');
+  const resOnly = dcAll.filter(x=>x.jenis==='Reservasi');
+  const cyear   = new Date().getFullYear().toString();
+  const dcYear  = dcOnly.filter(x=>x.tanggal&&x.tanggal.startsWith(cyear));
+  const dcYrNilai = dcYear.reduce((a,x)=>a+rpN(x.total),0);
+  const dcProses  = dcOnly.filter(x=>!['Diterima','Ditolak'].includes(x.status)).length;
+  const dcPO      = dcOnly.filter(x=>x.status==='PO Terbit').length;
 
   // ─ SPK Lumpsum ─
   const sF = byDate(S.sspk,'tanggal');
-  const sNilai=sF.reduce((a,x)=>a+rpN(x.nilaiKontrak),0);
-  const sReal =sF.reduce((a,x)=>a+rpN(x.realisasi),0);
+  const sNilai = sF.reduce((a,x)=>a+rpN(x.nilaiKontrak),0);
+  const sReal  = sF.reduce((a,x)=>a+rpN(x.realisasi),0);
 
-  // helper — fungsi card
-  const funCard=(label,color,borderColor,goto,stats,warn)=>`
-    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-      <div class="px-4 py-3 border-b-2 ${borderColor} flex items-center justify-between">
-        <span class="text-sm font-bold ${color}">${label}</span>
-        <button onclick="go('${goto}')" class="text-xs text-blue-600 hover:underline no-print">Detail →</button>
-      </div>
-      <div class="p-4 flex flex-col gap-2">
-        ${stats}
-        ${warn.length>0?`<div class="mt-1 text-xs text-red-600 flex items-center gap-1">⚠ ${warn.length} kontrak exp ≤90 hari</div>`:'<div class="mt-1 text-xs text-emerald-600">✓ Semua kontrak aman</div>'}
-      </div>
-    </div>`;
+  // ─ Grand totals ─
+  const totNilaiKontrak = mkHNilai + mkSNilai;
+  const totNilaiSPK     = spkHNilai + spkSNilai;
+  const totRealisasi    = saHNilai + realSNilai;
+  const totSisa         = totNilaiSPK - totRealisasi;
+  const totPct          = totNilaiSPK>0 ? Math.round(totRealisasi/totNilaiSPK*100) : 0;
+  const totBar          = totPct>=80?'bg-emerald-500':totPct>=50?'bg-blue-500':'bg-amber-400';
 
-  const statRow=(label,val,sub)=>`
-    <div class="flex justify-between items-baseline">
-      <span class="text-xs text-gray-400">${label}</span>
-      <div class="text-right"><span class="text-sm font-semibold text-gray-700">${val}</span>${sub?`<span class="text-xs text-gray-400 ml-1">${sub}</span>`:''}</div>
-    </div>`;
-
-  const progBar=(pct,color)=>`
-    <div class="flex items-center gap-2 mt-1">
-      <div class="flex-1 bg-gray-100 rounded-full h-1.5">
-        <div class="${color} h-1.5 rounded-full transition-all" style="width:${Math.min(pct,100)}%"></div>
-      </div>
-      <span class="text-xs font-semibold text-gray-600 w-9 text-right">${pct}%</span>
-    </div>`;
-
-  // ─ All expiring alerts across all fungsi ─
+  // ─ All expiring alerts ─
   const allWarn=[
     ...warnH.map(k=>({...k,fungsi:'HOIST',goPage:'mk'})),
     ...warnS.map(k=>({...k,fungsi:'STATIC',goPage:'mks'})),
   ].sort((a,b)=>daysLeft(a.tglBerakhir)-daysLeft(b.tglBerakhir));
 
-  // ─ Realisasi per kontrak: Hoist ─
-  const perKH = mkH.map(k=>{
-    const spks=spkH.filter(x=>x.idKontrak===k.id);
-    const real=saIds(k.id);
-    return {...k,spkCount:spks.length,nilaiSpk:spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0),real};
-  });
+  // helpers
+  const sRow=(lbl,val,cls='text-gray-700')=>`
+    <div class="flex justify-between items-baseline gap-2">
+      <span class="text-xs text-gray-400 shrink-0">${lbl}</span>
+      <span class="text-xs font-semibold ${cls} text-right">${val}</span>
+    </div>`;
+  const pBar=(pct,col)=>`<div class="flex items-center gap-1.5 mt-1.5">
+    <div class="flex-1 bg-gray-100 rounded-full h-1.5"><div class="${col} h-1.5 rounded-full" style="width:${Math.min(pct,100)}%"></div></div>
+    <span class="text-[11px] font-bold text-gray-600 w-9 text-right">${pct}%</span>
+  </div>`;
+  const pipeBadge=(n,lbl,ok)=>n===0
+    ?`<span class="text-[10px] text-emerald-600">✓ ${lbl}</span>`
+    :`<span class="text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">${n} ${lbl}</span>`;
 
-  // ─ Realisasi per kontrak: Static ─
-  const perKS = mkS.map(k=>{
-    const spks=spkSt.filter(x=>x.idKontrak===k.id);
-    return {...k,spkCount:spks.length,nilaiSpk:spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0),real:spks.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0)};
-  });
-
-  const perKRow=(k,colorCls,goPage)=>{
-    const nk=rpN(k.nilaiKontrak),pct=k.nilaiSpk>0?Math.min(Math.round(k.real/k.nilaiSpk*100),100):0;
+  // ─ Realisasi per kontrak rows (shared) ─
+  const perKH = mkH.map(k=>{ const spks=spkH.filter(x=>x.idKontrak===k.id); return {...k,spkCount:spks.length,nilaiSpk:spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0),real:saIds(k.id)}; });
+  const perKS = mkS.map(k=>{ const spks=spkSt.filter(x=>x.idKontrak===k.id); return {...k,spkCount:spks.length,nilaiSpk:spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0),real:spks.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0)}; });
+  const perKRow=(k,colorCls,fungiLabel,fungiColor,goPage)=>{
+    const pct=k.nilaiSpk>0?Math.min(Math.round(k.real/k.nilaiSpk*100),100):0;
     const n=daysLeft(k.tglBerakhir);
     const rowCls=n!==null&&n<=30?'bg-red-50':n!==null&&n<=90?'bg-amber-50':'';
     const bar=pct>=100?'bg-emerald-500':pct>=50?'bg-blue-500':'bg-amber-400';
     return `<tr class="${rowCls} hover:bg-gray-50 cursor-pointer" onclick="go('${goPage}')">
-      <td class="px-4 py-3 font-semibold ${colorCls} whitespace-nowrap text-xs">${esc(k.nomorSPB||k.customID)}</td>
-      <td class="px-4 py-3 max-w-[180px]"><div class="clamp2 text-xs text-gray-600" title="${esc(k.vendor)}">${esc(k.vendor)}</div></td>
-      <td class="px-4 py-3 text-right font-mono text-xs whitespace-nowrap">${rp(k.nilaiKontrak)}</td>
-      <td class="px-4 py-3 text-center text-gray-500 text-xs">${k.spkCount}</td>
-      <td class="px-4 py-3 text-right font-mono text-xs whitespace-nowrap">${rp(k.nilaiSpk)}</td>
-      <td class="px-4 py-3 text-right font-mono text-xs font-semibold text-emerald-700 whitespace-nowrap">${rp(k.real)}</td>
-      <td class="px-4 py-3 text-right font-mono text-xs text-orange-600 whitespace-nowrap">${rp(k.nilaiSpk-k.real)}</td>
-      <td class="px-4 py-3 w-28"><div class="flex items-center gap-1">
+      <td class="px-3 py-2.5"><span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${fungiColor}">${fungiLabel}</span></td>
+      <td class="px-3 py-2.5 font-semibold ${colorCls} whitespace-nowrap text-xs">${esc(k.nomorSPB||k.customID)}</td>
+      <td class="px-3 py-2.5 max-w-[160px]"><div class="clamp2 text-xs text-gray-600">${esc(k.vendor)}</div></td>
+      <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(k.nilaiSpk)}</td>
+      <td class="px-3 py-2.5 text-right font-mono text-xs font-semibold text-emerald-700 whitespace-nowrap">${rp(k.real)}</td>
+      <td class="px-3 py-2.5 text-right font-mono text-xs text-orange-600 whitespace-nowrap">${rp(k.nilaiSpk-k.real)}</td>
+      <td class="px-3 py-2.5 w-28"><div class="flex items-center gap-1">
         <div class="flex-1 bg-gray-200 rounded-full h-1.5"><div class="${bar} h-1.5 rounded-full" style="width:${pct}%"></div></div>
         <span class="text-[10px] text-gray-500 w-7 text-right">${pct}%</span>
       </div></td>
-      <td class="px-3 py-3 text-center whitespace-nowrap">${sisaHari(k.tglBerakhir)}</td>
+      <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(k.tglBerakhir)}</td>
     </tr>`;
   };
-
-  const perKThead=thead([['No. Kontrak'],['Vendor'],['Nilai Kontrak','right'],['SPK','center'],['Nilai SPK','right'],['Realisasi','right'],['Sisa','right'],['Progress','center'],['Sisa Hari','center']]);
+  const perKThead = thead([[''],['No. Kontrak'],['Vendor'],['Nilai SPK','right'],['Realisasi','right'],['Sisa','right'],['Progress','center'],['Sisa Hari','center']]);
 
   return `<div class="fade-in">
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+    <!-- HEADER -->
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
       <div>
         <h1 class="text-lg font-bold text-gray-800">Monitoring Kontrak</h1>
-        <p class="text-xs text-gray-400">Mechanical — Prabumulih Field</p>
+        <p class="text-xs text-gray-400">Mechanical — Prabumulih Field &middot; ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</p>
       </div>
       <div class="flex gap-2 flex-wrap items-center no-print">
         <button onclick="exportAll()" class="px-3 py-1.5 bg-blue-700 text-white rounded-lg text-sm hover:bg-blue-800">⬇ Export</button>
@@ -505,33 +495,90 @@ const rDash = () => {
       </div>
     </div>
 
+    <!-- GRAND SUMMARY STRIP -->
+    <div class="bg-gradient-to-r from-blue-800 to-blue-700 text-white rounded-xl shadow-md p-4 mb-5">
+      <p class="text-[10px] font-semibold tracking-widest text-blue-200 mb-3">RINGKASAN KESELURUHAN — HOIST + STATIC</p>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div>
+          <p class="text-[10px] text-blue-200">Nilai Kontrak Aktif</p>
+          <p class="text-base font-bold font-mono">${rp(totNilaiKontrak)}</p>
+          <p class="text-[10px] text-blue-300">${mkH.filter(x=>x.status==='Aktif').length+mkS.filter(x=>x.status==='Aktif').length} kontrak aktif</p>
+        </div>
+        <div>
+          <p class="text-[10px] text-blue-200">Total Nilai SPK</p>
+          <p class="text-base font-bold font-mono">${rp(totNilaiSPK)}</p>
+          <p class="text-[10px] text-blue-300">${spkH.length+spkSt.length} SPK total</p>
+        </div>
+        <div>
+          <p class="text-[10px] text-blue-200">Total Realisasi</p>
+          <p class="text-base font-bold font-mono text-emerald-300">${rp(totRealisasi)}</p>
+          <p class="text-[10px] text-blue-300">dari total SPK</p>
+        </div>
+        <div>
+          <p class="text-[10px] text-blue-200">Sisa Belum Bayar</p>
+          <p class="text-base font-bold font-mono text-amber-300">${rp(totSisa)}</p>
+          <p class="text-[10px] text-blue-300">${totPct}% terealisasi</p>
+        </div>
+      </div>
+      <div class="mt-3 flex items-center gap-2">
+        <div class="flex-1 bg-blue-900/50 rounded-full h-2">
+          <div class="${totBar} h-2 rounded-full transition-all" style="width:${Math.min(totPct,100)}%"></div>
+        </div>
+        <span class="text-xs font-bold text-white w-10 text-right">${totPct}%</span>
+      </div>
+    </div>
+
     <!-- 3 FUNGSI CARDS -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-      ${funCard('HOIST','text-blue-800','border-blue-600','mk',
-        statRow('Kontrak Aktif', mkH.filter(x=>x.status==='Aktif').length+' / '+mkH.length+' kontrak')
-       +statRow('Nilai Kontrak', rp(mkHNilai))
-       +statRow('Total SPK', spkH.length+' SPK · '+rp(spkHNilai))
-       +statRow('Realisasi SA', rp(saHNilai))
-       +progBar(pctH,'bg-blue-500'),
-        warnH
-      )}
-      ${funCard('STATIC','text-teal-800','border-teal-500','mks',
-        statRow('Kontrak Aktif', mkS.filter(x=>x.status==='Aktif').length+' / '+mkS.length+' kontrak')
-       +statRow('Nilai Kontrak', rp(mkSNilai))
-       +statRow('Total SPK', spkSt.length+' SPK · '+rp(spkSNilai))
-       +statRow('Realisasi', rp(realSNilai))
-       +progBar(pctS,'bg-teal-500'),
-        warnS
-      )}
-      <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div class="px-4 py-3 border-b-2 border-gray-300 flex items-center justify-between">
+      <!-- HOIST -->
+      <div class="bg-white rounded-xl shadow-sm overflow-hidden border-t-4 border-blue-600">
+        <div class="px-4 py-3 flex items-center justify-between">
+          <span class="text-sm font-bold text-blue-800">HOIST</span>
+          <button onclick="go('mk')" class="text-xs text-blue-600 hover:underline no-print">Detail →</button>
+        </div>
+        <div class="px-4 pb-4 flex flex-col gap-1.5">
+          ${sRow('Kontrak Aktif', mkH.filter(x=>x.status==='Aktif').length+' / '+mkH.length)}
+          ${sRow('Nilai Kontrak', rp(mkHNilai))}
+          ${sRow('Nilai SPK', spkH.length+' SPK · '+rp(spkHNilai))}
+          ${sRow('Realisasi SA', rp(saHNilai),'text-emerald-700')}
+          ${pBar(pctH,'bg-blue-500')}
+          <div class="flex items-center gap-2 mt-2 flex-wrap">
+            ${pipeBadge(spkNoPRH,'SPK belum PR')}
+            ${pipeBadge(spkNoSAH,'SPK belum SA')}
+          </div>
+          ${warnH.length>0?`<p class="text-[10px] text-red-600 mt-1">⚠ ${warnH.length} kontrak exp ≤90 hari</p>`:`<p class="text-[10px] text-emerald-600 mt-1">✓ Semua kontrak aman</p>`}
+        </div>
+      </div>
+
+      <!-- STATIC -->
+      <div class="bg-white rounded-xl shadow-sm overflow-hidden border-t-4 border-teal-500">
+        <div class="px-4 py-3 flex items-center justify-between">
+          <span class="text-sm font-bold text-teal-800">STATIC</span>
+          <button onclick="go('mks')" class="text-xs text-blue-600 hover:underline no-print">Detail →</button>
+        </div>
+        <div class="px-4 pb-4 flex flex-col gap-1.5">
+          ${sRow('Kontrak Aktif', mkS.filter(x=>x.status==='Aktif').length+' / '+mkS.length)}
+          ${sRow('Nilai Kontrak', rp(mkSNilai))}
+          ${sRow('Nilai SPK', spkSt.length+' SPK · '+rp(spkSNilai))}
+          ${sRow('Realisasi', rp(realSNilai),'text-emerald-700')}
+          ${pBar(pctS,'bg-teal-500')}
+          <div class="flex items-center gap-2 mt-2 flex-wrap">
+            ${pipeBadge(spkNoRealS,'SPK belum tagih')}
+          </div>
+          ${warnS.length>0?`<p class="text-[10px] text-red-600 mt-1">⚠ ${warnS.length} kontrak exp ≤90 hari</p>`:`<p class="text-[10px] text-emerald-600 mt-1">✓ Semua kontrak aman</p>`}
+        </div>
+      </div>
+
+      <!-- ROTATING -->
+      <div class="bg-white rounded-xl shadow-sm overflow-hidden border-t-4 border-gray-300">
+        <div class="px-4 py-3 flex items-center justify-between">
           <span class="text-sm font-bold text-gray-500">ROTATING</span>
           <button onclick="go('mkr')" class="text-xs text-blue-600 hover:underline no-print">Detail →</button>
         </div>
-        <div class="p-4 flex flex-col gap-2 items-center justify-center h-32">
-          <span class="text-2xl">⚙️</span>
-          <p class="text-xs text-gray-400 text-center">Data kontrak Rotating<br>belum tersedia</p>
-          <p class="text-[10px] text-gray-300">TVM Rotating tersedia di menu TVM</p>
+        <div class="px-4 pb-4 flex flex-col items-center justify-center gap-2 h-36 text-center">
+          <span class="text-3xl">⚙️</span>
+          <p class="text-xs text-gray-400">Data kontrak Rotating belum tersedia</p>
+          <p class="text-[10px] text-blue-400 hover:underline cursor-pointer" onclick="go('tvm')">TVM Rotating → lihat menu TVM</p>
         </div>
       </div>
     </div>
@@ -551,99 +598,95 @@ const rDash = () => {
       </div>
     </div>`:''}
 
-    <!-- SPK LUMPSUM RINGKASAN -->
-    <div class="flex items-center gap-3 mb-3">
-      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">SPK Lumpsum</h2>
-      <button onclick="go('sspk')" class="text-xs text-blue-600 hover:underline no-print">Lihat semua →</button>
-    </div>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-blue-500">
-        <p class="text-xs text-gray-400">Total SPK</p><p class="text-lg font-bold text-blue-700">${sF.length}</p>
-        <p class="text-xs text-gray-400">${rp(sNilai)}</p>
+    <!-- REALISASI PER KONTRAK (COMBINED) -->
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Realisasi Per Kontrak</h2>
+      <div class="flex gap-3 no-print">
+        <button onclick="go('mk')" class="text-xs text-blue-600 hover:underline">Hoist →</button>
+        <button onclick="go('mks')" class="text-xs text-teal-600 hover:underline">Static →</button>
       </div>
-      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-emerald-500">
-        <p class="text-xs text-gray-400">Tagihan</p><p class="text-lg font-bold text-emerald-700">${rp(sReal)}</p>
-        <p class="text-xs text-gray-400">${sNilai>0?Math.round(sReal/sNilai*100):0}% terealisasi</p>
-      </div>
-      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-orange-400">
-        <p class="text-xs text-gray-400">Sisa</p><p class="text-lg font-bold text-orange-600">${rp(sNilai-sReal)}</p>
-        <p class="text-xs text-gray-400">belum ditagih</p>
-      </div>
-      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-amber-400">
-        <p class="text-xs text-gray-400">Belum Lunas</p><p class="text-lg font-bold text-amber-600">${sF.filter(x=>x.status!=='Lunas').length} SPK</p>
-        <p class="text-xs text-gray-400">dari ${sF.length} total</p>
-      </div>
-    </div>
-
-    <!-- DC RINGKASAN -->
-    <div class="flex items-center gap-3 mb-3">
-      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">DC & Reservasi — Hoist</h2>
-      <button onclick="go('dc')" class="text-xs text-blue-600 hover:underline no-print">Lihat semua →</button>
-    </div>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-amber-400">
-        <p class="text-xs text-gray-400">DC Dalam Proses</p><p class="text-lg font-bold text-amber-600">${dcProses}</p>
-        <p class="text-xs text-gray-400">item</p>
-      </div>
-      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-indigo-400">
-        <p class="text-xs text-gray-400">PO Terbit</p><p class="text-lg font-bold text-indigo-700">${dcPO}</p>
-        <p class="text-xs text-gray-400">menunggu barang</p>
-      </div>
-      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-emerald-500">
-        <p class="text-xs text-gray-400">DC Diterima</p><p class="text-lg font-bold text-emerald-700">${dcDone}</p>
-        <p class="text-xs text-gray-400">item selesai</p>
-      </div>
-      <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-blue-400">
-        <p class="text-xs text-gray-400">Reservasi</p><p class="text-lg font-bold text-blue-700">${resOnly.length}</p>
-        <p class="text-xs text-gray-400">${resOnly.filter(x=>x.status==='Diterima').length} sudah diterima</p>
-      </div>
-    </div>
-
-    <!-- REALISASI PER KONTRAK: HOIST -->
-    <div class="flex items-center gap-3 mb-3">
-      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Realisasi Per Kontrak — Hoist</h2>
     </div>
     <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-5">
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           ${perKThead}
           <tbody class="divide-y divide-gray-100">
-            ${perKH.length===0?emptyRow('📑','Belum ada data.',9):perKH.map(k=>perKRow(k,'text-blue-700','mk')).join('')}
+            ${[...perKH.map(k=>perKRow(k,'text-blue-700','HOIST','bg-blue-100 text-blue-700','mk')),
+               ...perKS.map(k=>perKRow(k,'text-teal-700','STATIC','bg-teal-100 text-teal-700','mks'))].join('')||emptyRow('📑','Belum ada data.',8)}
           </tbody>
-          ${perKH.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
-            <tr><td colspan="2" class="px-4 py-3 text-right text-gray-500">TOTAL</td>
-            <td class="px-4 py-3 text-right font-mono">${rp(mkHNilai)}</td>
-            <td class="px-4 py-3 text-center">${spkH.length}</td>
-            <td class="px-4 py-3 text-right font-mono">${rp(spkHNilai)}</td>
-            <td class="px-4 py-3 text-right font-mono text-emerald-700">${rp(saHNilai)}</td>
-            <td class="px-4 py-3 text-right font-mono text-orange-600">${rp(spkHNilai-saHNilai)}</td>
-            <td colspan="2"></td></tr>
-          </tfoot>`:''}
+          <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
+            <tr>
+              <td colspan="3" class="px-3 py-3 text-right text-gray-500">TOTAL</td>
+              <td class="px-3 py-3 text-right font-mono">${rp(totNilaiSPK)}</td>
+              <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(totRealisasi)}</td>
+              <td class="px-3 py-3 text-right font-mono text-orange-600">${rp(totSisa)}</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </div>
 
-    <!-- REALISASI PER KONTRAK: STATIC -->
-    <div class="flex items-center gap-3 mb-3">
-      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Realisasi Per Kontrak — Static</h2>
-    </div>
-    <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          ${perKThead}
-          <tbody class="divide-y divide-gray-100">
-            ${perKS.length===0?emptyRow('📑','Belum ada data.',9):perKS.map(k=>perKRow(k,'text-teal-700','mks')).join('')}
-          </tbody>
-          ${perKS.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
-            <tr><td colspan="2" class="px-4 py-3 text-right text-gray-500">TOTAL</td>
-            <td class="px-4 py-3 text-right font-mono">${rp(mkSNilai)}</td>
-            <td class="px-4 py-3 text-center">${spkSt.length}</td>
-            <td class="px-4 py-3 text-right font-mono">${rp(spkSNilai)}</td>
-            <td class="px-4 py-3 text-right font-mono text-emerald-700">${rp(realSNilai)}</td>
-            <td class="px-4 py-3 text-right font-mono text-orange-600">${rp(spkSNilai-realSNilai)}</td>
-            <td colspan="2"></td></tr>
-          </tfoot>`:''}
-        </table>
+    <!-- SPK LUMPSUM + DC SIDE BY SIDE -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <!-- SPK Lumpsum -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">SPK Lumpsum</h2>
+          <button onclick="go('sspk')" class="text-xs text-blue-600 hover:underline no-print">Lihat →</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-blue-500">
+            <p class="text-[10px] text-gray-400">Total SPK</p>
+            <p class="text-xl font-bold text-blue-700">${sF.length}</p>
+            <p class="text-[10px] text-gray-400 font-mono">${rp(sNilai)}</p>
+          </div>
+          <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-emerald-500">
+            <p class="text-[10px] text-gray-400">Tagihan</p>
+            <p class="text-xl font-bold text-emerald-700 font-mono">${rp(sReal)}</p>
+            <p class="text-[10px] text-gray-400">${sNilai>0?Math.round(sReal/sNilai*100):0}% terealisasi</p>
+          </div>
+          <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-orange-400">
+            <p class="text-[10px] text-gray-400">Sisa</p>
+            <p class="text-xl font-bold text-orange-600 font-mono">${rp(sNilai-sReal)}</p>
+            <p class="text-[10px] text-gray-400">belum ditagih</p>
+          </div>
+          <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-amber-400">
+            <p class="text-[10px] text-gray-400">Belum Lunas</p>
+            <p class="text-xl font-bold text-amber-600">${sF.filter(x=>x.status!=='Lunas').length}</p>
+            <p class="text-[10px] text-gray-400">dari ${sF.length} SPK</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- DC & Reservasi -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">DC & Reservasi — Hoist</h2>
+          <button onclick="go('dc')" class="text-xs text-blue-600 hover:underline no-print">Lihat →</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-indigo-500">
+            <p class="text-[10px] text-gray-400">Nilai DC ${cyear}</p>
+            <p class="text-xl font-bold text-indigo-700 font-mono leading-tight">${rp(dcYrNilai)}</p>
+            <p class="text-[10px] text-gray-400">${dcYear.length} PO/RO tahun ini</p>
+          </div>
+          <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-amber-400">
+            <p class="text-[10px] text-gray-400">Dalam Proses</p>
+            <p class="text-xl font-bold text-amber-600">${dcProses}</p>
+            <p class="text-[10px] text-gray-400">${dcPO} PO terbit</p>
+          </div>
+          <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-emerald-500">
+            <p class="text-[10px] text-gray-400">DC Diterima</p>
+            <p class="text-xl font-bold text-emerald-700">${dcOnly.filter(x=>x.status==='Diterima').length}</p>
+            <p class="text-[10px] text-gray-400">dari ${dcOnly.length} total</p>
+          </div>
+          <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-violet-400">
+            <p class="text-[10px] text-gray-400">Reservasi</p>
+            <p class="text-xl font-bold text-violet-700">${resOnly.length}</p>
+            <p class="text-[10px] text-gray-400">${resOnly.filter(x=>x.status==='Diterima').length} sudah diterima</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>`;
