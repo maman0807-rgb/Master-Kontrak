@@ -244,7 +244,7 @@ const F = {
     spk:  r => ({id:r.id,noSPK:r.no_spk,tanggal:r.tanggal,vendor:r.vendor,uraian:r.uraian,nilaiKontrak:r.nilai_kontrak,realisasi:r.realisasi,progress:r.progress,status:r.status,jenisAnggaran:r.jenis_anggaran,keterangan:r.keterangan,createdBy:r.created_by,updatedBy:r.updated_by}),
     dc:   r => ({id:r.id,jenis:r.jenis||'Direct Charge',noPerm:r.no_perm,tanggal:r.tanggal,namaPart:r.nama_part,jumlah:r.jumlah,satuan:r.satuan,hargaSatuan:r.harga_satuan,total:r.total,kimap:r.kimap,nomorPR:r.nomor_pr,nomorPO:r.nomor_po,nomorMemo:r.nomor_memo,nomorMR:r.nomor_mr,nomorReservasi:r.nomor_reservasi,nomorGR:r.nomor_gr,tglGR:r.tgl_gr,diambilOleh:r.diambil_oleh,status:r.status,keterangan:r.keterangan,items:r.items||[],createdBy:r.created_by,updatedBy:r.updated_by}),
     mk:   r => ({id:r.id,customID:r.custom_id,nomorSPB:r.nomor_spb,vendor:r.vendor,judulKontrak:r.judul_kontrak,nilaiKontrak:r.nilai_kontrak,tglMulai:r.tgl_mulai,tglBerakhir:r.tgl_berakhir,pic:r.pic,status:r.status,jenis:r.jenis||'HHE',createdBy:r.created_by,updatedBy:r.updated_by}),
-    coo:  r => ({id:r.id,idKontrak:r.id_kontrak,customID:r.custom_id,nomorSPK:r.nomor_spk,deskripsi:r.deskripsi,nilaiSPK:r.nilai_spk,tglTerbit:r.tgl_terbit,tglMulai:r.tgl_mulai,tglSelesai:r.tgl_selesai,status:r.status,catatan:r.catatan,jenis:r.jenis||'HHE',createdBy:r.created_by,updatedBy:r.updated_by}),
+    coo:  r => ({id:r.id,idKontrak:r.id_kontrak,customID:r.custom_id,nomorSPK:r.nomor_spk,deskripsi:r.deskripsi,nilaiSPK:r.nilai_spk,tglTerbit:r.tgl_terbit,tglMulai:r.tgl_mulai,tglSelesai:r.tgl_selesai,status:r.status,catatan:r.catatan,jenis:r.jenis||'HHE',nomorPR:r.nomor_pr,nomorPO:r.nomor_po,nomorSA:r.nomor_sa,nilaiRealisasi:r.nilai_realisasi,noWO:r.no_wo,remarksInvoice:r.remarks_invoice,createdBy:r.created_by,updatedBy:r.updated_by}),
     pr:   r => ({id:r.id,idCoO:r.id_coo,customID:r.custom_id,nomorPR:r.nomor_pr,tglPR:r.tgl_pr,deskripsi:r.deskripsi,estimasiNilai:r.estimasi_nilai,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
     sa:   r => ({id:r.id,idCoO:r.id_coo,customID:r.custom_id,nomorSA:r.nomor_sa,tglSA:r.tgl_sa,deskripsi:r.deskripsi,nilaiSA:r.nilai_sa,nomorInvoice:r.nomor_invoice,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
     tvm:  r => ({id:r.id,nomorCOO:r.nomor_coo,nomorPR:r.nomor_pr,tanggal:r.tanggal,fungsi:r.fungsi||'Hoist & Heavy Equipment',deskripsi:r.deskripsi,nilai:r.nilai,tglMulai:r.tgl_mulai,tglSelesai:r.tgl_selesai,status:r.status,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
@@ -986,39 +986,100 @@ const rMKS = () => {
 const rSPKS = () => {
   let data = byDate(S.spkS,'tglTerbit');
   if(S.fkontrak) data = data.filter(x=>x.idKontrak===S.fkontrak);
-  const total = data.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+  const totalSPK  = data.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+  const totalReal = data.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0);
+  const pctReal   = totalSPK>0 ? (totalReal/totalSPK*100).toFixed(1) : 0;
+
   const filterMKS = `<select onchange="S.fkontrak=this.value;render()" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white">
     <option value="">Semua Kontrak</option>
     ${S.mkS.map(k=>`<option value="${k.id}" ${S.fkontrak===k.id?'selected':''}>${esc(k.nomorSPB||k.customID)} – ${esc(k.vendor)}</option>`).join('')}
   </select>`;
+
+  // Realisasi summary cards per kontrak (if not filtered to one kontrak)
+  const mkMap = {};
+  S.mkS.forEach(k=>{ mkMap[k.id]={...k,totalSPK:0,totalReal:0,countSPK:0}; });
+  S.spkS.forEach(s=>{
+    if(mkMap[s.idKontrak]){
+      mkMap[s.idKontrak].totalSPK  += rpN(s.nilaiSPK);
+      mkMap[s.idKontrak].totalReal += rpN(s.nilaiRealisasi);
+      mkMap[s.idKontrak].countSPK  += 1;
+    }
+  });
+
+  const summaryCards = !S.fkontrak ? `
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mb-5">
+      ${Object.values(mkMap).map(k=>{
+        const pct = k.totalSPK>0 ? (k.totalReal/k.totalSPK*100) : 0;
+        const barColor = pct>=90?'bg-green-500':pct>=50?'bg-teal-500':'bg-amber-400';
+        return `<div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-teal-400">
+          <div class="flex justify-between items-start mb-1">
+            <div class="text-xs font-semibold text-teal-700">${esc(k.nomorSPB||k.customID)}</div>
+            <div class="text-xs text-gray-400">${k.countSPK} SPK</div>
+          </div>
+          <div class="text-xs text-gray-500 mb-2 clamp2">${esc(k.vendor)}</div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-gray-400">SPK</span><span class="font-mono font-semibold">${rp(k.totalSPK)}</span>
+          </div>
+          <div class="flex justify-between text-xs mb-2">
+            <span class="text-gray-400">Realisasi</span><span class="font-mono font-semibold text-teal-700">${rp(k.totalReal)}</span>
+          </div>
+          <div class="w-full bg-gray-100 rounded-full h-1.5">
+            <div class="${barColor} h-1.5 rounded-full" style="width:${Math.min(pct,100).toFixed(1)}%"></div>
+          </div>
+          <div class="text-right text-xs text-gray-400 mt-0.5">${pct.toFixed(1)}%</div>
+        </div>`;
+      }).join('')}
+    </div>` : '';
+
+  const docBadge = (v,label,color) => v
+    ? `<span class="inline-block text-[10px] px-1.5 py-0.5 rounded ${color} font-mono whitespace-nowrap" title="${esc(v)}">${label}: ${esc(String(v).slice(-8))}</span>`
+    : '';
+
   return `<div class="fade-in">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
       <h1 class="text-lg font-bold text-gray-800">CoO SPK <span class="text-xs font-normal bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full ml-1">Static</span> <span class="text-sm font-normal text-gray-400">(${data.length})</span></h1>
-      <div class="flex gap-2 flex-wrap no-print">
+      <div class="flex gap-2 flex-wrap no-print items-center">
         ${filterMKS}
         <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
       </div>
     </div>
+    ${summaryCards}
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
-        ${thead([['No. SPK'],['Kontrak'],['Deskripsi'],['Nilai SPK','right'],['Tgl Mulai','center'],['Tgl Selesai','center'],['Status','center'],['Catatan']])}
+        ${thead([['No. SPK'],['Kontrak'],['Deskripsi'],['Nilai SPK','right'],['Realisasi','right'],['Dokumen'],['Tgl Selesai','center'],['Status','center'],['Remarks']])}
         <tbody class="divide-y divide-gray-100">
-          ${data.length===0?emptyRow('📋','Belum ada CoO SPK Static.',8):data.map(s=>{
+          ${data.length===0?emptyRow('📋','Belum ada CoO SPK Static.',9):data.map(s=>{
             const k=S.mkS.find(x=>x.id===s.idKontrak);
+            const pct = rpN(s.nilaiSPK)>0 ? (rpN(s.nilaiRealisasi)/rpN(s.nilaiSPK)*100).toFixed(0) : 0;
+            const realCls = pct>=100?'text-green-600':pct>0?'text-teal-600':'text-gray-400';
             return `<tr class="hover:bg-gray-50">
-              <td class="px-4 py-3 font-semibold text-teal-700 whitespace-nowrap">${esc(s.nomorSPK||'-')}</td>
-              <td class="px-4 py-3 text-xs text-teal-600 whitespace-nowrap">${k?esc(k.nomorSPB||k.customID):'-'}</td>
-              <td class="px-4 py-3 text-gray-600 max-w-sm"><div class="clamp2" title="${esc(s.deskripsi)}">${esc(s.deskripsi||'-')}</div></td>
-              <td class="px-4 py-3 text-right font-mono whitespace-nowrap">${rp(s.nilaiSPK)}</td>
-              <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(s.tglMulai)}</td>
-              <td class="px-4 py-3 text-center text-gray-500 whitespace-nowrap">${df(s.tglSelesai)}</td>
-              <td class="px-4 py-3 text-center">${badge(s.status)}</td>
-              <td class="px-4 py-3 text-gray-500 text-xs max-w-xs"><div class="clamp2">${esc(s.catatan||'-')}</div></td>
+              <td class="px-3 py-2.5 font-semibold text-teal-700 whitespace-nowrap text-xs">${esc(s.nomorSPK||'-')}</td>
+              <td class="px-3 py-2.5 text-xs text-teal-600 whitespace-nowrap">${k?esc(k.nomorSPB||k.customID):'-'}</td>
+              <td class="px-3 py-2.5 text-gray-600 max-w-xs"><div class="clamp2 text-xs" title="${esc(s.deskripsi)}">${esc(s.deskripsi||'-')}</div></td>
+              <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(s.nilaiSPK)}</td>
+              <td class="px-3 py-2.5 text-right text-xs whitespace-nowrap">
+                <span class="font-mono font-semibold ${realCls}">${s.nilaiRealisasi?rp(s.nilaiRealisasi):'-'}</span>
+                ${s.nilaiRealisasi?`<div class="text-[10px] text-gray-400">${pct}%</div>`:''}
+              </td>
+              <td class="px-3 py-2.5">
+                <div class="flex flex-col gap-0.5">
+                  ${docBadge(s.nomorPR,'PR','bg-blue-50 text-blue-700')}
+                  ${docBadge(s.nomorPO,'PO','bg-purple-50 text-purple-700')}
+                  ${docBadge(s.nomorSA,'SA','bg-orange-50 text-orange-700')}
+                </div>
+              </td>
+              <td class="px-3 py-2.5 text-center text-gray-500 whitespace-nowrap text-xs">${df(s.tglSelesai)}</td>
+              <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
+              <td class="px-3 py-2.5 text-gray-500 text-[10px] max-w-xs whitespace-nowrap">${esc(s.remarksInvoice||'-')}</td>
             </tr>`;}).join('')}
         </tbody>
         <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
-          <tr><td colspan="3" class="px-4 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
-          <td class="px-4 py-3 text-right font-mono">${rp(total)}</td><td colspan="4"></td></tr>
+          <tr>
+            <td colspan="3" class="px-3 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
+            <td class="px-3 py-3 text-right font-mono">${rp(totalSPK)}</td>
+            <td class="px-3 py-3 text-right font-mono text-teal-700">${rp(totalReal)} <span class="text-gray-400 font-normal">(${pctReal}%)</span></td>
+            <td colspan="4"></td>
+          </tr>
         </tfoot>
       </table>
     </div></div>
