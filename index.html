@@ -2309,23 +2309,24 @@ const rPR = () => {
     data = allPR.filter(x=>spkIds.has(x.idCoO));
   }
   const total = data.reduce((a,x)=>a+rpN(x.estimasiNilai),0);
-  const spkWithPR = new Set(S.pr.map(x=>x.idCoO));
+  const spkWithPR     = new Set(S.pr.map(x=>x.idCoO));         // all-time (untuk tab "Belum Ada PR")
+  const spkWithPRYear = new Set(allPR.map(x=>x.idCoO));        // filtered (untuk per-kontrak tab)
   let spkNoPR = S.spk.filter(x=>!spkWithPR.has(x.id)&&x.status!=='Closed');
   if(S.fkontrak) spkNoPR = spkNoPR.filter(x=>x.idKontrak===S.fkontrak);
 
   const tabBtn=(t,label)=>{const a=S.prTab===t;return `<button onclick="S.prTab='${t}';render()" class="px-4 py-2 text-sm font-medium border-b-2 transition ${a?'border-purple-600 text-purple-700 bg-white font-semibold':'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${label}</button>`;};
 
-  // ── Per Kontrak view ──
+  // ── Per Kontrak view (pakai allPR/allSA agar ikut filter tahun) ──
+  const allSAForPR = byDate(S.sa,'tglSA');
+  const spkWithSAYear = new Set(allSAForPR.map(x=>x.idCoO));
   const perKRows = S.mk.map(k=>{
     const spks    = S.spk.filter(x=>x.idKontrak===k.id);
     const spkNilai= spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
-    const prList  = S.pr.filter(x=>spks.find(s=>s.id===x.idCoO));
+    const prList  = allPR.filter(x=>spks.find(s=>s.id===x.idCoO));
     const prNilai = prList.reduce((a,x)=>a+rpN(x.estimasiNilai),0);
-    const withPR  = spks.filter(x=>spkWithPR.has(x.id)).length;
+    const withPR  = spks.filter(x=>spkWithPRYear.has(x.id)).length;
     const noPR    = spks.filter(x=>!spkWithPR.has(x.id)&&x.status!=='Closed').length;
-    // SA count per kontrak
-    const saIds   = new Set(S.sa.filter(x=>spks.find(s=>s.id===x.idCoO)).map(x=>x.idCoO));
-    const withSA  = spks.filter(x=>saIds.has(x.id)).length;
+    const withSA  = spks.filter(x=>spkWithSAYear.has(x.id)).length;
     return {k, total:spks.length, withPR, noPR, withSA, spkNilai, prNilai, prCount:prList.length};
   }).filter(x=>x.total>0);
 
@@ -2463,17 +2464,18 @@ const rSA = () => {
     data = allSA.filter(x=>spkIds.has(x.idCoO));
   }
   const total  = data.reduce((a,x)=>a+rpN(x.nilaiSA),0);
-  const spkWithSA=new Set(S.sa.map(x=>x.idCoO));
+  const spkWithSA     = new Set(S.sa.map(x=>x.idCoO));         // all-time (untuk tab "Belum Ditagih")
+  const spkWithSAYear = new Set(allSA.map(x=>x.idCoO));        // filtered (untuk per-kontrak tab)
   let spkNoSA=S.spk.filter(x=>!spkWithSA.has(x.id)&&x.status!=='Closed');
   if(S.fkontrak) spkNoSA=spkNoSA.filter(x=>x.idKontrak===S.fkontrak);
 
   const tabBtn=(t,label)=>{const a=S.saTab===t;return `<button onclick="S.saTab='${t}';render()" class="px-4 py-2 text-sm font-medium border-b-2 transition ${a?'border-emerald-600 text-emerald-700 bg-white font-semibold':'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${label}</button>`;};
 
-  // ── Tab: Per Kontrak ──
+  // ── Tab: Per Kontrak (pakai allSA agar ikut filter tahun) ──
   const perKRows = S.mk.map(k=>{
     const spks = S.spk.filter(x=>x.idKontrak===k.id);
     const spkNilai = spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
-    const saList   = S.sa.filter(x=>spks.find(s=>s.id===x.idCoO));
+    const saList   = allSA.filter(x=>spks.find(s=>s.id===x.idCoO));
     const saNilai  = saList.reduce((a,x)=>a+rpN(x.nilaiSA),0);
     const spkOpen  = spks.filter(x=>!spkWithSA.has(x.id)&&x.status!=='Closed').length;
     const pct = spkNilai>0 ? Math.min(Math.round(saNilai/spkNilai*100),100) : 0;
