@@ -1105,14 +1105,14 @@ const rDCR = () => rDCFungsi('Rotating');
 
 // ===== MASTER KONTRAK HOIST =====
 const rMK = () => {
-  const data = byDate(S.mk,'tglMulai');
+  const data = byDate(S.mk,'tglBerakhir');
   const totalNilai = data.reduce((a,x) => a+rpN(x.nilaiKontrak), 0);
   // hitung realisasi SA per kontrak
   const saPerK = {};
   S.sa.forEach(a=>{ const s=S.spk.find(x=>x.id===a.idCoO); if(s){ saPerK[s.idKontrak]=(saPerK[s.idKontrak]||0)+rpN(a.nilaiSA); } });
-  const spkPerK = {};
-  S.spk.forEach(s=>{ spkPerK[s.idKontrak]=(spkPerK[s.idKontrak]||0)+rpN(s.nilaiSPK); });
-  const totalSA = Object.values(saPerK).reduce((a,v)=>a+v,0);
+  const spkPerK = {}, cntPerK = {};
+  S.spk.forEach(s=>{ spkPerK[s.idKontrak]=(spkPerK[s.idKontrak]||0)+rpN(s.nilaiSPK); cntPerK[s.idKontrak]=(cntPerK[s.idKontrak]||0)+1; });
+  const totalSA = data.reduce((a,k)=>a+(saPerK[k.id]||0),0);
 
   return `<div class="fade-in">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -1162,8 +1162,8 @@ const rMK = () => {
         <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
           <tr><td colspan="4" class="px-3 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
           <td class="px-3 py-3 text-right font-mono whitespace-nowrap">${rp(totalNilai)}</td>
-          <td class="px-3 py-3 text-center">${S.spk.length}</td>
-          <td class="px-3 py-3 text-right font-mono whitespace-nowrap">${rp(Object.values(spkPerK).reduce((a,v)=>a+v,0))}</td>
+          <td class="px-3 py-3 text-center">${data.reduce((a,k)=>a+(cntPerK[k.id]||0),0)}</td>
+          <td class="px-3 py-3 text-right font-mono whitespace-nowrap">${rp(data.reduce((a,k)=>a+(spkPerK[k.id]||0),0))}</td>
           <td class="px-3 py-3 text-right font-mono text-emerald-700 whitespace-nowrap">${rp(totalSA)}</td>
           <td colspan="4"></td></tr>
         </tfoot>
@@ -1187,10 +1187,10 @@ const rSPK = () => {
   },0);
   const pctReal   = totalSPK>0 ? (totalSA/totalSPK*100).toFixed(1) : 0;
 
-  // Summary cards per kontrak
+  // Summary cards per kontrak — ikut filter tahun/bulan tapi bukan filter kontrak
   const mkMap = {};
   S.mk.forEach(k=>{ mkMap[k.id]={...k,countSPK:0,totalSPK:0,totalSA:0}; });
-  S.spk.forEach(s=>{
+  byDate(S.spk,'tglTerbit').forEach(s=>{
     if(!mkMap[s.idKontrak]) return;
     const sa=saMap[s.id]||[];
     mkMap[s.idKontrak].countSPK++;
@@ -2113,9 +2113,10 @@ const rMKR = () => {
   </div>`;
 
   // Build per-kontrak stats
+  const dataMKR = byDate(S.mkR,'tglBerakhir');
   const saBySpkR = {};
   S.sa.forEach(a=>{ saBySpkR[a.idCoO]=(saBySpkR[a.idCoO]||0)+rpN(a.nilaiSA); });
-  const perKR = S.mkR.map(k=>{
+  const perKR = dataMKR.map(k=>{
     const spks = S.spkR.filter(x=>x.idKontrak===k.id);
     const nilaiSPK = spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
     const real     = spks.reduce((a,x)=>a+(saBySpkR[x.id]||0),0);
@@ -2128,7 +2129,7 @@ const rMKR = () => {
 
   return `<div class="fade-in">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-      <h1 class="text-lg font-bold text-gray-800">Master Kontrak <span class="text-xs font-normal bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full ml-1">Rotating</span> <span class="text-sm font-normal text-gray-400">(${S.mkR.length})</span></h1>
+      <h1 class="text-lg font-bold text-gray-800">Master Kontrak <span class="text-xs font-normal bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full ml-1">Rotating</span> <span class="text-sm font-normal text-gray-400">(${dataMKR.length})</span></h1>
       <div class="flex gap-2 flex-wrap no-print items-center">
         ${fBar()}
         <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
@@ -2169,9 +2170,9 @@ const rMKR = () => {
               </tr>`;}).join('')}
           </tbody>
           <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
-            <tr><td colspan="4" class="px-3 py-3 text-right text-gray-500">TOTAL (${S.mkR.length})</td>
-            <td class="px-3 py-3 text-right font-mono">${rp(S.mkR.reduce((a,x)=>a+rpN(x.nilaiKontrak),0))}</td>
-            <td class="px-3 py-3 text-center">${S.spkR.length}</td>
+            <tr><td colspan="4" class="px-3 py-3 text-right text-gray-500">TOTAL (${dataMKR.length})</td>
+            <td class="px-3 py-3 text-right font-mono">${rp(dataMKR.reduce((a,x)=>a+rpN(x.nilaiKontrak),0))}</td>
+            <td class="px-3 py-3 text-center">${perKR.reduce((a,x)=>a+x.spkCount,0)}</td>
             <td class="px-3 py-3 text-right font-mono">${rp(totNilaiSPK)}</td>
             <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(totReal)}</td>
             <td colspan="4"></td></tr>
@@ -2183,7 +2184,7 @@ const rMKR = () => {
 };
 
 const rSPKR = () => {
-  let data = S.spkR;
+  let data = byDate(S.spkR,'tglTerbit');
   if(S.fkontrak) data = data.filter(x=>x.idKontrak===S.fkontrak);
   if(!S.spkR.length) return `<div class="fade-in">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -2232,7 +2233,7 @@ const rSPKR = () => {
     <!-- Summary per kontrak -->
     <div class="flex flex-wrap gap-3 mb-4">
       ${S.mkR.map(k=>{
-        const spks=S.spkR.filter(x=>x.idKontrak===k.id);
+        const spks=byDate(S.spkR,'tglTerbit').filter(x=>x.idKontrak===k.id);
         const nilaiSPK=spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
         const real=spks.reduce((a,x)=>a+(saBySpk[x.id]||0),0);
         const pct=nilaiSPK>0?Math.min(Math.round(real/nilaiSPK*100),100):0;
