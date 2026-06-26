@@ -1297,7 +1297,7 @@ const rSPK = () => {
 
 // ===== MASTER KONTRAK STATIC =====
 const rMKS = () => {
-  const data = byDate(S.mkS,'tglMulai');
+  const data = byDate(S.mkS,'tglBerakhir');
   const totalNilai = data.reduce((a,x) => a+rpN(x.nilaiKontrak), 0);
 
   // hitung SPK & realisasi per kontrak dari spkS
@@ -1309,8 +1309,8 @@ const rMKS = () => {
   const cntPerK = {};
   S.spkS.forEach(s=>{ cntPerK[s.idKontrak]=(cntPerK[s.idKontrak]||0)+1; });
 
-  const totalSpkNilai = Object.values(spkPerK).reduce((a,v)=>a+v,0);
-  const totalReal     = Object.values(realPerK).reduce((a,v)=>a+v,0);
+  const totalSpkNilai = data.reduce((a,k)=>a+(spkPerK[k.id]||0),0);
+  const totalReal     = data.reduce((a,k)=>a+(realPerK[k.id]||0),0);
 
   return `<div class="fade-in">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -1360,7 +1360,7 @@ const rMKS = () => {
           <tr>
             <td colspan="4" class="px-3 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
             <td class="px-3 py-3 text-right font-mono">${rp(totalNilai)}</td>
-            <td class="px-3 py-3 text-center">${S.spkS.length}</td>
+            <td class="px-3 py-3 text-center">${data.reduce((a,k)=>a+(cntPerK[k.id]||0),0)}</td>
             <td class="px-3 py-3 text-right font-mono">${rp(totalSpkNilai)}</td>
             <td class="px-3 py-3 text-right font-mono text-teal-700">${rp(totalReal)}</td>
             <td colspan="4"></td>
@@ -1380,10 +1380,10 @@ const rSPKS = () => {
   const pctReal   = totalSPK>0 ? (totalReal/totalSPK*100).toFixed(1) : 0;
 
 
-  // Realisasi summary cards per kontrak (if not filtered to one kontrak)
+  // Realisasi summary cards per kontrak — ikut filter tahun/bulan tapi bukan filter kontrak
   const mkMap = {};
   S.mkS.forEach(k=>{ mkMap[k.id]={...k,totalSPK:0,totalReal:0,countSPK:0}; });
-  S.spkS.forEach(s=>{
+  byDate(S.spkS,'tglTerbit').forEach(s=>{
     if(mkMap[s.idKontrak]){
       mkMap[s.idKontrak].totalSPK  += rpN(s.nilaiSPK);
       mkMap[s.idKontrak].totalReal += rpN(s.nilaiRealisasi);
@@ -1494,11 +1494,11 @@ const rPLS = () => {
   let data = all;
   if(S.fkontrak) data = data.filter(x=>x.idKontrak===S.fkontrak);
 
-  const nPR   = all.filter(hasPR).length;
-  const nPO   = all.filter(hasPO).length;
-  const nSA   = all.filter(hasSA).length;
-  const nReal = all.filter(hasReal).length;
-  const nPend = all.filter(isPending).length;
+  const nPR   = data.filter(hasPR).length;
+  const nPO   = data.filter(hasPO).length;
+  const nSA   = data.filter(hasSA).length;
+  const nReal = data.filter(hasReal).length;
+  const nPend = data.filter(isPending).length;
 
   const tabBtn=(t,label)=>{const a=S.plsTab===t;return `<button onclick="S.plsTab='${t}';render()" class="px-4 py-2 text-sm font-medium border-b-2 transition ${a?'border-teal-600 text-teal-700 bg-white font-semibold':'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${label}</button>`;};
 
@@ -1549,23 +1549,23 @@ const rPLS = () => {
     <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
       <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-teal-500">
         <p class="text-[10px] text-gray-400">Total SPK</p>
-        <p class="text-xl font-bold text-teal-700">${all.length}</p>
-        <p class="text-[10px] text-gray-400">${all.filter(x=>x.status!=='Closed').length} aktif</p>
+        <p class="text-xl font-bold text-teal-700">${data.length}</p>
+        <p class="text-[10px] text-gray-400">${data.filter(x=>x.status!=='Closed').length} aktif</p>
       </div>
       <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-purple-400">
         <p class="text-[10px] text-gray-400">Sudah PR</p>
         <p class="text-xl font-bold text-purple-700">${nPR}</p>
-        <p class="text-[10px] text-gray-400">${all.length-nPR} belum</p>
+        <p class="text-[10px] text-gray-400">${data.length-nPR} belum</p>
       </div>
       <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-blue-400">
         <p class="text-[10px] text-gray-400">Sudah PO</p>
         <p class="text-xl font-bold text-blue-700">${nPO}</p>
-        <p class="text-[10px] text-gray-400">${all.length-nPO} belum</p>
+        <p class="text-[10px] text-gray-400">${data.length-nPO} belum</p>
       </div>
       <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-emerald-500">
         <p class="text-[10px] text-gray-400">Sudah SA</p>
         <p class="text-xl font-bold text-emerald-700">${nSA}</p>
-        <p class="text-[10px] text-gray-400">${all.length-nSA} belum</p>
+        <p class="text-[10px] text-gray-400">${data.length-nSA} belum</p>
       </div>
       <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 ${nPend>0?'border-amber-400':'border-emerald-400'}">
         <p class="text-[10px] text-gray-400">Pipeline Pending</p>
@@ -1578,7 +1578,7 @@ const rPLS = () => {
     <div class="flex border-b border-gray-200 mb-4 bg-gray-50">
       ${tabBtn('perkontrak','📊 Per Kontrak')}
       ${tabBtn('pending',`${nPend>0?'⚠ ':'✅ '}Pending (${nPend})`)}
-      ${tabBtn('all','📋 Semua SPK ('+all.length+')')}
+      ${tabBtn('all','📋 Semua SPK ('+data.length+')')}
     </div>
 
     ${S.plsTab==='perkontrak'?`
@@ -1719,10 +1719,10 @@ const rPLH = () => {
   let data = all;
   if(S.fkontrak) data = data.filter(x=>x.idKontrak===S.fkontrak);
 
-  const nPR = all.filter(hasPR).length;
-  const nPO = all.filter(hasPO).length;
-  const nSA = all.filter(hasSA).length;
-  const nPend = all.filter(isPending).length;
+  const nPR = data.filter(hasPR).length;
+  const nPO = data.filter(hasPO).length;
+  const nSA = data.filter(hasSA).length;
+  const nPend = data.filter(isPending).length;
   const totReal = S.sa.reduce((a,x)=>a+rpN(x.nilaiSA),0);
 
   const tabBtn=(t,lbl)=>{const a=S.plhTab===t;return `<button onclick="S.plhTab='${t}';render()" class="px-4 py-2 text-sm font-medium border-b-2 transition ${a?'border-blue-600 text-blue-700 bg-white font-semibold':'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${lbl}</button>`;};
@@ -1762,23 +1762,23 @@ const rPLH = () => {
     <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
       <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-blue-500">
         <p class="text-[10px] text-gray-400">Total SPK</p>
-        <p class="text-xl font-bold text-blue-700">${all.length}</p>
-        <p class="text-[10px] text-gray-400">${all.filter(x=>x.status!=='Closed').length} aktif</p>
+        <p class="text-xl font-bold text-blue-700">${data.length}</p>
+        <p class="text-[10px] text-gray-400">${data.filter(x=>x.status!=='Closed').length} aktif</p>
       </div>
       <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-purple-400">
         <p class="text-[10px] text-gray-400">Sudah PR</p>
         <p class="text-xl font-bold text-purple-700">${nPR}</p>
-        <p class="text-[10px] text-gray-400">${all.length-nPR} belum</p>
+        <p class="text-[10px] text-gray-400">${data.length-nPR} belum</p>
       </div>
       <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-blue-400">
         <p class="text-[10px] text-gray-400">Sudah PO</p>
         <p class="text-xl font-bold text-blue-700">${nPO}</p>
-        <p class="text-[10px] text-gray-400">${all.length-nPO} belum</p>
+        <p class="text-[10px] text-gray-400">${data.length-nPO} belum</p>
       </div>
       <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-emerald-500">
         <p class="text-[10px] text-gray-400">Sudah SA</p>
         <p class="text-xl font-bold text-emerald-700">${nSA}</p>
-        <p class="text-[10px] text-gray-400">${all.length-nSA} belum</p>
+        <p class="text-[10px] text-gray-400">${data.length-nSA} belum</p>
       </div>
       <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 ${nPend>0?'border-amber-400':'border-emerald-400'}">
         <p class="text-[10px] text-gray-400">Pipeline Pending</p>
@@ -1789,7 +1789,7 @@ const rPLH = () => {
     <div class="flex border-b border-gray-200 mb-4 bg-gray-50">
       ${tabBtn('perkontrak','📊 Per Kontrak')}
       ${tabBtn('pending',`${nPend>0?'⚠ ':'✅ '}Pending (${nPend})`)}
-      ${tabBtn('all','📋 Semua SPK ('+all.length+')')}
+      ${tabBtn('all','📋 Semua SPK ('+data.length+')')}
     </div>
 
     ${S.plhTab==='perkontrak'?`
@@ -1921,10 +1921,10 @@ const rPLR = () => {
   let data = all;
   if(S.fkontrak) data = data.filter(x=>x.idKontrak===S.fkontrak);
 
-  const nPR = all.filter(hasPR).length;
-  const nPO = all.filter(hasPO).length;
-  const nSA = all.filter(hasSA).length;
-  const nPend = all.filter(isPending).length;
+  const nPR = data.filter(hasPR).length;
+  const nPO = data.filter(hasPO).length;
+  const nSA = data.filter(hasSA).length;
+  const nPend = data.filter(isPending).length;
   const totReal = Object.values(saBySpk).flat().reduce((a,x)=>a+rpN(x.nilaiSA),0);
 
   const tabBtn=(t,lbl)=>{const a=S.plrTab===t;return `<button onclick="S.plrTab='${t}';render()" class="px-4 py-2 text-sm font-medium border-b-2 transition ${a?'border-emerald-600 text-emerald-700 bg-white font-semibold':'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${lbl}</button>`;};
@@ -1970,23 +1970,23 @@ const rPLR = () => {
     <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
       <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-emerald-500">
         <p class="text-[10px] text-gray-400">Total SPK</p>
-        <p class="text-xl font-bold text-emerald-700">${all.length}</p>
-        <p class="text-[10px] text-gray-400">${all.filter(x=>x.status!=='Closed').length} aktif</p>
+        <p class="text-xl font-bold text-emerald-700">${data.length}</p>
+        <p class="text-[10px] text-gray-400">${data.filter(x=>x.status!=='Closed').length} aktif</p>
       </div>
       <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-purple-400">
         <p class="text-[10px] text-gray-400">Sudah PR</p>
         <p class="text-xl font-bold text-purple-700">${nPR}</p>
-        <p class="text-[10px] text-gray-400">${all.length-nPR} belum</p>
+        <p class="text-[10px] text-gray-400">${data.length-nPR} belum</p>
       </div>
       <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-blue-400">
         <p class="text-[10px] text-gray-400">Sudah PO</p>
         <p class="text-xl font-bold text-blue-700">${nPO}</p>
-        <p class="text-[10px] text-gray-400">${all.length-nPO} belum</p>
+        <p class="text-[10px] text-gray-400">${data.length-nPO} belum</p>
       </div>
       <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-teal-400">
         <p class="text-[10px] text-gray-400">Sudah SA</p>
         <p class="text-xl font-bold text-teal-700">${nSA}</p>
-        <p class="text-[10px] text-gray-400">${all.length-nSA} belum</p>
+        <p class="text-[10px] text-gray-400">${data.length-nSA} belum</p>
       </div>
       <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 ${nPend>0?'border-amber-400':'border-emerald-400'}">
         <p class="text-[10px] text-gray-400">Pipeline Pending</p>
@@ -1997,7 +1997,7 @@ const rPLR = () => {
     <div class="flex border-b border-gray-200 mb-4 bg-gray-50">
       ${tabBtn('perkontrak','📊 Per Kontrak')}
       ${tabBtn('pending',`${nPend>0?'⚠ ':'✅ '}Belum SA (${nPend})`)}
-      ${tabBtn('all','📋 Semua SPK ('+all.length+')')}
+      ${tabBtn('all','📋 Semua SPK ('+data.length+')')}
     </div>
 
     ${S.plrTab==='perkontrak'?`
