@@ -407,8 +407,13 @@ const go = page => {
 
 // ===== RENDER =====
 const render = () => {
-  const pages={dashboard:rDash,sspk:rSSPK,dc:rDC,dcs:rDCS,dcr:rDCR,mk:rMK,spk:rSPK,pr:rPR,sa:rSA,tvm:rTVM,users:rUsers,mks:rMKS,spks:rSPKS,mkr:rMKR,spkr:rSPKR,pls:rPLS,plh:rPLH,plr:rPLR};
-  document.getElementById('app').innerHTML=(pages[S.page]||rDash)();
+  try {
+    const pages={dashboard:rDash,sspk:rSSPK,dc:rDC,dcs:rDCS,dcr:rDCR,mk:rMK,spk:rSPK,pr:rPR,sa:rSA,tvm:rTVM,users:rUsers,mks:rMKS,spks:rSPKS,mkr:rMKR,spkr:rSPKR,pls:rPLS,plh:rPLH,plr:rPLR};
+    document.getElementById('app').innerHTML=(pages[S.page]||rDash)();
+  } catch(err) {
+    console.error('[render error]', S.page, err);
+    document.getElementById('app').innerHTML=`<div class="p-8 text-center"><div class="text-red-600 font-semibold mb-2">Error render halaman: ${S.page}</div><pre class="text-xs text-left bg-red-50 border border-red-200 rounded p-3 max-w-xl mx-auto overflow-auto">${err.stack||err.message}</pre><button onclick="S.page='dashboard';render()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded">Kembali ke Dashboard</button></div>`;
+  }
 };
 const emptyRow = (icon,msg,n) => `<tr><td colspan="${n}" class="py-14 text-center text-gray-400"><div class="text-3xl mb-2">${icon}</div>${msg}</td></tr>`;
 const shortU = e => e ? e.split('@')[0] : '';
