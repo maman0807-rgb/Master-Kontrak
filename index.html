@@ -524,7 +524,18 @@ const rDash = () => {
   const perKH = mkH.map(k=>{ const spks=spkH.filter(x=>x.idKontrak===k.id); return {...k,spkCount:spks.length,nilaiSpk:spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0),real:saIds(k.id)}; });
   const perKS = mkS.map(k=>{ const spks=spkSt.filter(x=>x.idKontrak===k.id); return {...k,spkCount:spks.length,nilaiSpk:spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0),real:spks.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0)}; });
   const perKR = mkR.map(k=>{ const spks=spkR.filter(x=>x.idKontrak===k.id); return {...k,spkCount:spks.length,nilaiSpk:spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0),real:spks.reduce((a,x)=>a+(saRBySpk[x.id]||0),0)}; });
+  // Merge kontrak yang dipakai bersama Hoist+Rotating — gabungkan SPK dan realisasi, tampil 1 baris
+  const sharedIds = new Set(perKH.map(x=>x.id).filter(id=>perKR.some(r=>r.id===id)));
+  const perKHFinal = perKH.map(row=>{
+    if(!sharedIds.has(row.id)) return {...row,isShared:false};
+    const rRow = perKR.find(r=>r.id===row.id);
+    return {...row, nilaiSpk:row.nilaiSpk+(rRow?rRow.nilaiSpk:0), real:row.real+(rRow?rRow.real:0), spkCount:row.spkCount+(rRow?rRow.spkCount:0), isShared:true};
+  });
+  const perKSFinal = perKS.map(r=>({...r,isShared:false}));
+  const perKRFinal = perKR.filter(r=>!sharedIds.has(r.id)).map(r=>({...r,isShared:false}));
   const perKRow=(k,colorCls,fungiLabel,fungiColor,goPage)=>{
+    const label    = k.isShared ? 'HOIST+ROT' : fungiLabel;
+    const badgeCls = k.isShared ? 'bg-indigo-100 text-indigo-700' : fungiColor;
     const nilaiK = rpN(k.nilaiKontrak);
     const sisaK  = nilaiK - k.nilaiSpk;
     const pctSpk = nilaiK>0 ? Math.min(Math.round(k.nilaiSpk/nilaiK*100),100) : 0;
@@ -534,7 +545,7 @@ const rDash = () => {
     const barSPK = pctSpk>=100?'bg-blue-600':pctSpk>=70?'bg-blue-400':'bg-blue-300';
     const barSA  = pct>=100?'bg-emerald-500':pct>=50?'bg-emerald-400':'bg-amber-400';
     return `<tr class="${rowCls} hover:bg-gray-50 cursor-pointer" onclick="go('${goPage}')">
-      <td class="px-3 py-2.5"><span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${fungiColor}">${fungiLabel}</span></td>
+      <td class="px-3 py-2.5"><span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${badgeCls}">${label}</span></td>
       <td class="px-3 py-2.5 font-semibold ${colorCls} whitespace-nowrap text-xs">${esc(k.nomorSPB||k.customID)}</td>
       <td class="px-3 py-2.5 max-w-[140px]"><div class="clamp2 text-xs text-gray-600">${esc(k.vendor)}</div></td>
       <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(nilaiK)}</td>
@@ -703,9 +714,9 @@ const rDash = () => {
         <table class="w-full text-sm">
           ${perKThead}
           <tbody class="divide-y divide-gray-100">
-            ${[...perKH.map(k=>perKRow(k,'text-blue-700','HOIST','bg-blue-100 text-blue-700','mk')),
-               ...perKS.map(k=>perKRow(k,'text-teal-700','STATIC','bg-teal-100 text-teal-700','mks')),
-               ...perKR.map(k=>perKRow(k,'text-emerald-700','ROTATING','bg-emerald-100 text-emerald-700','spkr'))].join('')||emptyRow('📑','Belum ada data.',8)}
+            ${[...perKHFinal.map(k=>perKRow(k,'text-blue-700','HOIST','bg-blue-100 text-blue-700','mk')),
+               ...perKSFinal.map(k=>perKRow(k,'text-teal-700','STATIC','bg-teal-100 text-teal-700','mks')),
+               ...perKRFinal.map(k=>perKRow(k,'text-emerald-700','ROTATING','bg-emerald-100 text-emerald-700','spkr'))].join('')||emptyRow('📑','Belum ada data.',9)}
           </tbody>
           <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
             <tr>
