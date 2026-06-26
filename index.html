@@ -415,13 +415,20 @@ const rDash = () => {
   const saF     = byDate(S.sa,'tglSA');
   const saBySpk = {};
   saF.forEach(x=>{ saBySpk[x.idCoO]=(saBySpk[x.idCoO]||0)+rpN(x.nilaiSA); });
-  const saIds = id => S.spk.filter(x=>x.idKontrak===id).reduce((a,x)=>a+(saBySpk[x.id]||0),0);
+
+  // Filter kontrak aktif tahun berjalan: tglBerakhir >= 1 Jan tahun ini
+  const curYear = new Date().getFullYear();
+  const minDate = `${curYear}-01-01`;
+  const isActiveYear = k => !k.tglBerakhir || k.tglBerakhir >= minDate;
 
   // ─ Hoist stats ─
-  const mkH  = S.mk, spkH = S.spk;
+  const mkH  = S.mk.filter(isActiveYear);
+  const activeHIds = new Set(mkH.map(k=>k.id));
+  const spkH = S.spk.filter(x=>activeHIds.has(x.idKontrak));
+  const saIds = id => spkH.filter(x=>x.idKontrak===id).reduce((a,x)=>a+(saBySpk[x.id]||0),0);
   const mkHNilai   = mkH.reduce((a,x)=>a+rpN(x.nilaiKontrak),0);
   const spkHNilai  = spkH.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
-  const saHNilai   = saF.reduce((a,x)=>a+rpN(x.nilaiSA),0);
+  const saHNilai   = spkH.reduce((a,x)=>a+(saBySpk[x.id]||0),0);
   const pctH       = spkHNilai>0 ? Math.round(saHNilai/spkHNilai*100) : 0;
   const spkWithSA  = new Set(saF.map(x=>x.idCoO));
   const spkNoSAH   = spkH.filter(x=>!spkWithSA.has(x.id)&&x.status!=='Closed').length;
@@ -430,7 +437,9 @@ const rDash = () => {
   const warnH = mkH.filter(k=>{ const n=daysLeft(k.tglBerakhir); return n!==null&&n<=90&&k.status==='Aktif'; }).sort((a,b)=>daysLeft(a.tglBerakhir)-daysLeft(b.tglBerakhir));
 
   // ─ Static stats ─
-  const mkS = S.mkS, spkSt = S.spkS;
+  const mkS  = S.mkS.filter(isActiveYear);
+  const activeSIds = new Set(mkS.map(k=>k.id));
+  const spkSt = S.spkS.filter(x=>activeSIds.has(x.idKontrak));
   const mkSNilai   = mkS.reduce((a,x)=>a+rpN(x.nilaiKontrak),0);
   const spkSNilai  = spkSt.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
   const realSNilai = spkSt.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0);
@@ -439,10 +448,12 @@ const rDash = () => {
   const warnS = mkS.filter(k=>{ const n=daysLeft(k.tglBerakhir); return n!==null&&n<=90&&k.status==='Aktif'; }).sort((a,b)=>daysLeft(a.tglBerakhir)-daysLeft(b.tglBerakhir));
 
   // ─ Rotating stats ─
-  const mkR = S.mkR||[], spkR = S.spkR||[];
+  const mkR  = (S.mkR||[]).filter(isActiveYear);
+  const activeRIds = new Set(mkR.map(k=>k.id));
+  const spkR = (S.spkR||[]).filter(x=>activeRIds.has(x.idKontrak));
   const spkRNilai = spkR.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
   const saRBySpk  = {};
-  saF.forEach(a=>{ saRBySpk[a.idCoO]=(saRBySpk[a.idCoO]||0)+rpN(a.nilaiSA); });
+  saF.forEach(a=>{ if(activeRIds.has(spkR.find(x=>x.id===a.idCoO)?.idKontrak)) saRBySpk[a.idCoO]=(saRBySpk[a.idCoO]||0)+rpN(a.nilaiSA); });
   const saRNilai  = spkR.reduce((a,x)=>a+(saRBySpk[x.id]||0),0);
   const pctR      = spkRNilai>0?Math.round(saRNilai/spkRNilai*100):0;
 
@@ -519,7 +530,7 @@ const rDash = () => {
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
       <div>
         <h1 class="text-lg font-bold text-gray-800">Monitoring Kontrak</h1>
-        <p class="text-xs text-gray-400">Mechanical — Prabumulih Field &middot; ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</p>
+        <p class="text-xs text-gray-400">Mechanical — Prabumulih Field &middot; ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})} &middot; <span class="text-blue-500 font-medium">Kontrak Aktif ${curYear}</span></p>
       </div>
       <div class="flex gap-2 flex-wrap items-center no-print">
         <button onclick="exportAll()" class="px-3 py-1.5 bg-blue-700 text-white rounded-lg text-sm hover:bg-blue-800">⬇ Export</button>
