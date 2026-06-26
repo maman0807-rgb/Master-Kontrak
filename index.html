@@ -491,10 +491,12 @@ const rDash = () => {
   const sReal  = sF.reduce((a,x)=>a+rpN(x.realisasi),0);
 
   // ─ Grand totals ─
-  const totNilaiKontrak = mkHNilai + mkSNilai;
+  const mkROwnNilai     = mkR.filter(k=>k.jenis==='Rotating').reduce((a,x)=>a+rpN(x.nilaiKontrak),0);
+  const totNilaiKontrak = mkHNilai + mkSNilai + mkROwnNilai;
   const totNilaiSPK     = spkHNilai + spkSNilai + spkRNilai;
   const totRealisasi    = saHNilai + realSNilai + saRNilai;
-  const totSisa         = totNilaiSPK - totRealisasi;
+  const totSisaKontrak  = totNilaiKontrak - totNilaiSPK;   // sisa plafon belum di-SPK
+  const totSisaSA       = totNilaiSPK - totRealisasi;       // SPK belum terbayar
   const totPct          = totNilaiSPK>0 ? Math.round(totRealisasi/totNilaiSPK*100) : 0;
   const totBar          = totPct>=80?'bg-emerald-500':totPct>=50?'bg-blue-500':'bg-amber-400';
 
@@ -523,25 +525,38 @@ const rDash = () => {
   const perKS = mkS.map(k=>{ const spks=spkSt.filter(x=>x.idKontrak===k.id); return {...k,spkCount:spks.length,nilaiSpk:spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0),real:spks.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0)}; });
   const perKR = mkR.map(k=>{ const spks=spkR.filter(x=>x.idKontrak===k.id); return {...k,spkCount:spks.length,nilaiSpk:spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0),real:spks.reduce((a,x)=>a+(saRBySpk[x.id]||0),0)}; });
   const perKRow=(k,colorCls,fungiLabel,fungiColor,goPage)=>{
-    const pct=k.nilaiSpk>0?Math.min(Math.round(k.real/k.nilaiSpk*100),100):0;
+    const nilaiK = rpN(k.nilaiKontrak);
+    const sisaK  = nilaiK - k.nilaiSpk;
+    const pctSpk = nilaiK>0 ? Math.min(Math.round(k.nilaiSpk/nilaiK*100),100) : 0;
+    const pct    = k.nilaiSpk>0 ? Math.min(Math.round(k.real/k.nilaiSpk*100),100) : 0;
     const n=daysLeft(k.tglBerakhir);
     const rowCls=n!==null&&n<=30?'bg-red-50':n!==null&&n<=90?'bg-amber-50':'';
-    const bar=pct>=100?'bg-emerald-500':pct>=50?'bg-blue-500':'bg-amber-400';
+    const barSPK = pctSpk>=100?'bg-blue-600':pctSpk>=70?'bg-blue-400':'bg-blue-300';
+    const barSA  = pct>=100?'bg-emerald-500':pct>=50?'bg-emerald-400':'bg-amber-400';
     return `<tr class="${rowCls} hover:bg-gray-50 cursor-pointer" onclick="go('${goPage}')">
       <td class="px-3 py-2.5"><span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${fungiColor}">${fungiLabel}</span></td>
       <td class="px-3 py-2.5 font-semibold ${colorCls} whitespace-nowrap text-xs">${esc(k.nomorSPB||k.customID)}</td>
-      <td class="px-3 py-2.5 max-w-[160px]"><div class="clamp2 text-xs text-gray-600">${esc(k.vendor)}</div></td>
+      <td class="px-3 py-2.5 max-w-[140px]"><div class="clamp2 text-xs text-gray-600">${esc(k.vendor)}</div></td>
+      <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(nilaiK)}</td>
       <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(k.nilaiSpk)}</td>
+      <td class="px-3 py-2.5 text-right font-mono text-xs font-semibold whitespace-nowrap ${sisaK<0?'text-red-600':'text-blue-600'}">${rp(sisaK)}</td>
       <td class="px-3 py-2.5 text-right font-mono text-xs font-semibold text-emerald-700 whitespace-nowrap">${rp(k.real)}</td>
-      <td class="px-3 py-2.5 text-right font-mono text-xs text-orange-600 whitespace-nowrap">${rp(k.nilaiSpk-k.real)}</td>
-      <td class="px-3 py-2.5 w-28"><div class="flex items-center gap-1">
-        <div class="flex-1 bg-gray-200 rounded-full h-1.5"><div class="${bar} h-1.5 rounded-full" style="width:${pct}%"></div></div>
-        <span class="text-[10px] text-gray-500 w-7 text-right">${pct}%</span>
-      </div></td>
+      <td class="px-3 py-2.5 w-32">
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-1">
+            <div class="flex-1 bg-gray-200 rounded-full h-1"><div class="${barSPK} h-1 rounded-full" style="width:${pctSpk}%"></div></div>
+            <span class="text-[9px] text-gray-400 w-7 text-right">${pctSpk}%</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <div class="flex-1 bg-gray-200 rounded-full h-1"><div class="${barSA} h-1 rounded-full" style="width:${pct}%"></div></div>
+            <span class="text-[9px] text-gray-500 w-7 text-right">${pct}%</span>
+          </div>
+        </div>
+      </td>
       <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(k.tglBerakhir,k.status)}</td>
     </tr>`;
   };
-  const perKThead = thead([[''],['No. Kontrak'],['Vendor'],['Nilai SPK','right'],['Realisasi','right'],['Sisa','right'],['Progress','center'],['Sisa Hari','center']]);
+  const perKThead = thead([[''],['No. Kontrak'],['Vendor'],['Nilai Kontrak','right'],['Nilai SPK','right'],['Sisa Kontrak','right'],['Realisasi SA','right'],['Progress (SPK·SA)','center'],['Sisa Hari','center']]);
 
   return `<div class="fade-in">
     <!-- HEADER -->
@@ -578,9 +593,9 @@ const rDash = () => {
           <p class="text-[10px] text-blue-300">dari total SPK</p>
         </div>
         <div>
-          <p class="text-[10px] text-blue-200">Sisa Belum Bayar</p>
-          <p class="text-base font-bold font-mono text-amber-300">${rp(totSisa)}</p>
-          <p class="text-[10px] text-blue-300">${totPct}% terealisasi</p>
+          <p class="text-[10px] text-blue-200">Sisa Anggaran Kontrak</p>
+          <p class="text-base font-bold font-mono text-amber-300">${rp(totSisaKontrak)}</p>
+          <p class="text-[10px] text-blue-300">belum di-SPK · SA outstanding ${rp(totSisaSA)}</p>
         </div>
       </div>
       <div class="mt-3 flex items-center gap-2">
@@ -695,9 +710,10 @@ const rDash = () => {
           <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
             <tr>
               <td colspan="3" class="px-3 py-3 text-right text-gray-500">TOTAL</td>
+              <td class="px-3 py-3 text-right font-mono">${rp(totNilaiKontrak)}</td>
               <td class="px-3 py-3 text-right font-mono">${rp(totNilaiSPK)}</td>
+              <td class="px-3 py-3 text-right font-mono text-blue-600">${rp(totSisaKontrak)}</td>
               <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(totRealisasi)}</td>
-              <td class="px-3 py-3 text-right font-mono text-orange-600">${rp(totSisa)}</td>
               <td colspan="2"></td>
             </tr>
           </tfoot>
