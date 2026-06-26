@@ -391,9 +391,11 @@ const sbClose = () => {
 };
 
 const go = page => {
-  const hoistPg=new Set(['spk','pr','sa','plh']),staticPg=new Set(['spks','pls']),rotPg=new Set(['spkr','plr']);
+  const hoistPg=new Set(['mk','spk','pr','sa','plh']),staticPg=new Set(['mks','spks','pls']),rotPg=new Set(['mkr','spkr','plr']);
   const grp=p=>hoistPg.has(p)?'h':staticPg.has(p)?'s':rotPg.has(p)?'r':'';
-  if(grp(page)!==grp(S.page)||!grp(page)) S.fkontrak='';
+  const fromGrp=grp(S.page), toGrp=grp(page);
+  if(toGrp!==fromGrp||!toGrp) S.fkontrak='';
+  if(toGrp && toGrp!==fromGrp){ S.fy=''; S.fm=''; }
   S.page=page;
   document.querySelectorAll('.nav-item').forEach(el=>{
     el.classList.remove('bg-blue-800','text-white','font-semibold');
