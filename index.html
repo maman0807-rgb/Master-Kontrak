@@ -1635,7 +1635,7 @@ const rPLS = () => {
           <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
             <tr>
               <td colspan="6" class="px-3 py-3 text-right text-gray-500">TOTAL</td>
-              <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(S.spkS.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0))}</td>
+              <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(perKRows.reduce((a,x)=>a+x.nilaiReal,0))}</td>
             </tr>
           </tfoot>
         </table>
@@ -1743,7 +1743,6 @@ const rPLH = () => {
   const nPO = data.filter(hasPO).length;
   const nSA = data.filter(hasSA).length;
   const nPend = data.filter(isPending).length;
-  const totReal = S.sa.reduce((a,x)=>a+rpN(x.nilaiSA),0);
 
   const tabBtn=(t,lbl)=>{const a=S.plhTab===t;return `<button onclick="S.plhTab='${t}';render()" class="px-4 py-2 text-sm font-medium border-b-2 transition ${a?'border-blue-600 text-blue-700 bg-white font-semibold':'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${lbl}</button>`;};
 
@@ -1838,7 +1837,7 @@ const rPLH = () => {
         </tbody>
         <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
           <tr><td colspan="6" class="px-3 py-3 text-right text-gray-500">TOTAL</td>
-          <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(totReal)}</td></tr>
+          <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(perKRows.reduce((a,x)=>a+x.nilaiReal,0))}</td></tr>
         </tfoot>
       </table>
     </div></div>
@@ -1916,7 +1915,7 @@ const rPLH = () => {
           <tr><td colspan="3" class="px-3 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
           <td class="px-3 py-3 text-right font-mono">${rp(data.reduce((a,x)=>a+rpN(x.nilaiSPK),0))}</td>
           <td></td>
-          <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(totReal)}</td>
+          <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(data.flatMap(s=>saBySpk[s.id]||[]).reduce((a,x)=>a+rpN(x.nilaiSA),0))}</td>
           <td colspan="2"></td></tr>
         </tfoot>`:''}
       </table>
@@ -1945,7 +1944,6 @@ const rPLR = () => {
   const nPO = data.filter(hasPO).length;
   const nSA = data.filter(hasSA).length;
   const nPend = data.filter(isPending).length;
-  const totReal = Object.values(saBySpk).flat().reduce((a,x)=>a+rpN(x.nilaiSA),0);
 
   const tabBtn=(t,lbl)=>{const a=S.plrTab===t;return `<button onclick="S.plrTab='${t}';render()" class="px-4 py-2 text-sm font-medium border-b-2 transition ${a?'border-emerald-600 text-emerald-700 bg-white font-semibold':'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${lbl}</button>`;};
 
@@ -1969,6 +1967,8 @@ const rPLR = () => {
     const pending = spks.filter(isPending).length;
     return {k, n:spks.length, wPR, wPO, wSA, nilaiSPK, nilaiReal, pending};
   }).filter(Boolean);
+
+  const pendR = data.filter(isPending);
 
   if(!all.length) return `<div class="fade-in">
     <h1 class="text-lg font-bold text-gray-800 mb-4">Pipeline PR · PO · SA <span class="text-xs font-normal bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full ml-1">Rotating</span></h1>
@@ -2046,7 +2046,7 @@ const rPLR = () => {
         </tbody>
         <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
           <tr><td colspan="6" class="px-3 py-3 text-right text-gray-500">TOTAL</td>
-          <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(totReal)}</td></tr>
+          <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(perKRows.reduce((a,x)=>a+x.nilaiReal,0))}</td></tr>
         </tfoot>
       </table>
     </div></div>
@@ -2057,7 +2057,7 @@ const rPLR = () => {
       <table class="w-full text-sm">
         ${thead([['No. SPK'],['Kontrak'],['Deskripsi'],['Nilai SPK','right'],['Step Berikut','center'],['Dokumen Pipeline'],['Tgl Selesai','center'],['Status','center'],['','center']])}
         <tbody class="divide-y divide-gray-100">
-          ${data.filter(isPending).length===0?emptyRow('✅','Semua SPK sudah lengkap PR·PO·SA.',9):data.filter(isPending).map(s=>{
+          ${pendR.length===0?emptyRow('✅','Semua SPK sudah lengkap PR·PO·SA.',9):pendR.map(s=>{
             const k=S.mkR.find(x=>x.id===s.idKontrak);
             const sas=saBySpk[s.id]||[]; const saVal=s.nomorSA||sas[0]?.nomorSA;
             const step=!hasPR(s)?'Belum PR':!hasPO(s)?'Belum PO':'Belum SA';
@@ -2078,6 +2078,11 @@ const rPLR = () => {
               <td class="px-3 py-2.5 text-center"><button onclick="mQuickDoc('${s.id}','Rotating')" class="text-xs px-2.5 py-1 rounded bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 whitespace-nowrap font-medium">✏ Edit Dok</button></td>
             </tr>`;}).join('')}
         </tbody>
+        ${pendR.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
+          <tr><td colspan="3" class="px-3 py-3 text-right text-gray-500">TOTAL (${pendR.length})</td>
+          <td class="px-3 py-3 text-right font-mono">${rp(pendR.reduce((a,x)=>a+rpN(x.nilaiSPK),0))}</td>
+          <td colspan="4"></td></tr>
+        </tfoot>`:''}
       </table>
     </div></div>
 
@@ -2111,7 +2116,7 @@ const rPLR = () => {
           <tr><td colspan="3" class="px-3 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
           <td class="px-3 py-3 text-right font-mono">${rp(data.reduce((a,x)=>a+rpN(x.nilaiSPK),0))}</td>
           <td></td>
-          <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(totReal)}</td>
+          <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(data.flatMap(s=>saBySpk[s.id]||[]).reduce((a,x)=>a+rpN(x.nilaiSA),0))}</td>
           <td colspan="2"></td></tr>
         </tfoot>`:''}
       </table>
@@ -2333,7 +2338,7 @@ const rPR = () => {
   const total = data.reduce((a,x)=>a+rpN(x.estimasiNilai),0);
   const spkWithPR     = new Set(S.pr.map(x=>x.idCoO));         // all-time (untuk tab "Belum Ada PR")
   const spkWithPRYear = new Set(allPR.map(x=>x.idCoO));        // filtered (untuk per-kontrak tab)
-  let spkNoPR = S.spk.filter(x=>!spkWithPR.has(x.id)&&x.status!=='Closed');
+  let spkNoPR = S.spk.filter(x=>!spkWithPR.has(x.id)&&!x.nomorPR&&x.status!=='Closed');
   if(S.fkontrak) spkNoPR = spkNoPR.filter(x=>x.idKontrak===S.fkontrak);
 
   const tabBtn=(t,label)=>{const a=S.prTab===t;return `<button onclick="S.prTab='${t}';render()" class="px-4 py-2 text-sm font-medium border-b-2 transition ${a?'border-purple-600 text-purple-700 bg-white font-semibold':'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${label}</button>`;};
@@ -2809,7 +2814,7 @@ const svQuickDoc = async (e, id, fungsi) => {
   setLoad(true,'Menyimpan...'); const {error}=await sb.from('coo_spk').update(patch).eq('id',id);
   setLoad(false); if(dbErr(error)) return;
   Object.assign(s,{nomorPR:patch.nomor_pr,nomorPO:patch.nomor_po,nomorSA:patch.nomor_sa,nilaiRealisasi:patch.nilai_realisasi,noWO:patch.no_wo,remarksInvoice:patch.remarks_invoice});
-  closeM(); render();
+  closeModal(); render();
 };
 
 // ===== DIRECT CHARGE CRUD =====
