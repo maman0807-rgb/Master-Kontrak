@@ -806,6 +806,8 @@ const rDCFungsi = (fungsiLabel, accentCol, badgeCol, pageKey) => {
   const jenis = isDC ? 'Direct Charge' : 'Reservasi';
   const all = byDate(S.dc.filter(x=>x.fungsi===fungsiLabel),'tanggal');
   const byJenis = all.filter(x => (x.jenis||'Direct Charge') === jenis);
+  // all-time (tidak terfilter tahun) — untuk "Total Semua Tahun" dan Rekap Material
+  const byJenisAll = S.dc.filter(x=>x.fungsi===fungsiLabel&&(x.jenis||'Direct Charge')===jenis);
   const data = isDC ? byJenis.filter(d => {
     if(S.fpo && d.nomorPO !== S.fpo) return false;
     const items = d.items?.length ? d.items : [{namaPart:d.namaPart,kimap:d.kimap,partNumber:d.partNumber}];
@@ -833,8 +835,8 @@ const rDCFungsi = (fungsiLabel, accentCol, badgeCol, pageKey) => {
   const dcTotalYear = dcMonths.reduce((a,x)=>a+x.nilai,0);
   const dcMonthActive = dcMonths.filter(x=>x.count>0).length||1;
 
-  // Reservasi: all unique years for per-tahun rekap
-  const resYears = [...new Set(byJenis.filter(x=>x.tanggal).map(x=>x.tanggal.substring(0,4)))].sort();
+  // Reservasi: all unique years dari data ALL-TIME (bukan filtered) agar pivot tetap lengkap
+  const resYears = [...new Set(byJenisAll.filter(x=>x.tanggal).map(x=>x.tanggal.substring(0,4)))].sort();
 
   const thDC  = [['Tanggal','center'],['No. PO/RO'],['Status','center'],['Total','right'],['Judul Pekerjaan'],['','center']];
   const thRes = [['No. Reservasi'],['No. MR'],['Tanggal','center'],['Status','center'],['','center']];
@@ -942,10 +944,10 @@ const rDCFungsi = (fungsiLabel, accentCol, badgeCol, pageKey) => {
     </tr>`;
   };
 
-  // Reservasi rekap per tahun
+  // Reservasi rekap per tahun — pakai byJenisAll agar pivot selalu lengkap semua tahun
   const rekapPerTahun = () => {
     const map = {};
-    byJenis.forEach(d => {
+    byJenisAll.forEach(d => {
       const yr = (d.tanggal||'').substring(0,4);
       if(!yr) return;
       const items = d.items?.length ? d.items : [{namaPart:d.namaPart,jumlah:d.jumlah,satuan:d.satuan,kimap:d.kimap,partNumber:''}];
@@ -994,7 +996,7 @@ const rDCFungsi = (fungsiLabel, accentCol, badgeCol, pageKey) => {
       </div>
       <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-gray-300">
         <p class="text-xs text-gray-400 mb-1">Total Semua Tahun</p>
-        <p class="text-lg font-bold text-gray-600 font-mono">${rp(byJenis.reduce((a,x)=>a+rpN(x.total),0))}</p>
+        <p class="text-lg font-bold text-gray-600 font-mono">${rp(byJenisAll.reduce((a,x)=>a+rpN(x.total),0))}</p>
       </div>
     </div>
 
