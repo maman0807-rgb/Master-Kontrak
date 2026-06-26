@@ -1499,19 +1499,19 @@ const rPLS = () => {
 
   const stepBar=(done,total,label,colOn,colOff)=>{
     const pct=total>0?Math.round(done/total*100):0;
-    return `<div class="flex flex-col items-center gap-0.5 min-w-[52px]">
-      <span class="text-[10px] font-semibold ${done===total&&total>0?colOn:done>0?'text-blue-500':colOff}">${done}/${total}</span>
-      <div class="w-full bg-gray-100 rounded-full h-1.5">
-        <div class="${done===total&&total>0?'bg-emerald-500':done>0?'bg-blue-400':'bg-gray-200'} h-1.5 rounded-full" style="width:${pct}%"></div>
+    return `<div class="flex flex-col items-center gap-0.5 min-w-[68px]">
+      <span class="text-xs font-bold ${done===total&&total>0?colOn:done>0?'text-blue-500':colOff}">${done}/${total}</span>
+      <div class="w-full bg-gray-100 rounded-full h-2">
+        <div class="${done===total&&total>0?'bg-emerald-500':done>0?'bg-blue-400':'bg-gray-200'} h-2 rounded-full" style="width:${pct}%"></div>
       </div>
-      <span class="text-[9px] text-gray-400">${label}</span>
+      <span class="text-[11px] font-medium text-gray-500">${label}</span>
     </div>`;
   };
 
   // Detail table helper
   const docBadge=(has,label,val)=>has
-    ?`<span class="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200" title="${esc(val||'')}">✓ ${label}: ${esc((val||'').slice(-10))}</span>`
-    :`<span class="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-gray-50 text-gray-300 border border-gray-100">– ${label}</span>`;
+    ?`<span class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200" title="${esc(val||'')}">✓ ${label}: ${esc((val||'').slice(-10))}</span>`
+    :`<span class="inline-flex items-center text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-400 border border-gray-100">– ${label}</span>`;
 
   // Pending SPKs (tab pending)
   const pendingData = data.filter(isPending);
@@ -1621,7 +1621,7 @@ const rPLS = () => {
               <td class="px-3 py-2.5 text-xs text-teal-600 whitespace-nowrap">${k?esc(k.nomorSPB||k.customID):'-'}</td>
               <td class="px-3 py-2.5 max-w-[180px]"><div class="clamp2 text-xs text-gray-600">${esc(s.deskripsi||'-')}</div></td>
               <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(s.nilaiSPK)}</td>
-              <td class="px-3 py-2.5 text-center"><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${stepCol}">${step}</span></td>
+              <td class="px-3 py-2.5 text-center"><span class="text-xs font-bold px-2 py-1 rounded-full ${stepCol}">${step}</span></td>
               <td class="px-3 py-2.5">
                 <div class="flex flex-wrap gap-1">
                   ${docBadge(hasPR(s),'PR',s.nomorPR)}
@@ -1631,7 +1631,7 @@ const rPLS = () => {
               </td>
               <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(s.tglSelesai,s.status)}</td>
               <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
-              <td class="px-3 py-2.5 text-center"><button onclick="mQuickDoc('${s.id}','Static')" class="text-[10px] px-2 py-1 rounded bg-teal-50 text-teal-600 border border-teal-200 hover:bg-teal-100 whitespace-nowrap">✏ Edit Dok</button></td>
+              <td class="px-3 py-2.5 text-center"><button onclick="mQuickDoc('${s.id}','Static')" class="text-xs px-2.5 py-1 rounded bg-teal-50 text-teal-600 border border-teal-200 hover:bg-teal-100 whitespace-nowrap font-medium">✏ Edit Dok</button></td>
             </tr>`;}).join('')}
         </tbody>
         ${pendingData.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
@@ -1668,7 +1668,7 @@ const rPLS = () => {
               <td class="px-3 py-2.5 text-right font-mono text-xs font-semibold text-emerald-700 whitespace-nowrap">${s.nilaiRealisasi?rp(s.nilaiRealisasi):'-'}</td>
               <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(s.tglSelesai,s.status)}</td>
               <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
-              <td class="px-3 py-2.5 text-center"><button onclick="mQuickDoc('${s.id}','Static')" class="text-[10px] px-2 py-1 rounded bg-teal-50 text-teal-600 border border-teal-200 hover:bg-teal-100 whitespace-nowrap">✏ Edit Dok</button></td>
+              <td class="px-3 py-2.5 text-center"><button onclick="mQuickDoc('${s.id}','Static')" class="text-xs px-2.5 py-1 rounded bg-teal-50 text-teal-600 border border-teal-200 hover:bg-teal-100 whitespace-nowrap font-medium">✏ Edit Dok</button></td>
             </tr>`;}).join('')}
         </tbody>
         ${data.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
@@ -1708,15 +1708,15 @@ const rPLH = () => {
 
   const tabBtn=(t,lbl)=>{const a=S.plhTab===t;return `<button onclick="S.plhTab='${t}';render()" class="px-4 py-2 text-sm font-medium border-b-2 transition ${a?'border-blue-600 text-blue-700 bg-white font-semibold':'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${lbl}</button>`;};
 
-  const stepBar=(done,total,label,colOn,colOff)=>{const pct=total>0?Math.round(done/total*100):0;return `<div class="flex flex-col items-center gap-0.5 min-w-[52px]">
-    <span class="text-[10px] font-semibold ${done===total&&total>0?colOn:done>0?'text-blue-500':colOff}">${done}/${total}</span>
-    <div class="w-full bg-gray-100 rounded-full h-1.5"><div class="${done===total&&total>0?'bg-emerald-500':done>0?'bg-blue-400':'bg-gray-200'} h-1.5 rounded-full" style="width:${pct}%"></div></div>
-    <span class="text-[9px] text-gray-400">${label}</span>
+  const stepBar=(done,total,label,colOn,colOff)=>{const pct=total>0?Math.round(done/total*100):0;return `<div class="flex flex-col items-center gap-0.5 min-w-[68px]">
+    <span class="text-xs font-bold ${done===total&&total>0?colOn:done>0?'text-blue-500':colOff}">${done}/${total}</span>
+    <div class="w-full bg-gray-100 rounded-full h-2"><div class="${done===total&&total>0?'bg-emerald-500':done>0?'bg-blue-400':'bg-gray-200'} h-2 rounded-full" style="width:${pct}%"></div></div>
+    <span class="text-[11px] font-medium text-gray-500">${label}</span>
   </div>`;};
 
   const docBadge=(has,label,val)=>has
-    ?`<span class="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200" title="${esc(val||'')}">✓ ${label}: ${esc((val||'').slice(-10))}</span>`
-    :`<span class="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-gray-50 text-gray-300 border border-gray-100">– ${label}</span>`;
+    ?`<span class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200" title="${esc(val||'')}">✓ ${label}: ${esc((val||'').slice(-10))}</span>`
+    :`<span class="inline-flex items-center text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-400 border border-gray-100">– ${label}</span>`;
 
   const perKRows = S.mk.map(k=>{
     const spks = S.spk.filter(x=>x.idKontrak===k.id);
@@ -1824,7 +1824,7 @@ const rPLH = () => {
               <td class="px-3 py-2.5 text-xs text-blue-600 whitespace-nowrap">${k?esc(k.nomorSPB||k.customID):'-'}</td>
               <td class="px-3 py-2.5 max-w-[180px]"><div class="clamp2 text-xs text-gray-600">${esc(s.deskripsi||'-')}</div></td>
               <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(s.nilaiSPK)}</td>
-              <td class="px-3 py-2.5 text-center"><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${stepCol}">${step}</span></td>
+              <td class="px-3 py-2.5 text-center"><span class="text-xs font-bold px-2 py-1 rounded-full ${stepCol}">${step}</span></td>
               <td class="px-3 py-2.5"><div class="flex flex-wrap gap-1">
                 ${docBadge(hasPR(s),'PR',prVal)}
                 ${docBadge(hasPO(s),'PO',s.nomorPO)}
@@ -1832,7 +1832,7 @@ const rPLH = () => {
               </div></td>
               <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(s.tglSelesai,s.status)}</td>
               <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
-              <td class="px-3 py-2.5 text-center"><button onclick="mQuickDoc('${s.id}','Hoist')" class="text-[10px] px-2 py-1 rounded bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 whitespace-nowrap">✏ Edit Dok</button></td>
+              <td class="px-3 py-2.5 text-center"><button onclick="mQuickDoc('${s.id}','Hoist')" class="text-xs px-2.5 py-1 rounded bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 whitespace-nowrap font-medium">✏ Edit Dok</button></td>
             </tr>`;}).join('')}
         </tbody>
         ${pendingData.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
@@ -1870,7 +1870,7 @@ const rPLH = () => {
               <td class="px-3 py-2.5 text-right font-mono text-xs font-semibold text-emerald-700 whitespace-nowrap">${real?rp(real):'-'}</td>
               <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(s.tglSelesai,s.status)}</td>
               <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
-              <td class="px-3 py-2.5 text-center"><button onclick="mQuickDoc('${s.id}','Hoist')" class="text-[10px] px-2 py-1 rounded bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 whitespace-nowrap">✏ Edit Dok</button></td>
+              <td class="px-3 py-2.5 text-center"><button onclick="mQuickDoc('${s.id}','Hoist')" class="text-xs px-2.5 py-1 rounded bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 whitespace-nowrap font-medium">✏ Edit Dok</button></td>
             </tr>`;}).join('')}
         </tbody>
         ${data.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
@@ -1911,13 +1911,13 @@ const rPLR = () => {
   const tabBtn=(t,lbl)=>{const a=S.plrTab===t;return `<button onclick="S.plrTab='${t}';render()" class="px-4 py-2 text-sm font-medium border-b-2 transition ${a?'border-emerald-600 text-emerald-700 bg-white font-semibold':'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${lbl}</button>`;};
 
   const docBadge=(has,label,val)=>has
-    ?`<span class="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200" title="${esc(val||'')}">✓ ${label}: ${esc((val||'').slice(-10))}</span>`
-    :`<span class="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-gray-50 text-gray-300 border border-gray-100">– ${label}</span>`;
+    ?`<span class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200" title="${esc(val||'')}">✓ ${label}: ${esc((val||'').slice(-10))}</span>`
+    :`<span class="inline-flex items-center text-xs px-2 py-0.5 rounded bg-gray-50 text-gray-400 border border-gray-100">– ${label}</span>`;
 
-  const stepBarR=(done,total,label,colOn,colOff)=>{const pct=total>0?Math.round(done/total*100):0;return `<div class="flex flex-col items-center gap-0.5 min-w-[52px]">
-    <span class="text-[10px] font-semibold ${done===total&&total>0?colOn:done>0?'text-blue-500':colOff}">${done}/${total}</span>
-    <div class="w-full bg-gray-100 rounded-full h-1.5"><div class="${done===total&&total>0?'bg-emerald-500':done>0?'bg-blue-400':'bg-gray-200'} h-1.5 rounded-full" style="width:${pct}%"></div></div>
-    <span class="text-[9px] text-gray-400">${label}</span>
+  const stepBarR=(done,total,label,colOn,colOff)=>{const pct=total>0?Math.round(done/total*100):0;return `<div class="flex flex-col items-center gap-0.5 min-w-[68px]">
+    <span class="text-xs font-bold ${done===total&&total>0?colOn:done>0?'text-blue-500':colOff}">${done}/${total}</span>
+    <div class="w-full bg-gray-100 rounded-full h-2"><div class="${done===total&&total>0?'bg-emerald-500':done>0?'bg-blue-400':'bg-gray-200'} h-2 rounded-full" style="width:${pct}%"></div></div>
+    <span class="text-[11px] font-medium text-gray-500">${label}</span>
   </div>`;};
   const perKRows = S.mkR.map(k=>{
     const spks = S.spkR.filter(x=>x.idKontrak===k.id);
@@ -2028,7 +2028,7 @@ const rPLR = () => {
               <td class="px-3 py-2.5 text-xs text-emerald-600 whitespace-nowrap">${k?esc(k.nomorSPB||k.customID):'-'}</td>
               <td class="px-3 py-2.5 max-w-[180px]"><div class="clamp2 text-xs text-gray-600">${esc(s.deskripsi||'-')}</div></td>
               <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(s.nilaiSPK)}</td>
-              <td class="px-3 py-2.5 text-center"><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${stepCol}">${step}</span></td>
+              <td class="px-3 py-2.5 text-center"><span class="text-xs font-bold px-2 py-1 rounded-full ${stepCol}">${step}</span></td>
               <td class="px-3 py-2.5"><div class="flex flex-wrap gap-1">
                 ${docBadge(hasPR(s),'PR',s.nomorPR)}
                 ${docBadge(hasPO(s),'PO',s.nomorPO)}
@@ -2036,7 +2036,7 @@ const rPLR = () => {
               </div></td>
               <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(s.tglSelesai,s.status)}</td>
               <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
-              <td class="px-3 py-2.5 text-center"><button onclick="mQuickDoc('${s.id}','Rotating')" class="text-[10px] px-2 py-1 rounded bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 whitespace-nowrap">✏ Edit Dok</button></td>
+              <td class="px-3 py-2.5 text-center"><button onclick="mQuickDoc('${s.id}','Rotating')" class="text-xs px-2.5 py-1 rounded bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 whitespace-nowrap font-medium">✏ Edit Dok</button></td>
             </tr>`;}).join('')}
         </tbody>
       </table>
@@ -2065,7 +2065,7 @@ const rPLR = () => {
               <td class="px-3 py-2.5 text-right font-mono text-xs font-semibold text-emerald-700 whitespace-nowrap">${real?rp(real):'-'}</td>
               <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(s.tglSelesai,s.status)}</td>
               <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
-              <td class="px-3 py-2.5 text-center"><button onclick="mQuickDoc('${s.id}','Rotating')" class="text-[10px] px-2 py-1 rounded bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 whitespace-nowrap">✏ Edit Dok</button></td>
+              <td class="px-3 py-2.5 text-center"><button onclick="mQuickDoc('${s.id}','Rotating')" class="text-xs px-2.5 py-1 rounded bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 whitespace-nowrap font-medium">✏ Edit Dok</button></td>
             </tr>`;}).join('')}
         </tbody>
         ${data.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
