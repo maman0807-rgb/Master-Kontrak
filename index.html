@@ -399,7 +399,7 @@ const byLine = r => {
   const u = (r.updatedBy && r.updatedBy!==r.createdBy) ? `<span title="${esc(r.updatedBy)}"> ✏️ ${esc(shortU(r.updatedBy))}</span>` : '';
   return `<div class="text-[10px] text-gray-400 mt-1.5 leading-tight">${c}${u}</div>`;
 };
-const thead = ths => `<thead class="bg-gray-100 text-gray-600 text-xs uppercase border-b-2 border-gray-200"><tr>${ths.map(([t,a])=>`<th class="px-4 py-3 font-semibold text-${a||'left'}">${t}</th>`).join('')}</tr></thead>`;
+const thead = ths => `<thead class="bg-gray-100 text-gray-600 text-xs uppercase border-b-2 border-gray-200"><tr>${ths.map(([t,a,w])=>`<th class="px-4 py-3 font-semibold text-${a||'left'}${w?' '+w:''}">${t}</th>`).join('')}</tr></thead>`;
 const tfoot_total = (label, cols, vals) => `<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200"><tr><td colspan="${label[0]}" class="px-4 py-3 text-right text-gray-500">TOTAL ${label[1]}</td>${vals.map(v=>`<td class="px-4 py-3 text-right font-mono ${v[1]||''}">${v[0]}</td>`).join('')}</tr></tfoot>`;
 
 // ===== DASHBOARD =====
@@ -1566,7 +1566,7 @@ const rPLS = () => {
     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
-          ${thead([['No. Kontrak'],['Vendor'],['SPK','center'],['Pipeline PR → PO → SA → Tagih'],['Pending','center'],['Nilai SPK','right'],['Tagih','right']])}
+          ${thead([['No. Kontrak'],['Vendor'],['SPK','center','w-12'],['Pipeline PR → PO → SA → Tagih'],['Pending','center','w-16'],['Nilai SPK','right'],['Tagih','right']])}
           <tbody class="divide-y divide-gray-100">
             ${perKRows.length===0?emptyRow('📊','Belum ada data.',7):perKRows.map(({k,n,wPR,wPO,wSA,wReal,nilaiSPK,nilaiReal,pending})=>`
               <tr class="hover:bg-gray-50 cursor-pointer" onclick="S.fkontrak='${k.id}';S.plsTab='all';render()">
@@ -1776,7 +1776,7 @@ const rPLH = () => {
     ${S.plhTab==='perkontrak'?`
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
-        ${thead([['No. Kontrak'],['Vendor'],['SPK','center'],['Pipeline PR → PO → SA'],['Pending','center'],['Nilai SPK','right'],['Realisasi SA','right']])}
+        ${thead([['No. Kontrak'],['Vendor'],['SPK','center','w-12'],['Pipeline PR → PO → SA'],['Pending','center','w-16'],['Nilai SPK','right'],['Realisasi SA','right']])}
         <tbody class="divide-y divide-gray-100">
           ${perKRows.length===0?emptyRow('📊','Belum ada data.',7):perKRows.map(({k,n,wPR,wPO,wSA,nilaiSPK,nilaiReal,pending})=>`
             <tr class="hover:bg-gray-50 cursor-pointer" onclick="S.fkontrak='${k.id}';S.plhTab='all';render()">
@@ -1984,7 +1984,7 @@ const rPLR = () => {
     ${S.plrTab==='perkontrak'?`
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
-        ${thead([['No. Kontrak'],['Vendor'],['SPK','center'],['Pipeline PR → PO → SA'],['Pending','center'],['Nilai SPK','right'],['Realisasi SA','right']])}
+        ${thead([['No. Kontrak'],['Vendor'],['SPK','center','w-12'],['Pipeline PR → PO → SA'],['Pending','center','w-16'],['Nilai SPK','right'],['Realisasi SA','right']])}
         <tbody class="divide-y divide-gray-100">
           ${perKRows.length===0?emptyRow('⚙️','Belum ada data.',7):perKRows.map(({k,n,wPR,wPO,wSA,nilaiSPK,nilaiReal,pending})=>`
             <tr class="hover:bg-gray-50 cursor-pointer" onclick="S.fkontrak='${k.id}';S.plrTab='all';render()">
