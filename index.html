@@ -292,9 +292,14 @@ const F = {
 };
 
 // ===== LOAD ALL DATA =====
+const recomputeMKR = () => {
+  const sharedIds = new Set(S.spkR.filter(x=>x.jenis!=='Rotating').map(x=>x.idKontrak));
+  S.mkR = [...S.mk.filter(k=>sharedIds.has(k.id)), ...S.mkR.filter(k=>k.jenis==='Rotating')];
+};
+
 const loadAll = async () => {
   setLoad(true,'Memuat data dari Supabase...');
-  const [r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11] = await Promise.all([
+  const [r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13] = await Promise.all([
     sb.from('spk').select('*').order('tanggal',{ascending:false}),
     sb.from('direct_charge').select('*').order('tanggal',{ascending:false}),
     sb.from('master_kontrak').select('*').eq('jenis','HHE').order('custom_id'),
@@ -306,6 +311,8 @@ const loadAll = async () => {
     sb.from('user_profiles').select('*').order('email'),
     sb.from('tvm_coo').select('*').order('tgl_mulai',{ascending:false}),
     sb.from('coo_spk').select('*').eq('fungsi','Rotating').order('tgl_terbit',{ascending:false}),
+    sb.from('master_kontrak').select('*').eq('jenis','Rotating').order('custom_id'),
+    sb.from('coo_spk').select('*').eq('jenis','Rotating').order('tgl_terbit',{ascending:false}),
   ]);
   S.sspk  = (r1.data||[]).map(F.from.spk);
   S.dc    = (r2.data||[]).map(F.from.dc);
@@ -317,10 +324,11 @@ const loadAll = async () => {
   S.sa    = (r8.data||[]).map(F.from.sa);
   S.users = (r9.data||[]);
   S.tvm   = (r10.data||[]).map(F.from.tvm);
-  S.spkR  = (r11.data||[]).map(F.from.coo);
-  // MK Rotating = kontrak HHE yang punya SPK dengan fungsi='Rotating'
-  const rotKIds = new Set(S.spkR.map(x=>x.idKontrak));
-  S.mkR   = S.mk.filter(k=>rotKIds.has(k.id));
+  // Rotating SPK: gabungan HHE-shared (fungsi='Rotating') + Rotating-own (jenis='Rotating')
+  S.spkR  = [...(r11.data||[]).map(F.from.coo), ...(r13.data||[]).map(F.from.coo)];
+  // MK Rotating: HHE yang di-share + Rotating-own contract
+  const sharedIds = new Set((r11.data||[]).map(x=>x.id_kontrak));
+  S.mkR   = [...S.mk.filter(k=>sharedIds.has(k.id)), ...(r12.data||[]).map(F.from.mk)];
   const myProfile = S.users.find(u=>u.email===S.currentUser);
   S.currentNama = myProfile?.nama || '';
   S.isAdmin = myProfile?.role === 'admin';
@@ -2113,7 +2121,7 @@ const rMKR = () => {
       <div class="flex gap-2 flex-wrap no-print items-center">
         ${fBar()}
         <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
-        <button onclick="mMK()" class="px-3 py-1.5 bg-emerald-700 text-white rounded-lg text-sm hover:bg-emerald-800">+ Tambah Kontrak</button>
+        <button onclick="mMK(null,'Rotating')" class="px-3 py-1.5 bg-emerald-700 text-white rounded-lg text-sm hover:bg-emerald-800">+ Tambah Kontrak</button>
       </div>
     </div>
     <p class="text-xs text-gray-400 mb-3">Kontrak HHE yang digunakan Rotating — ${S.spkR.length} SPK ter-tag</p>
@@ -2144,8 +2152,8 @@ const rMKR = () => {
                 <td class="px-3 py-2.5 text-center">${badge(k.status)}</td>
                 <td class="px-3 py-2.5 text-center whitespace-nowrap no-print">
                   <button onclick="S.fkontrak='${k.id}';go('spkr')" class="text-emerald-600 hover:underline text-xs mr-1">SPK</button>
-                  <button onclick="mMK('${k.id}')" class="text-blue-600 hover:underline text-xs mr-1">Edit</button>
-                  <button onclick="dMK('${k.id}')" class="text-red-500 hover:underline text-xs">Hapus</button>
+                  <button onclick="mMK('${k.id}','${k.jenis}')" class="text-blue-600 hover:underline text-xs mr-1">Edit</button>
+                  <button onclick="dMK('${k.id}','${k.jenis}')" class="text-red-500 hover:underline text-xs">Hapus</button>
                 </td>
               </tr>`;}).join('')}
           </tbody>
@@ -2835,10 +2843,10 @@ const dDC = async id => {
 
 // ===== MASTER KONTRAK CRUD =====
 const mMK = (id=null, jenis='HHE') => {
-  const list = jenis==='Static' ? S.mkS : S.mk;
+  const list = jenis==='Static'?S.mkS:jenis==='Rotating'?S.mkR:S.mk;
   const k = id ? list.find(x=>x.id===id) : null;
-  const badgeCls = jenis==='Static' ? 'bg-teal-100 text-teal-700' : 'bg-blue-100 text-blue-700';
-  const label = jenis==='Static' ? 'Static' : 'Hoist';
+  const badgeCls = jenis==='Static'?'bg-teal-100 text-teal-700':jenis==='Rotating'?'bg-emerald-100 text-emerald-700':'bg-blue-100 text-blue-700';
+  const label = jenis==='Static'?'Static':jenis==='Rotating'?'Rotating':'Hoist';
   showM(`<div class="p-6"><h2 class="text-base font-bold mb-4">${k?'Edit':'Tambah'} Master Kontrak <span class="text-xs font-normal ${badgeCls} px-2 py-0.5 rounded-full ml-1">${label}</span></h2>
     <form onsubmit="svMK(event,'${id||''}','${jenis}')"><div class="grid grid-cols-2 gap-3">
       ${fld('Custom ID','customID','text',k?.customID,true)} ${fld('Nomor SPB','nomorSPB','text',k?.nomorSPB)}
@@ -2851,36 +2859,53 @@ const mMK = (id=null, jenis='HHE') => {
 };
 const svMK = async (e, id, jenis='HHE') => {
   e.preventDefault(); const f=e.target;
-  const list = jenis==='Static' ? S.mkS : S.mk;
+  const list = jenis==='Static'?S.mkS:jenis==='Rotating'?S.mkR:S.mk;
   const ex = id ? list.find(x=>x.id===id) : null;
   const o={id:id||uid(),customID:f.customID.value.trim(),nomorSPB:f.nomorSPB.value.trim(),vendor:f.vendor.value.trim(),judulKontrak:f.judulKontrak.value.trim(),nilaiKontrak:f.nilaiKontrak.value,pic:f.pic.value.trim(),tglMulai:f.tglMulai.value,tglBerakhir:f.tglBerakhir.value,status:f.status.value,jenis,createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
   setLoad(true,'Menyimpan...'); const {error}=await sb.from('master_kontrak').upsert(F.to.mk(o));
   setLoad(false); if(dbErr(error)) return;
-  if(id){ const idx=list.findIndex(x=>x.id===id); if(idx>=0) list[idx]=o; }
-  else { list.push(o); list.sort((a,b)=>a.customID.localeCompare(b.customID)); }
+  if(jenis==='Rotating'){
+    if(id){ const idx=S.mkR.findIndex(x=>x.id===id); if(idx>=0) S.mkR[idx]=o; }
+    else { S.mkR.push(o); S.mkR.sort((a,b)=>a.customID.localeCompare(b.customID)); }
+  } else if(jenis==='Static'){
+    if(id){ const idx=S.mkS.findIndex(x=>x.id===id); if(idx>=0) S.mkS[idx]=o; }
+    else { S.mkS.push(o); S.mkS.sort((a,b)=>a.customID.localeCompare(b.customID)); }
+  } else {
+    if(id){ const idx=S.mk.findIndex(x=>x.id===id); if(idx>=0) S.mk[idx]=o; }
+    else { S.mk.push(o); S.mk.sort((a,b)=>a.customID.localeCompare(b.customID)); }
+    recomputeMKR();
+  }
   closeModal(); render();
 };
 const dMK = async (id, jenis='HHE') => {
   if(!confirm('Hapus kontrak ini? Semua SPK terkait ikut terhapus.')) return;
-  const mkList  = jenis==='Static' ? S.mkS : S.mk;
-  const spkList = jenis==='Static' ? S.spkS : S.spk;
+  const spkList = jenis==='Static'?S.spkS:jenis==='Rotating'?S.spkR.filter(x=>x.jenis==='Rotating'):S.spk;
   const spkIds  = spkList.filter(x=>x.idKontrak===id).map(x=>x.id);
   setLoad(true,'Menghapus...');
   if(spkIds.length){
-    if(jenis!=='Static'){
+    if(jenis==='HHE'){
       const {error:e1}=await sb.from('penagihan_sa').delete().in('id_coo',spkIds);
       if(dbErr(e1)){setLoad(false);return;}
       const {error:e2}=await sb.from('purchase_request').delete().in('id_coo',spkIds);
       if(dbErr(e2)){setLoad(false);return;}
+    } else if(jenis==='Rotating'){
+      const {error:e1}=await sb.from('penagihan_sa').delete().in('id_coo',spkIds);
+      if(dbErr(e1)){setLoad(false);return;}
     }
     const {error:e3}=await sb.from('coo_spk').delete().eq('id_kontrak',id);
     if(dbErr(e3)){setLoad(false);return;}
   }
   const {error}=await sb.from('master_kontrak').delete().eq('id',id);
   setLoad(false); if(dbErr(error)) return;
-  const mkIdx=mkList.findIndex(x=>x.id===id); if(mkIdx>=0) mkList.splice(mkIdx,1);
-  if(jenis==='Static') S.spkS=S.spkS.filter(x=>x.idKontrak!==id);
-  else { S.spk=S.spk.filter(x=>x.idKontrak!==id); S.pr=S.pr.filter(x=>!spkIds.includes(x.idCoO)); S.sa=S.sa.filter(x=>!spkIds.includes(x.idCoO)); }
+  if(jenis==='Static'){
+    S.mkS=S.mkS.filter(x=>x.id!==id); S.spkS=S.spkS.filter(x=>x.idKontrak!==id);
+  } else if(jenis==='Rotating'){
+    S.mkR=S.mkR.filter(x=>x.id!==id); S.spkR=S.spkR.filter(x=>x.idKontrak!==id);
+  } else {
+    S.mk=S.mk.filter(x=>x.id!==id); S.spk=S.spk.filter(x=>x.idKontrak!==id);
+    S.pr=S.pr.filter(x=>!spkIds.includes(x.idCoO)); S.sa=S.sa.filter(x=>!spkIds.includes(x.idCoO));
+    recomputeMKR();
+  }
   render();
 };
 
@@ -2936,11 +2961,15 @@ const mSPKR = (id=null) => {
     <span class="text-[10px] font-bold uppercase tracking-widest ${color} whitespace-nowrap">${label}</span>
     <div class="flex-1 border-t border-gray-200"></div>
   </div>`;
+  const allKontrakR = [
+    ...S.mk.map(k=>({v:k.id,l:`[HHE] ${k.nomorSPB||k.customID} – ${k.vendor}`})),
+    ...S.mkR.filter(k=>k.jenis==='Rotating').map(k=>({v:k.id,l:`[ROT] ${k.nomorSPB||k.customID} – ${k.vendor}`}))
+  ];
   showM(`<div class="p-6 max-h-[85vh] overflow-y-auto"><h2 class="text-base font-bold mb-4">${s?'Edit':'Tambah'} CoO SPK <span class="text-xs font-normal bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full ml-1">Rotating</span></h2>
-    <p class="text-xs text-gray-400 mb-3 -mt-2">SPK dari kontrak HHE yang penggunaannya untuk Rotating Equipment</p>
+    <p class="text-xs text-gray-400 mb-3 -mt-2">Pilih kontrak HHE (shared) atau kontrak Rotating milik sendiri</p>
     <form onsubmit="svSPKR(event,'${id||''}')"><div class="grid grid-cols-2 gap-3">
       ${fld('Custom ID','customID','text',id?s?.customID:genCustomID('COO-R',S.spkR),true)} ${fld('Nomor SPK','nomorSPK','text',s?.nomorSPK)}
-      ${sel('Master Kontrak (HHE)','idKontrak',S.mk.map(k=>({v:k.id,l:`${k.nomorSPB||k.customID} – ${k.vendor}`})),s?.idKontrak,true,false)} ${fld('Tgl Terbit','tglTerbit','date',s?.tglTerbit)}
+      ${sel('Master Kontrak','idKontrak',allKontrakR,s?.idKontrak,true,false)} ${fld('Tgl Terbit','tglTerbit','date',s?.tglTerbit)}
       ${tarea('Deskripsi','deskripsi',s?.deskripsi)}
       ${fld('Nilai SPK (Rp)','nilaiSPK','number',s?.nilaiSPK)} ${fld('Tgl Mulai','tglMulai','date',s?.tglMulai)}
       ${fld('Tgl Selesai','tglSelesai','date',s?.tglSelesai)} ${sel('Status','status',['Open','In Progress','Closed'],s?.status||'Open')}
@@ -2958,7 +2987,8 @@ const svSPKR = async (e,id) => {
     idKontrak:f.idKontrak.value,tglTerbit:f.tglTerbit.value,deskripsi:f.deskripsi.value.trim(),
     nilaiSPK:f.nilaiSPK.value,tglMulai:f.tglMulai.value,tglSelesai:f.tglSelesai.value,
     status:f.status.value,catatan:f.catatan.value.trim(),
-    jenis:'HHE',fungsi:'Rotating',
+    jenis:S.mkR.find(x=>x.id===f.idKontrak.value&&x.jenis==='Rotating')?'Rotating':'HHE',
+    fungsi:S.mkR.find(x=>x.id===f.idKontrak.value&&x.jenis==='Rotating')?null:'Rotating',
     nomorPR:f.nomorPR.value.trim()||null,nomorPO:f.nomorPO.value.trim()||null,
     nomorSA:f.nomorSA.value.trim()||null,nilaiRealisasi:f.nilaiRealisasi.value||null,
     noWO:f.noWO.value.trim()||null,remarksInvoice:f.remarksInvoice.value||null,
@@ -2966,7 +2996,7 @@ const svSPKR = async (e,id) => {
   setLoad(true,'Menyimpan...'); const {error}=await sb.from('coo_spk').upsert(F.to.coo(o));
   setLoad(false); if(dbErr(error)) return;
   if(id){ const idx=S.spkR.findIndex(x=>x.id===id); if(idx>=0) S.spkR[idx]=o; }
-  else { S.spkR.unshift(o); if(!S.mkR.find(x=>x.id===o.idKontrak)){ const mk=S.mk.find(x=>x.id===o.idKontrak); if(mk) S.mkR.push(mk); } }
+  else { S.spkR.unshift(o); recomputeMKR(); }
   closeModal(); render();
 };
 const dSPKR = async id => {
@@ -2977,7 +3007,7 @@ const dSPKR = async id => {
   const {error}=await sb.from('coo_spk').delete().eq('id',id);
   setLoad(false); if(dbErr(error)) return;
   S.spkR=S.spkR.filter(x=>x.id!==id); S.sa=S.sa.filter(x=>x.idCoO!==id);
-  S.mkR=S.mkR.filter(k=>S.spkR.some(x=>x.idKontrak===k.id));
+  recomputeMKR();
   render();
 };
 
