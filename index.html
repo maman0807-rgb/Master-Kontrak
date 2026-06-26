@@ -345,6 +345,17 @@ const byDate = (arr,f) => arr.filter(x => {
   if(S.fm && String(v).substring(5,7) !== S.fm.padStart(2,'0')) return false;
   return true;
 });
+// Filter MK: kontrak aktif selama tahun S.fy (tglMulai ≤ S.fy ≤ tglBerakhir)
+const byDateMK = arr => {
+  if(!S.fy) return arr;
+  return arr.filter(k => {
+    const mulai = (k.tglMulai||'').substring(0,4);
+    const akhir = (k.tglBerakhir||'').substring(0,4);
+    if(mulai && mulai > S.fy) return false;
+    if(akhir && akhir < S.fy) return false;
+    return true;
+  });
+};
 const byK = arr => {
   if(!S.fkontrak) return arr;
   const ids = S.spk.filter(x=>x.idKontrak===S.fkontrak).map(x=>x.id);
@@ -1107,7 +1118,7 @@ const rDCR = () => rDCFungsi('Rotating');
 
 // ===== MASTER KONTRAK HOIST =====
 const rMK = () => {
-  const data = byDate(S.mk,'tglBerakhir');
+  const data = byDateMK(S.mk);
   const totalNilai = data.reduce((a,x) => a+rpN(x.nilaiKontrak), 0);
   // hitung realisasi SA per kontrak
   const saPerK = {};
@@ -1299,7 +1310,7 @@ const rSPK = () => {
 
 // ===== MASTER KONTRAK STATIC =====
 const rMKS = () => {
-  const data = byDate(S.mkS,'tglBerakhir');
+  const data = byDateMK(S.mkS);
   const totalNilai = data.reduce((a,x) => a+rpN(x.nilaiKontrak), 0);
 
   // hitung SPK & realisasi per kontrak dari spkS
@@ -2117,7 +2128,7 @@ const rMKR = () => {
   </div>`;
 
   // Build per-kontrak stats
-  const dataMKR = byDate(S.mkR,'tglBerakhir');
+  const dataMKR = byDateMK(S.mkR);
   const saBySpkR = {};
   S.sa.forEach(a=>{ saBySpkR[a.idCoO]=(saBySpkR[a.idCoO]||0)+rpN(a.nilaiSA); });
   const perKR = dataMKR.map(k=>{
