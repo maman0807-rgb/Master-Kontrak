@@ -610,41 +610,6 @@ const rDash = () => {
     ...perKRFinal.filter(isBudgetWarn).map(k=>({...k, wFungsi:'ROTATING', goPage:'spkr'})),
   ].sort((a,b)=>{ const na=rpN(a.nilaiKontrak),nb=rpN(b.nilaiKontrak); return ((na-a.nilaiSpk)/na)-((nb-b.nilaiSpk)/nb); });
 
-  const perKRow=(k,colorCls,fungiLabel,fungiColor,goPage)=>{
-    const label    = k.isShared ? 'HOIST+ROT' : fungiLabel;
-    const badgeCls = k.isShared ? 'bg-indigo-100 text-indigo-700' : fungiColor;
-    const nilaiK = rpN(k.nilaiKontrak);
-    const sisaK  = nilaiK - k.nilaiSpk;
-    const pctSpk = nilaiK>0 ? Math.min(Math.round(k.nilaiSpk/nilaiK*100),100) : 0;
-    const pct    = k.nilaiSpk>0 ? Math.min(Math.round(k.real/k.nilaiSpk*100),100) : 0;
-    const n=daysLeft(k.tglBerakhir);
-    const rowCls=n!==null&&n<=30?'bg-red-50':n!==null&&n<=90?'bg-amber-50':'';
-    const barSPK = pctSpk>=100?'bg-blue-600':pctSpk>=70?'bg-blue-400':'bg-blue-300';
-    const barSA  = pct>=100?'bg-emerald-500':pct>=50?'bg-emerald-400':'bg-amber-400';
-    return `<tr class="${rowCls} hover:bg-gray-50 cursor-pointer" onclick="go('${goPage}')">
-      <td class="px-3 py-2.5"><span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${badgeCls}">${label}</span></td>
-      <td class="px-3 py-2.5 font-semibold ${colorCls} whitespace-nowrap text-xs">${esc(k.nomorSPB||k.customID)}</td>
-      <td class="px-3 py-2.5 max-w-[140px]"><div class="clamp2 text-xs text-gray-600">${esc(k.vendor)}</div></td>
-      <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(nilaiK)}</td>
-      <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(k.nilaiSpk)}</td>
-      <td class="px-3 py-2.5 text-right font-mono text-xs font-semibold whitespace-nowrap ${sisaK<0?'text-red-600':'text-blue-600'}">${rp(sisaK)}</td>
-      <td class="px-3 py-2.5 text-right font-mono text-xs font-semibold text-emerald-700 whitespace-nowrap">${rp(k.real)}</td>
-      <td class="px-3 py-2.5 w-32">
-        <div class="flex flex-col gap-1">
-          <div class="flex items-center gap-1">
-            <div class="flex-1 bg-gray-200 rounded-full h-1"><div class="${barSPK} h-1 rounded-full" style="width:${pctSpk}%"></div></div>
-            <span class="text-[9px] text-gray-400 w-7 text-right">${pctSpk}%</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <div class="flex-1 bg-gray-200 rounded-full h-1"><div class="${barSA} h-1 rounded-full" style="width:${pct}%"></div></div>
-            <span class="text-[9px] text-gray-500 w-7 text-right">${pct}%</span>
-          </div>
-        </div>
-      </td>
-      <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(k.tglBerakhir,k.status)}</td>
-    </tr>`;
-  };
-  const perKThead = thead([[''],['No. Kontrak'],['Vendor'],['Nilai Kontrak','right'],['Nilai SPK','right'],['Sisa Kontrak','right'],['Realisasi SA','right'],['Progress (SPK·SA)','center'],['Sisa Hari','center']]);
 
   return `<div class="fade-in">
     <!-- HEADER -->
@@ -668,12 +633,12 @@ const rDash = () => {
         <div>
           <p class="text-[10px] text-blue-200">Nilai Kontrak Aktif</p>
           <p class="text-base font-bold font-mono">${rp(totNilaiKontrak)}</p>
-          <p class="text-[10px] text-blue-300">${mkH.filter(x=>x.status==='Aktif').length+mkS.filter(x=>x.status==='Aktif').length} kontrak aktif</p>
+          <p class="text-[10px] text-blue-300">${mkH.filter(x=>x.status==='Aktif').length+mkS.filter(x=>x.status==='Aktif').length+mkR.filter(x=>x.status==='Aktif'&&x.jenis==='Rotating').length} kontrak aktif</p>
         </div>
         <div>
           <p class="text-[10px] text-blue-200">Total Nilai SPK</p>
           <p class="text-base font-bold font-mono">${rp(totNilaiSPK)}</p>
-          <p class="text-[10px] text-blue-300">${spkH.length+spkSt.length} SPK total</p>
+          <p class="text-[10px] text-blue-300">${spkH.length+spkSt.length+spkR.length} SPK total</p>
         </div>
         <div>
           <p class="text-[10px] text-blue-200">Total Realisasi</p>
