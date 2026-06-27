@@ -475,6 +475,7 @@ const rDash = () => {
   // Fallback ke coo_spk.nilai_realisasi bila tidak ada penagihan_sa (dari Quick Doc)
   const saRNilai  = spkR.reduce((a,x)=>a+(saRBySpk[x.id]||rpN(x.nilaiRealisasi)||0),0);
   const pctR      = spkRNilai>0?Math.round(saRNilai/spkRNilai*100):0;
+  const warnR = mkR.filter(k=>k.jenis==='Rotating').filter(k=>{ const n=daysLeft(k.tglBerakhir); return n!==null&&n<=90&&k.status==='Aktif'; }).sort((a,b)=>daysLeft(a.tglBerakhir)-daysLeft(b.tglBerakhir));
 
   // ─ DC stats ─
   const dcAll   = byDate(S.dc,'tanggal');
@@ -514,6 +515,7 @@ const rDash = () => {
   const allWarn=[
     ...warnH.map(k=>({...k,fungsi:'HOIST',goPage:'mk'})),
     ...warnS.map(k=>({...k,fungsi:'STATIC',goPage:'mks'})),
+    ...warnR.map(k=>({...k,fungsi:'ROTATING',goPage:'mkr'})),
   ].sort((a,b)=>daysLeft(a.tglBerakhir)-daysLeft(b.tglBerakhir));
 
   // helpers
@@ -687,6 +689,7 @@ const rDash = () => {
           ${sRow('Realisasi SA', rp(saRNilai),'text-emerald-700')}
           ${pBar(pctR,'bg-emerald-500')}
           <p class="text-[10px] text-blue-400 hover:underline cursor-pointer mt-1" onclick="go('tvm')">TVM Rotating → lihat menu TVM</p>
+          ${warnR.length>0?`<p class="text-[10px] text-red-600 mt-1">⚠ ${warnR.length} kontrak own exp ≤90 hari</p>`:`<p class="text-[10px] text-emerald-600 mt-1">✓ Semua kontrak aman</p>`}
         </div>`:`
         <div class="px-4 pb-4 flex flex-col items-center justify-center gap-2 h-36 text-center">
           <span class="text-3xl">⚙️</span>
@@ -702,7 +705,7 @@ const rDash = () => {
       <div class="flex flex-col gap-1.5">
         ${allWarn.map(k=>{ const n=daysLeft(k.tglBerakhir); const c=n<=30?'text-red-700 font-bold':'text-amber-700'; return `
           <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-1.5 border border-amber-200">
-            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${k.fungsi==='HOIST'?'bg-blue-100 text-blue-700':'bg-teal-100 text-teal-700'}">${k.fungsi}</span>
+            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${k.fungsi==='HOIST'?'bg-blue-100 text-blue-700':k.fungsi==='ROTATING'?'bg-emerald-100 text-emerald-700':'bg-teal-100 text-teal-700'}">${k.fungsi}</span>
             <span class="text-xs font-semibold text-gray-700 flex-1">${esc(k.nomorSPB||k.customID)} — ${esc(k.vendor)}</span>
             <span class="text-xs text-gray-400 hidden sm:block">${df(k.tglBerakhir)}</span>
             <span class="text-xs ${c}">${n<=0?'Expired!':n+' hari'}</span>
@@ -2213,7 +2216,7 @@ const rMKR = () => {
   const perKR = dataMKR.map(k=>{
     const spks = S.spkR.filter(x=>x.idKontrak===k.id);
     const nilaiSPK = spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
-    const real     = spks.reduce((a,x)=>a+(saBySpkR[x.id]||0),0);
+    const real     = spks.reduce((a,x)=>a+(saBySpkR[x.id]||rpN(x.nilaiRealisasi)||0),0);
     const pct      = nilaiSPK>0?Math.min(Math.round(real/nilaiSPK*100),100):0;
     const bar      = pct>=100?'bg-emerald-500':pct>=50?'bg-blue-500':'bg-amber-400';
     return {...k, spkCount:spks.length, nilaiSPK, real, pct, bar};
@@ -2307,7 +2310,7 @@ const rSPKR = () => {
   const perK = S.mkR.map(k=>{
     const spks = S.spkR.filter(x=>x.idKontrak===k.id);
     const nilaiSPK=spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
-    const real=spks.reduce((a,x)=>a+(saBySpk[x.id]||0),0);
+    const real=spks.reduce((a,x)=>a+(saBySpk[x.id]||rpN(x.nilaiRealisasi)||0),0);
     const pct=nilaiSPK>0?Math.min(Math.round(real/nilaiSPK*100),100):0;
     const bar=pct>=100?'bg-emerald-500':pct>=50?'bg-blue-500':'bg-amber-400';
     const isActive=!S.fkontrak||S.fkontrak===k.id;
@@ -2329,7 +2332,7 @@ const rSPKR = () => {
       ${S.mkR.map(k=>{
         const spks=byDate(S.spkR,'tglTerbit').filter(x=>x.idKontrak===k.id);
         const nilaiSPK=spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
-        const real=spks.reduce((a,x)=>a+(saBySpk[x.id]||0),0);
+        const real=spks.reduce((a,x)=>a+(saBySpk[x.id]||rpN(x.nilaiRealisasi)||0),0);
         const pct=nilaiSPK>0?Math.min(Math.round(real/nilaiSPK*100),100):0;
         const isActive=S.fkontrak===k.id;
         return `<div class="bg-white rounded-xl shadow-sm p-3 border-2 cursor-pointer transition ${isActive?'border-emerald-500':'border-transparent hover:border-gray-200'} min-w-[180px]"
@@ -2354,7 +2357,7 @@ const rSPKR = () => {
         <tbody class="divide-y divide-gray-100">
           ${data.length===0?emptyRow('⚙️','Belum ada SPK Rotating.',10):data.map(s=>{
             const k=S.mkR.find(x=>x.id===s.idKontrak);
-            const real=saBySpk[s.id]||0;
+            const real=saBySpk[s.id]||rpN(s.nilaiRealisasi)||0;
             const pct=rpN(s.nilaiSPK)>0?Math.min(Math.round(real/rpN(s.nilaiSPK)*100),100):0;
             const realCls=pct>=100?'text-emerald-600':pct>0?'text-blue-600':'text-gray-400';
             return `<tr class="hover:bg-gray-50">
@@ -2386,7 +2389,7 @@ const rSPKR = () => {
         ${data.length>0?`<tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
           <tr><td colspan="4" class="px-3 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
           <td class="px-3 py-3 text-right font-mono">${rp(data.reduce((a,x)=>a+rpN(x.nilaiSPK),0))}</td>
-          <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(data.reduce((a,x)=>a+(saBySpk[x.id]||0),0))}</td>
+          <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(data.reduce((a,x)=>a+(saBySpk[x.id]||rpN(x.nilaiRealisasi)||0),0))}</td>
           <td colspan="3"></td></tr>
         </tfoot>`:''}
       </table>
