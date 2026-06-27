@@ -279,7 +279,7 @@ const F = {
   from: {
     spk:  r => ({id:r.id,noSPK:r.no_spk,tanggal:r.tanggal,vendor:r.vendor,uraian:r.uraian,nilaiKontrak:r.nilai_kontrak,realisasi:r.realisasi,progress:r.progress,status:r.status,jenisAnggaran:r.jenis_anggaran,keterangan:r.keterangan,createdBy:r.created_by,updatedBy:r.updated_by}),
     dc:   r => ({id:r.id,jenis:r.jenis||'Direct Charge',fungsi:r.fungsi||'Hoist',noPerm:r.no_perm,tanggal:r.tanggal,namaPart:r.nama_part,jumlah:r.jumlah,satuan:r.satuan,hargaSatuan:r.harga_satuan,total:r.total,kimap:r.kimap,nomorPR:r.nomor_pr,nomorPO:r.nomor_po,nomorMemo:r.nomor_memo,nomorMR:r.nomor_mr,nomorReservasi:r.nomor_reservasi,nomorGR:r.nomor_gr,tglGR:r.tgl_gr,diambilOleh:r.diambil_oleh,status:r.status,keterangan:r.keterangan,items:r.items||[],createdBy:r.created_by,updatedBy:r.updated_by}),
-    mk:   r => ({id:r.id,customID:r.custom_id,nomorSPB:r.nomor_spb,vendor:r.vendor,judulKontrak:r.judul_kontrak,nilaiKontrak:r.nilai_kontrak,tglMulai:r.tgl_mulai,tglBerakhir:r.tgl_berakhir,pic:r.pic,status:r.status,jenis:r.jenis||'HHE',createdBy:r.created_by,updatedBy:r.updated_by}),
+    mk:   r => ({id:r.id,customID:r.custom_id,nomorSPB:r.nomor_spb,vendor:r.vendor,judulKontrak:r.judul_kontrak,nilaiKontrak:r.nilai_kontrak,tglMulai:r.tgl_mulai,tglBerakhir:r.tgl_berakhir,pic:r.pic,status:r.status,jenis:r.jenis||'HHE',zona:r.zona||'Prabumulih Field',createdBy:r.created_by,updatedBy:r.updated_by}),
     coo:  r => ({id:r.id,idKontrak:r.id_kontrak,customID:r.custom_id,nomorSPK:r.nomor_spk,deskripsi:r.deskripsi,nilaiSPK:r.nilai_spk,tglTerbit:r.tgl_terbit,tglMulai:r.tgl_mulai,tglSelesai:r.tgl_selesai,status:r.status,catatan:r.catatan,jenis:r.jenis||'HHE',fungsi:r.fungsi||null,nomorPR:r.nomor_pr,nomorPO:r.nomor_po,nomorSA:r.nomor_sa,nilaiRealisasi:r.nilai_realisasi,noWO:r.no_wo,remarksInvoice:r.remarks_invoice,createdBy:r.created_by,updatedBy:r.updated_by}),
     pr:   r => ({id:r.id,idCoO:r.id_coo,customID:r.custom_id,nomorPR:r.nomor_pr,tglPR:r.tgl_pr,deskripsi:r.deskripsi,estimasiNilai:r.estimasi_nilai,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
     sa:   r => ({id:r.id,idCoO:r.id_coo,customID:r.custom_id,nomorSA:r.nomor_sa,tglSA:r.tgl_sa,deskripsi:r.deskripsi,nilaiSA:r.nilai_sa,nomorInvoice:r.nomor_invoice,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
@@ -289,7 +289,7 @@ const F = {
   to: {
     spk:  o => ({id:o.id,no_spk:o.noSPK,tanggal:dn(o.tanggal),vendor:o.vendor,uraian:o.uraian,nilai_kontrak:rpN(o.nilaiKontrak),realisasi:rpN(o.realisasi),progress:+o.progress||0,status:o.status,jenis_anggaran:o.jenisAnggaran||null,keterangan:o.keterangan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     dc:   o => ({id:o.id,jenis:o.jenis||'Direct Charge',fungsi:o.fungsi||'Hoist',no_perm:o.noPerm,tanggal:dn(o.tanggal),nama_part:o.namaPart,jumlah:rpN(o.jumlah),satuan:o.satuan,harga_satuan:rpN(o.hargaSatuan),total:rpN(o.total),kimap:o.kimap||null,nomor_pr:o.nomorPR||null,nomor_po:o.nomorPO||null,nomor_memo:o.nomorMemo||null,nomor_mr:o.nomorMR||null,nomor_reservasi:o.nomorReservasi||null,nomor_gr:o.nomorGR||null,tgl_gr:dn(o.tglGR),diambil_oleh:o.diambilOleh||null,status:o.status,keterangan:o.keterangan,items:o.items||[],created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
-    mk:   o => ({id:o.id,custom_id:o.customID,nomor_spb:o.nomorSPB,vendor:o.vendor,judul_kontrak:o.judulKontrak,nilai_kontrak:rpN(o.nilaiKontrak),tgl_mulai:dn(o.tglMulai),tgl_berakhir:dn(o.tglBerakhir),pic:o.pic,status:o.status,jenis:o.jenis||'HHE',created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
+    mk:   o => ({id:o.id,custom_id:o.customID,nomor_spb:o.nomorSPB,vendor:o.vendor,judul_kontrak:o.judulKontrak,nilai_kontrak:rpN(o.nilaiKontrak),tgl_mulai:dn(o.tglMulai),tgl_berakhir:dn(o.tglBerakhir),pic:o.pic,status:o.status,jenis:o.jenis||'HHE',zona:o.zona||'Prabumulih Field',created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     coo:  o => ({id:o.id,id_kontrak:o.idKontrak,custom_id:o.customID,nomor_spk:o.nomorSPK,deskripsi:o.deskripsi,nilai_spk:rpN(o.nilaiSPK),tgl_terbit:dn(o.tglTerbit),tgl_mulai:dn(o.tglMulai),tgl_selesai:dn(o.tglSelesai),status:o.status,catatan:o.catatan,jenis:o.jenis||'HHE',fungsi:o.fungsi||null,nomor_pr:o.nomorPR||null,nomor_po:o.nomorPO||null,nomor_sa:o.nomorSA||null,nilai_realisasi:o.nilaiRealisasi?rpN(o.nilaiRealisasi):null,no_wo:o.noWO||null,remarks_invoice:o.remarksInvoice||null,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     pr:   o => ({id:o.id,id_coo:o.idCoO,custom_id:o.customID,nomor_pr:o.nomorPR,tgl_pr:dn(o.tglPR),deskripsi:o.deskripsi,estimasi_nilai:rpN(o.estimasiNilai),catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     sa:   o => ({id:o.id,id_coo:o.idCoO,custom_id:o.customID,nomor_sa:o.nomorSA,tgl_sa:dn(o.tglSA),deskripsi:o.deskripsi,nilai_sa:rpN(o.nilaiSA),nomor_invoice:o.nomorInvoice,catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
@@ -1290,7 +1290,8 @@ const rMK = () => {
               <td class="px-3 py-2.5 font-semibold text-blue-700 whitespace-nowrap text-xs">${esc(k.customID)}</td>
               <td class="px-3 py-2.5 text-gray-500 whitespace-nowrap text-xs">${esc(k.nomorSPB||'-')}</td>
               <td class="px-3 py-2.5 max-w-[150px]"><div class="clamp2 text-xs" title="${esc(k.vendor)}">${esc(k.vendor)}</div></td>
-              <td class="px-3 py-2.5 text-gray-600 max-w-[180px]"><div class="clamp2 text-xs" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak||'-')}</div></td>
+              <td class="px-3 py-2.5 text-gray-600 max-w-[180px]">${k.zona&&k.zona!=='Prabumulih Field'?`<span class="inline-block mb-0.5 text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-medium">${esc(k.zona)}</span><br>`:''}
+                <div class="clamp2 text-xs" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak||'-')}</div></td>
               <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs">${rp(k.nilaiKontrak)}</td>
               <td class="px-3 py-2.5 text-center text-gray-500 text-xs">${spkCount}</td>
               <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs">${rp(spkNilai)}</td>
@@ -1487,7 +1488,8 @@ const rMKS = () => {
               <td class="px-3 py-2.5 font-semibold text-teal-700 whitespace-nowrap text-xs">${esc(k.customID)}</td>
               <td class="px-3 py-2.5 text-gray-500 whitespace-nowrap text-xs">${esc(k.nomorSPB||'-')}</td>
               <td class="px-3 py-2.5 max-w-[150px]"><div class="clamp2 text-xs" title="${esc(k.vendor)}">${esc(k.vendor)}</div></td>
-              <td class="px-3 py-2.5 text-gray-600 max-w-[180px]"><div class="clamp2 text-xs" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak||'-')}</div></td>
+              <td class="px-3 py-2.5 text-gray-600 max-w-[180px]">${k.zona&&k.zona!=='Prabumulih Field'?`<span class="inline-block mb-0.5 text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-medium">${esc(k.zona)}</span><br>`:''}
+                <div class="clamp2 text-xs" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak||'-')}</div></td>
               <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs">${rp(k.nilaiKontrak)}</td>
               <td class="px-3 py-2.5 text-center text-gray-500 text-xs">${cnt}</td>
               <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs">${rp(spkNilai)}</td>
@@ -2308,7 +2310,8 @@ const rMKR = () => {
                 <td class="px-3 py-2.5 font-semibold text-emerald-700 whitespace-nowrap text-xs">${esc(k.customID)}</td>
                 <td class="px-3 py-2.5 text-gray-500 whitespace-nowrap text-xs">${esc(k.nomorSPB||'-')}</td>
                 <td class="px-3 py-2.5 max-w-[150px]"><div class="clamp2 text-xs" title="${esc(k.vendor)}">${esc(k.vendor)}</div></td>
-                <td class="px-3 py-2.5 text-gray-600 max-w-[180px]"><div class="clamp2 text-xs" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak||'-')}</div></td>
+                <td class="px-3 py-2.5 text-gray-600 max-w-[180px]">${k.zona&&k.zona!=='Prabumulih Field'?`<span class="inline-block mb-0.5 text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-medium">${esc(k.zona)}</span><br>`:''}
+                  <div class="clamp2 text-xs" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak||'-')}</div></td>
                 <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(k.nilaiKontrak)}</td>
                 <td class="px-3 py-2.5 text-center text-xs text-gray-500">${k.spkCount}</td>
                 <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(k.nilaiSPK)}</td>
@@ -3027,14 +3030,14 @@ const mMK = (id=null, jenis='HHE') => {
       ${tarea('Judul Kontrak','judulKontrak',k?.judulKontrak)}
       ${fld('Nilai Kontrak (Rp)','nilaiKontrak','number',k?.nilaiKontrak)} ${fld('PIC','pic','text',k?.pic)}
       ${fld('Tgl Mulai','tglMulai','date',k?.tglMulai)} ${fld('Tgl Berakhir','tglBerakhir','date',k?.tglBerakhir)}
-      ${sel('Status','status',['Aktif','Selesai','Terminasi'],k?.status||'Aktif')}
+      ${sel('Zona Kontrak','zona',['Prabumulih Field','Zona 4'],k?.zona||'Prabumulih Field')} ${sel('Status','status',['Aktif','Selesai','Terminasi'],k?.status||'Aktif')}
     </div>${mFoot()}</form></div>`);
 };
 const svMK = async (e, id, jenis='HHE') => {
   e.preventDefault(); const f=e.target;
   const list = jenis==='Static'?S.mkS:jenis==='Rotating'?S.mkR:S.mk;
   const ex = id ? list.find(x=>x.id===id) : null;
-  const o={id:id||uid(),customID:f.customID.value.trim(),nomorSPB:f.nomorSPB.value.trim(),vendor:f.vendor.value.trim(),judulKontrak:f.judulKontrak.value.trim(),nilaiKontrak:f.nilaiKontrak.value,pic:f.pic.value.trim(),tglMulai:f.tglMulai.value,tglBerakhir:f.tglBerakhir.value,status:f.status.value,jenis,createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
+  const o={id:id||uid(),customID:f.customID.value.trim(),nomorSPB:f.nomorSPB.value.trim(),vendor:f.vendor.value.trim(),judulKontrak:f.judulKontrak.value.trim(),nilaiKontrak:f.nilaiKontrak.value,pic:f.pic.value.trim(),tglMulai:f.tglMulai.value,tglBerakhir:f.tglBerakhir.value,zona:f.zona.value,status:f.status.value,jenis,createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
   setLoad(true,'Menyimpan...'); const {error}=await sb.from('master_kontrak').upsert(F.to.mk(o));
   setLoad(false); if(dbErr(error)) return;
   if(jenis==='Rotating'){
