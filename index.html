@@ -789,7 +789,7 @@ const rDash = () => {
             <span class="text-xs font-semibold text-gray-700 flex-1">${esc(k.nomorSPB||k.customID)} — ${esc(k.vendor)}</span>
             <span class="text-xs text-gray-400 hidden sm:block">${df(k.tglBerakhir)}</span>
             <span class="text-xs ${c}">${n<=0?'Expired!':n+' hari'}</span>
-            <button onclick="go('${k.goPage}')" class="text-xs text-blue-600 hover:underline no-print">→</button>
+            <button onclick="S.fkontrak='${k.id}';go('${k.goPage}')" class="text-xs text-blue-600 hover:underline no-print">→</button>
           </div>`;}).join('')}
       </div>
     </div>`:''}
@@ -804,7 +804,7 @@ const rDash = () => {
             <span class="text-xs font-semibold text-gray-700 flex-1">${esc(k.nomorSPB||k.customID)} — ${esc(k.vendor)}</span>
             <span class="text-xs text-gray-400 hidden sm:block font-mono">${rp(sisaRp)}</span>
             <span class="text-xs ${c} font-semibold">${sisaPct}% sisa</span>
-            <button onclick="go('${k.goPage}')" class="text-xs text-blue-600 hover:underline no-print">→</button>
+            <button onclick="S.fkontrak='${k.id}';go('${k.goPage}')" class="text-xs text-blue-600 hover:underline no-print">→</button>
           </div>`;}).join('')}
       </div>
     </div>`:''}
