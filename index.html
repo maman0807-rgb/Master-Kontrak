@@ -516,6 +516,22 @@ const rDash = () => {
   const spkNoSAR  = spkR.filter(x=>!x.nomorSA&&!saRBySpk[x.id]&&!rpN(x.nilaiRealisasi)&&x.status!=='Closed').length;
   const warnR = mkR.filter(k=>k.jenis==='Rotating').filter(k=>{ const n=daysLeft(k.tglBerakhir); return n!==null&&n<=90&&k.status==='Aktif'; }).sort((a,b)=>daysLeft(a.tglBerakhir)-daysLeft(b.tglBerakhir));
 
+  // ─ Zona 4 (kontrak luar field yang dapat digunakan) ─
+  const allMKFlat = [...mkH.map(k=>({...k,_src:'h'})), ...mkS.map(k=>({...k,_src:'s'})), ...mkR.filter(k=>k.jenis==='Rotating').map(k=>({...k,_src:'r'}))];
+  const mkZ4      = allMKFlat.filter(k=>k.zona==='Zona 4');
+  const mkZ4Ids   = new Set(mkZ4.map(k=>k.id));
+  const spkZ4H    = spkH.filter(x=>mkZ4Ids.has(x.idKontrak));
+  const spkZ4S    = spkSt.filter(x=>mkZ4Ids.has(x.idKontrak));
+  const spkZ4R    = spkR.filter(x=>mkZ4Ids.has(x.idKontrak));
+  const spkZ4     = [...spkZ4H, ...spkZ4S, ...spkZ4R];
+  const mkZ4Nilai  = mkZ4.reduce((a,k)=>a+rpN(k.nilaiKontrak),0);
+  const spkZ4Nilai = spkZ4.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+  const realZ4     = spkZ4H.reduce((a,x)=>a+(saBySpk[x.id]||0),0)
+                   + spkZ4S.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0)
+                   + spkZ4R.reduce((a,x)=>a+(saRBySpk[x.id]||rpN(x.nilaiRealisasi)||0),0);
+  const pctZ4      = spkZ4Nilai>0?Math.round(realZ4/spkZ4Nilai*100):0;
+  const warnZ4     = mkZ4.filter(k=>{ const n=daysLeft(k.tglBerakhir); return n!==null&&n<=90&&k.status==='Aktif'; }).sort((a,b)=>daysLeft(a.tglBerakhir)-daysLeft(b.tglBerakhir));
+
   // ─ DC stats ─
   const dcAll   = byDate(S.dc,'tanggal');
   const dcOnly  = dcAll.filter(x=>(x.jenis||'Direct Charge')==='Direct Charge');
@@ -677,8 +693,8 @@ const rDash = () => {
       </div>
     </div>
 
-    <!-- 3 FUNGSI CARDS -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+    <!-- FUNGSI CARDS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 ${mkZ4.length?'lg:grid-cols-4':'lg:grid-cols-3 md:grid-cols-3'} gap-4 mb-5">
       <!-- HOIST -->
       <div class="bg-white rounded-xl shadow-sm overflow-hidden border-t-4 border-blue-600">
         <div class="px-4 py-3 flex items-center justify-between">
@@ -744,6 +760,23 @@ const rDash = () => {
           ${warnR.length>0?`<p class="text-[10px] text-red-600 mt-1">⚠ ${warnR.length} kontrak exp ≤90 hari</p>`:`<p class="text-[10px] text-emerald-600 mt-1">✓ Semua kontrak aman</p>`}
         </div>
       </div>
+
+      <!-- ZONA 4 -->
+      ${mkZ4.length?`
+      <div class="bg-white rounded-xl shadow-sm overflow-hidden border-t-4 border-purple-500">
+        <div class="px-4 py-3 flex items-center justify-between">
+          <span class="text-sm font-bold text-purple-800">ZONA 4</span>
+          <span class="text-[10px] text-purple-400 italic">dapat digunakan Field</span>
+        </div>
+        <div class="px-4 pb-4 flex flex-col gap-1.5">
+          ${sRow('Kontrak Aktif', mkZ4.filter(x=>x.status==='Aktif').length+' / '+mkZ4.length)}
+          ${sRow('Nilai Kontrak', rp(mkZ4Nilai))}
+          ${sRow('Nilai SPK', spkZ4.length+' SPK · '+rp(spkZ4Nilai))}
+          ${sRow('Realisasi', rp(realZ4),'text-emerald-700')}
+          ${pBar(pctZ4,'bg-purple-500')}
+          ${warnZ4.length>0?`<p class="text-[10px] text-red-600 mt-1">⚠ ${warnZ4.length} kontrak exp ≤90 hari</p>`:`<p class="text-[10px] text-emerald-600 mt-1">✓ Semua kontrak aman</p>`}
+        </div>
+      </div>`:''}
     </div>
 
     <!-- ALERTS -->
