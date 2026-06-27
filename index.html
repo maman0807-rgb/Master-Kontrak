@@ -545,6 +545,15 @@ const rDash = () => {
   });
   const perKSFinal = perKS.map(r=>({...r,isShared:false}));
   const perKRFinal = perKR.filter(r=>!sharedIds.has(r.id)).map(r=>({...r,isShared:false}));
+
+  // ─ Budget alerts: sisa anggaran kontrak ≤30% ─
+  const isBudgetWarn = k => { const n=rpN(k.nilaiKontrak); return n>0 && k.status==='Aktif' && (n-k.nilaiSpk)/n <= 0.30; };
+  const allWarnBud = [
+    ...perKHFinal.filter(isBudgetWarn).map(k=>({...k, wFungsi:k.isShared?'SHARED':'HOIST', goPage:'mk'})),
+    ...perKSFinal.filter(isBudgetWarn).map(k=>({...k, wFungsi:'STATIC', goPage:'mks'})),
+    ...perKRFinal.filter(isBudgetWarn).map(k=>({...k, wFungsi:'ROTATING', goPage:'spkr'})),
+  ].sort((a,b)=>{ const na=rpN(a.nilaiKontrak),nb=rpN(b.nilaiKontrak); return ((na-a.nilaiSpk)/na)-((nb-b.nilaiSpk)/nb); });
+
   const perKRow=(k,colorCls,fungiLabel,fungiColor,goPage)=>{
     const label    = k.isShared ? 'HOIST+ROT' : fungiLabel;
     const badgeCls = k.isShared ? 'bg-indigo-100 text-indigo-700' : fungiColor;
@@ -709,6 +718,21 @@ const rDash = () => {
             <span class="text-xs font-semibold text-gray-700 flex-1">${esc(k.nomorSPB||k.customID)} — ${esc(k.vendor)}</span>
             <span class="text-xs text-gray-400 hidden sm:block">${df(k.tglBerakhir)}</span>
             <span class="text-xs ${c}">${n<=0?'Expired!':n+' hari'}</span>
+            <button onclick="go('${k.goPage}')" class="text-xs text-blue-600 hover:underline no-print">→</button>
+          </div>`;}).join('')}
+      </div>
+    </div>`:''}
+
+    <!-- BUDGET ALERTS -->
+    ${allWarnBud.length>0?`<div class="mb-5 rounded-xl border border-orange-300 bg-orange-50 p-4">
+      <p class="text-xs font-bold text-orange-800 mb-2">⚠ ${allWarnBud.length} Kontrak Sisa Anggaran ≤30%</p>
+      <div class="flex flex-col gap-1.5">
+        ${allWarnBud.map(k=>{ const nilaiK=rpN(k.nilaiKontrak); const sisaRp=nilaiK-k.nilaiSpk; const sisaPct=Math.round(sisaRp/nilaiK*100); const c=sisaPct<=10?'text-red-700 font-bold':'text-orange-700'; const bc=k.wFungsi==='HOIST'?'bg-blue-100 text-blue-700':k.wFungsi==='ROTATING'?'bg-emerald-100 text-emerald-700':k.wFungsi==='SHARED'?'bg-indigo-100 text-indigo-700':'bg-teal-100 text-teal-700'; return `
+          <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-1.5 border border-orange-200">
+            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${bc}">${k.wFungsi}</span>
+            <span class="text-xs font-semibold text-gray-700 flex-1">${esc(k.nomorSPB||k.customID)} — ${esc(k.vendor)}</span>
+            <span class="text-xs text-gray-400 hidden sm:block font-mono">${rp(sisaRp)}</span>
+            <span class="text-xs ${c} font-semibold">${sisaPct}% sisa</span>
             <button onclick="go('${k.goPage}')" class="text-xs text-blue-600 hover:underline no-print">→</button>
           </div>`;}).join('')}
       </div>
