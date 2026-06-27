@@ -568,9 +568,9 @@ const rDash = () => {
 
   // ─ All expiring alerts ─
   const allWarn=[
-    ...warnH.map(k=>({...k,fungsi:'HOIST',goPage:'mk'})),
-    ...warnS.map(k=>({...k,fungsi:'STATIC',goPage:'mks'})),
-    ...warnR.map(k=>({...k,fungsi:'ROTATING',goPage:'mkr'})),
+    ...warnH.map(k=>({...k,fungsi:'HOIST',goPage:'spk'})),
+    ...warnS.map(k=>({...k,fungsi:'STATIC',goPage:'spks'})),
+    ...warnR.map(k=>({...k,fungsi:'ROTATING',goPage:'spkr'})),
   ].sort((a,b)=>daysLeft(a.tglBerakhir)-daysLeft(b.tglBerakhir));
 
   // helpers
@@ -604,8 +604,8 @@ const rDash = () => {
   // ─ Budget alerts: sisa anggaran kontrak ≤30% ─
   const isBudgetWarn = k => { const n=rpN(k.nilaiKontrak); return n>0 && k.status==='Aktif' && (n-k.nilaiSpk)/n <= 0.30; };
   const allWarnBud = [
-    ...perKHFinal.filter(isBudgetWarn).map(k=>({...k, wFungsi:k.isShared?'SHARED':'HOIST', goPage:'mk'})),
-    ...perKSFinal.filter(isBudgetWarn).map(k=>({...k, wFungsi:'STATIC', goPage:'mks'})),
+    ...perKHFinal.filter(isBudgetWarn).map(k=>({...k, wFungsi:k.isShared?'SHARED':'HOIST', goPage:'spk'})),
+    ...perKSFinal.filter(isBudgetWarn).map(k=>({...k, wFungsi:'STATIC', goPage:'spks'})),
     ...perKRFinal.filter(isBudgetWarn).map(k=>({...k, wFungsi:'ROTATING', goPage:'spkr'})),
   ].sort((a,b)=>{ const na=rpN(a.nilaiKontrak),nb=rpN(b.nilaiKontrak); return ((na-a.nilaiSpk)/na)-((nb-b.nilaiSpk)/nb); });
 
