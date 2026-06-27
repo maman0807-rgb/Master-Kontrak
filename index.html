@@ -511,6 +511,9 @@ const rDash = () => {
   // Fallback ke coo_spk.nilai_realisasi bila tidak ada penagihan_sa (dari Quick Doc)
   const saRNilai  = spkR.reduce((a,x)=>a+(saRBySpk[x.id]||rpN(x.nilaiRealisasi)||0),0);
   const pctR      = spkRNilai>0?Math.round(saRNilai/spkRNilai*100):0;
+  const mkRNilai  = mkR.reduce((a,x)=>a+rpN(x.nilaiKontrak),0);
+  const spkNoPRR  = spkR.filter(x=>!x.nomorPR&&x.status!=='Closed').length;
+  const spkNoSAR  = spkR.filter(x=>!x.nomorSA&&!saRBySpk[x.id]&&!rpN(x.nilaiRealisasi)&&x.status!=='Closed').length;
   const warnR = mkR.filter(k=>k.jenis==='Rotating').filter(k=>{ const n=daysLeft(k.tglBerakhir); return n!==null&&n<=90&&k.status==='Aktif'; }).sort((a,b)=>daysLeft(a.tglBerakhir)-daysLeft(b.tglBerakhir));
 
   // ─ DC stats ─
@@ -719,28 +722,27 @@ const rDash = () => {
       </div>
 
       <!-- ROTATING -->
-      <div class="bg-white rounded-xl shadow-sm overflow-hidden border-t-4 ${spkR.length?'border-emerald-500':'border-gray-300'}">
+      <div class="bg-white rounded-xl shadow-sm overflow-hidden border-t-4 border-emerald-500">
         <div class="px-4 py-3 flex items-center justify-between">
-          <span class="text-sm font-bold ${spkR.length?'text-emerald-800':'text-gray-500'}">ROTATING</span>
+          <span class="text-sm font-bold text-emerald-800">ROTATING</span>
           <div class="flex gap-2 no-print">
             <button onclick="go('mkr')" class="text-xs text-blue-600 hover:underline">Kontrak</button>
-            <button onclick="go('spkr')" class="text-xs text-emerald-600 hover:underline">SPK →</button>
+            <button onclick="go('plr')" class="text-xs text-emerald-600 hover:underline">Pipeline →</button>
           </div>
         </div>
-        ${spkR.length?`
         <div class="px-4 pb-4 flex flex-col gap-1.5">
-          ${sRow('Kontrak (shared Hoist)', mkR.length+' kontrak')}
-          ${sRow('SPK Rotating ter-tag', spkR.length+' SPK · '+rp(spkRNilai))}
+          ${sRow('Kontrak Aktif', mkR.filter(x=>x.status==='Aktif').length+' / '+mkR.length)}
+          ${sRow('Nilai Kontrak', rp(mkRNilai))}
+          ${sRow('Nilai SPK', spkR.length+' SPK · '+rp(spkRNilai))}
           ${sRow('Realisasi SA', rp(saRNilai),'text-emerald-700')}
           ${pBar(pctR,'bg-emerald-500')}
+          <div class="flex items-center gap-2 mt-2 flex-wrap">
+            ${pipeBadge(spkNoPRR,'SPK belum PR')}
+            ${pipeBadge(spkNoSAR,'SPK belum SA')}
+          </div>
           <p class="text-[10px] text-blue-400 hover:underline cursor-pointer mt-1" onclick="go('tvm')">TVM Rotating → lihat menu TVM</p>
-          ${warnR.length>0?`<p class="text-[10px] text-red-600 mt-1">⚠ ${warnR.length} kontrak own exp ≤90 hari</p>`:`<p class="text-[10px] text-emerald-600 mt-1">✓ Semua kontrak aman</p>`}
-        </div>`:`
-        <div class="px-4 pb-4 flex flex-col items-center justify-center gap-2 h-36 text-center">
-          <span class="text-3xl">⚙️</span>
-          <p class="text-xs text-gray-400">Belum ada SPK Rotating ter-tag</p>
-          <p class="text-[10px] text-blue-400 hover:underline cursor-pointer" onclick="go('tvm')">TVM Rotating → lihat menu TVM</p>
-        </div>`}
+          ${warnR.length>0?`<p class="text-[10px] text-red-600 mt-1">⚠ ${warnR.length} kontrak exp ≤90 hari</p>`:`<p class="text-[10px] text-emerald-600 mt-1">✓ Semua kontrak aman</p>`}
+        </div>
       </div>
     </div>
 
