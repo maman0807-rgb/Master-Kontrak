@@ -45,14 +45,19 @@
 
 <!-- Sidebar overlay (mobile) -->
 <div id="sb-overlay" class="hidden fixed inset-0 bg-black/50 z-30 md:hidden" onclick="sbClose()"></div>
+<!-- Sidebar toggle button desktop (muncul saat sidebar hidden) -->
+<button id="sb-float-btn" onclick="toggleSidebar()" class="hidden fixed top-4 left-4 z-40 bg-blue-950 text-white px-2.5 py-2 rounded-lg shadow-lg text-sm no-print" title="Tampilkan sidebar">☰</button>
 
 <!-- Sidebar -->
 <aside id="sidebar" class="fixed top-0 left-0 h-full w-56 bg-blue-950 text-white z-40 flex flex-col transition-transform duration-200 -translate-x-full md:translate-x-0 no-print">
   <!-- Logo -->
-  <div class="px-5 py-5 border-b border-blue-800/60">
-    <div class="text-base font-bold leading-tight">📋 Rekap SPK</div>
-    <div class="text-xs text-blue-400 mt-0.5">& Kontrak COO</div>
-    <div class="text-[10px] text-blue-500 mt-1">Prabumulih Field</div>
+  <div class="px-5 py-5 border-b border-blue-800/60 flex items-start justify-between">
+    <div>
+      <div class="text-base font-bold leading-tight">📋 Rekap SPK</div>
+      <div class="text-xs text-blue-400 mt-0.5">& Kontrak COO</div>
+      <div class="text-[10px] text-blue-500 mt-1">Prabumulih Field</div>
+    </div>
+    <button onclick="toggleSidebar()" class="hidden md:block text-blue-400 hover:text-white p-1 rounded transition -mr-1 mt-0.5 text-base leading-none" title="Sembunyikan sidebar">‹‹</button>
   </div>
 
   <!-- Nav -->
@@ -199,6 +204,7 @@ sb.auth.onAuthStateChange((event, session) => {
     S.isAdmin = false;
     document.getElementById('nav-user').textContent = S.currentUser;
     document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
+    applySidebarState();
     loadAll();
   } else {
     showLogin();
@@ -388,6 +394,36 @@ const sbOpen = () => {
 const sbClose = () => {
   document.getElementById('sidebar').classList.add('-translate-x-full');
   document.getElementById('sb-overlay').classList.add('hidden');
+};
+const toggleSidebar = () => {
+  const sb = document.getElementById('sidebar');
+  const app = document.getElementById('app');
+  const btn = document.getElementById('sb-float-btn');
+  const isOpen = sb.classList.contains('md:translate-x-0');
+  if(isOpen) {
+    sb.classList.remove('md:translate-x-0');
+    app.classList.remove('md:ml-56');
+    app.classList.add('md:ml-0');
+    if(btn) btn.classList.remove('hidden');
+    localStorage.setItem('sb-hidden','1');
+  } else {
+    sb.classList.add('md:translate-x-0');
+    app.classList.remove('md:ml-0');
+    app.classList.add('md:ml-56');
+    if(btn) btn.classList.add('hidden');
+    localStorage.removeItem('sb-hidden');
+  }
+};
+const applySidebarState = () => {
+  if(window.innerWidth >= 768 && localStorage.getItem('sb-hidden')==='1') {
+    const sb = document.getElementById('sidebar');
+    const app = document.getElementById('app');
+    const btn = document.getElementById('sb-float-btn');
+    sb.classList.remove('md:translate-x-0');
+    app.classList.remove('md:ml-56');
+    app.classList.add('md:ml-0');
+    if(btn) btn.classList.remove('hidden');
+  }
 };
 
 const go = page => {
