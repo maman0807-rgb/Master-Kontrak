@@ -533,15 +533,30 @@ const rDash = () => {
   const pctZ4      = spkZ4Nilai>0?Math.round(realZ4/spkZ4Nilai*100):0;
   const warnZ4     = mkZ4.filter(k=>{ const n=daysLeft(k.tglBerakhir); return n!==null&&n<=90&&k.status==='Aktif'; }).sort((a,b)=>daysLeft(a.tglBerakhir)-daysLeft(b.tglBerakhir));
 
-  // ─ DC stats ─
+  // ─ DC stats per fungsi ─
   const dcAll   = byDate(S.dc,'tanggal');
   const dcOnly  = dcAll.filter(x=>(x.jenis||'Direct Charge')==='Direct Charge');
   const resOnly = dcAll.filter(x=>x.jenis==='Reservasi');
   const cyear   = new Date().getFullYear().toString();
-  const dcYear  = dcOnly.filter(x=>x.tanggal&&x.tanggal.startsWith(cyear));
-  const dcYrNilai = dcYear.reduce((a,x)=>a+rpN(x.total),0);
-  const dcProses  = dcOnly.filter(x=>!['Diterima','Ditolak'].includes(x.status)).length;
-  const dcPO      = dcOnly.filter(x=>x.status==='PO Terbit').length;
+  const dcStatsFn = fungsi => {
+    const isFungsi = x => (x.fungsi||'Hoist') === fungsi;
+    const dcF     = dcOnly.filter(isFungsi);
+    const dcFYear = dcF.filter(x=>x.tanggal&&x.tanggal.startsWith(cyear));
+    const resF    = resOnly.filter(isFungsi);
+    return {
+      nilaiYear:  dcFYear.reduce((a,x)=>a+rpN(x.total),0),
+      yearCount:  dcFYear.length,
+      proses:     dcF.filter(x=>!['Diterima','Ditolak'].includes(x.status)).length,
+      po:         dcF.filter(x=>x.status==='PO Terbit').length,
+      diterima:   dcF.filter(x=>x.status==='Diterima').length,
+      total:      dcF.length,
+      res:        resF.length,
+      resDiterima:resF.filter(x=>x.status==='Diterima').length
+    };
+  };
+  const dcH = dcStatsFn('Hoist');
+  const dcS = dcStatsFn('Static');
+  const dcR = dcStatsFn('Rotating');
 
   // ─ SPK Lumpsum ─
   const sF = byDate(S.sspk,'tanggal');
@@ -810,32 +825,41 @@ const rDash = () => {
         </div>
       </div>
 
-      <!-- DC & Reservasi -->
+      <!-- DC & Reservasi per fungsi -->
       <div>
         <div class="flex items-center justify-between mb-2">
-          <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">DC & Reservasi — Semua Fungsi</h2>
-          <button onclick="go('dc')" class="text-xs text-blue-600 hover:underline no-print">Lihat →</button>
+          <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">DC & Reservasi ${cyear}</h2>
+          <div class="flex gap-2 no-print">
+            <button onclick="go('dc')"  class="text-xs text-blue-600 hover:underline">Hoist</button>
+            <button onclick="go('dcs')" class="text-xs text-teal-600 hover:underline">Static</button>
+            <button onclick="go('dcr')" class="text-xs text-emerald-600 hover:underline">Rotating</button>
+          </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-indigo-500">
-            <p class="text-[10px] text-gray-400">Nilai DC ${cyear}</p>
-            <p class="text-xl font-bold text-indigo-700 font-mono leading-tight">${rp(dcYrNilai)}</p>
-            <p class="text-[10px] text-gray-400">${dcYear.length} PO/RO tahun ini</p>
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div class="grid grid-cols-[1fr_auto_auto_auto_auto] text-[10px] text-gray-400 font-semibold uppercase tracking-wide px-3 py-1.5 bg-gray-50 border-b gap-x-3">
+            <span>Fungsi</span><span class="text-right">Nilai DC</span><span class="text-center">Proses</span><span class="text-center">✓ Terima</span><span class="text-center">Res</span>
           </div>
-          <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-amber-400">
-            <p class="text-[10px] text-gray-400">Dalam Proses</p>
-            <p class="text-xl font-bold text-amber-600">${dcProses}</p>
-            <p class="text-[10px] text-gray-400">${dcPO} PO terbit</p>
-          </div>
-          <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-emerald-500">
-            <p class="text-[10px] text-gray-400">DC Diterima</p>
-            <p class="text-xl font-bold text-emerald-700">${dcOnly.filter(x=>x.status==='Diterima').length}</p>
-            <p class="text-[10px] text-gray-400">dari ${dcOnly.length} total</p>
-          </div>
-          <div class="bg-white rounded-xl p-3 shadow-sm border-l-4 border-violet-400">
-            <p class="text-[10px] text-gray-400">Reservasi</p>
-            <p class="text-xl font-bold text-violet-700">${resOnly.length}</p>
-            <p class="text-[10px] text-gray-400">${resOnly.filter(x=>x.status==='Diterima').length} sudah diterima</p>
+          ${[
+            {label:'HOIST',   cls:'bg-blue-100 text-blue-700',   d:dcH, page:'dc'},
+            {label:'STATIC',  cls:'bg-teal-100 text-teal-700',   d:dcS, page:'dcs'},
+            {label:'ROTATING',cls:'bg-emerald-100 text-emerald-700', d:dcR, page:'dcr'},
+          ].map(({label,cls,d,page},i)=>`
+          <div class="grid grid-cols-[1fr_auto_auto_auto_auto] items-center px-3 py-2.5 gap-x-3 ${i<2?'border-b':''} hover:bg-gray-50 cursor-pointer" onclick="go('${page}')">
+            <div>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${cls}">${label}</span>
+              <span class="text-[10px] text-gray-400 ml-1">${d.yearCount} PO/RO</span>
+            </div>
+            <span class="text-xs font-mono font-semibold text-indigo-700 text-right whitespace-nowrap">${d.nilaiYear?rp(d.nilaiYear):'-'}</span>
+            <span class="text-center text-xs ${d.proses>0?'font-semibold text-amber-600':'text-gray-300'}">${d.proses}</span>
+            <span class="text-center text-xs ${d.diterima>0?'font-semibold text-emerald-600':'text-gray-300'}">${d.diterima}</span>
+            <span class="text-center text-xs ${d.res>0?'font-semibold text-violet-600':'text-gray-300'}">${d.res}</span>
+          </div>`).join('')}
+          <div class="grid grid-cols-[1fr_auto_auto_auto_auto] items-center px-3 py-2 gap-x-3 bg-gray-50 border-t text-[10px] font-semibold text-gray-500">
+            <span>TOTAL</span>
+            <span class="text-right font-mono text-indigo-700">${rp(dcH.nilaiYear+dcS.nilaiYear+dcR.nilaiYear)}</span>
+            <span class="text-center text-amber-600">${dcH.proses+dcS.proses+dcR.proses}</span>
+            <span class="text-center text-emerald-600">${dcH.diterima+dcS.diterima+dcR.diterima}</span>
+            <span class="text-center text-violet-600">${dcH.res+dcS.res+dcR.res}</span>
           </div>
         </div>
       </div>
