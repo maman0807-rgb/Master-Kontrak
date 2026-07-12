@@ -513,13 +513,14 @@ const rDash = () => {
   const mkH  = S.mk.filter(isActiveYear);
   const activeHIds = new Set(mkH.map(k=>k.id));
   const spkH = S.spk.filter(x=>activeHIds.has(x.idKontrak));
-  const saIds = id => spkH.filter(x=>x.idKontrak===id).reduce((a,x)=>a+(saBySpk[x.id]||0),0);
+  // Fallback ke coo_spk.nilai_realisasi bila tidak ada penagihan_sa (dari Quick Doc) — sama seperti Rotating
+  const saIds = id => spkH.filter(x=>x.idKontrak===id).reduce((a,x)=>a+(saBySpk[x.id]||rpN(x.nilaiRealisasi)||0),0);
   const mkHNilai   = mkH.reduce((a,x)=>a+rpN(x.nilaiKontrak),0);
   const spkHNilai  = spkH.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
-  const saHNilai   = spkH.reduce((a,x)=>a+(saBySpk[x.id]||0),0);
+  const saHNilai   = spkH.reduce((a,x)=>a+(saBySpk[x.id]||rpN(x.nilaiRealisasi)||0),0);
   const pctH       = spkHNilai>0 ? Math.round(saHNilai/spkHNilai*100) : 0;
   const spkWithSA  = new Set(saF.map(x=>x.idCoO));
-  const spkNoSAH   = spkH.filter(x=>!spkWithSA.has(x.id)&&x.status!=='Closed').length;
+  const spkNoSAH   = spkH.filter(x=>!x.nomorSA&&!spkWithSA.has(x.id)&&!rpN(x.nilaiRealisasi)&&x.status!=='Closed').length;
   const spkWithPR  = new Set(S.pr.map(x=>x.idCoO));
   const spkNoPRH   = spkH.filter(x=>!spkWithPR.has(x.id)&&x.status!=='Closed').length;
   const warnH = mkH.filter(k=>{ const n=daysLeft(k.tglBerakhir); return n!==null&&n<=90&&k.status==='Aktif'; }).sort((a,b)=>daysLeft(a.tglBerakhir)-daysLeft(b.tglBerakhir));
@@ -560,7 +561,7 @@ const rDash = () => {
   const spkZ4     = [...spkZ4H, ...spkZ4S, ...spkZ4R];
   const mkZ4Nilai  = mkZ4.reduce((a,k)=>a+rpN(k.nilaiKontrak),0);
   const spkZ4Nilai = spkZ4.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
-  const realZ4     = spkZ4H.reduce((a,x)=>a+(saBySpk[x.id]||0),0)
+  const realZ4     = spkZ4H.reduce((a,x)=>a+(saBySpk[x.id]||rpN(x.nilaiRealisasi)||0),0)
                    + spkZ4S.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0)
                    + spkZ4R.reduce((a,x)=>a+(saRBySpk[x.id]||rpN(x.nilaiRealisasi)||0),0);
   const pctZ4      = spkZ4Nilai>0?Math.round(realZ4/spkZ4Nilai*100):0;
@@ -1925,7 +1926,7 @@ const rPLH = () => {
     const wPO = spks.filter(hasPO).length;
     const wSA = spks.filter(hasSA).length;
     const nilaiSPK = spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
-    const nilaiReal = spks.flatMap(x=>saBySpk[x.id]||[]).reduce((a,x)=>a+rpN(x.nilaiSA),0);
+    const nilaiReal = spks.reduce((a,x)=>a+((saBySpk[x.id]||[]).reduce((b,s)=>b+rpN(s.nilaiSA),0)||rpN(x.nilaiRealisasi)||0),0);
     const pending = spks.filter(isPending).length;
     return {k, n:spks.length, wPR, wPO, wSA, nilaiSPK, nilaiReal, pending};
   }).filter(Boolean);
@@ -2077,7 +2078,7 @@ const rPLH = () => {
           <tr><td colspan="3" class="px-3 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
           <td class="px-3 py-3 text-right font-mono">${rp(data.reduce((a,x)=>a+rpN(x.nilaiSPK),0))}</td>
           <td></td>
-          <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(data.flatMap(s=>saBySpk[s.id]||[]).reduce((a,x)=>a+rpN(x.nilaiSA),0))}</td>
+          <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(data.reduce((a,s)=>{ const sas=saBySpk[s.id]||[]; return a+(sas.reduce((b,x)=>b+rpN(x.nilaiSA),0)||rpN(s.nilaiRealisasi)||0); },0))}</td>
           <td colspan="2"></td></tr>
         </tfoot>`:''}
       </table>
