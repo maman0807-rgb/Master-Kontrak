@@ -2318,7 +2318,9 @@ const rMKR = () => {
     const hoistSpks  = k.jenis!=='Rotating' ? S.spk.filter(x=>x.idKontrak===k.id) : [];
     const hoistCount = hoistSpks.length;
     const hoistNilai = hoistSpks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
-    return {...k, spkCount:spks.length, nilaiSPK, real, pct, bar, hoistCount, hoistNilai};
+    // Sisa kontrak gabungan Hoist+Rotating (relevan cuma kalau kontraknya shared)
+    const sisaGabungan = rpN(k.nilaiKontrak) - (nilaiSPK + hoistNilai);
+    return {...k, spkCount:spks.length, nilaiSPK, real, pct, bar, hoistCount, hoistNilai, sisaGabungan};
   });
   const totNilaiSPK = perKR.reduce((a,x)=>a+x.nilaiSPK,0);
   const totReal     = perKR.reduce((a,x)=>a+x.real,0);
@@ -2347,7 +2349,8 @@ const rMKR = () => {
                 <td class="px-3 py-2.5 max-w-[150px]"><div class="clamp2 text-xs" title="${esc(k.vendor)}">${esc(k.vendor)}</div></td>
                 <td class="px-3 py-2.5 text-gray-600 max-w-[180px]">${k.zona&&k.zona!=='Prabumulih Field'?`<span class="inline-block mb-0.5 text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-medium">${esc(k.zona)}</span><br>`:''}
                   <div class="clamp2 text-xs" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak||'-')}</div>
-                  ${k.hoistCount>0?`<span class="inline-block mt-0.5 text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium" title="Kontrak ini juga dipakai Hoist">🔗 +${k.hoistCount} SPK Hoist (${rp(k.hoistNilai)})</span>`:''}</td>
+                  ${k.hoistCount>0?`<div class="mt-0.5"><span class="inline-block text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium" title="Kontrak ini juga dipakai Hoist">🔗 +${k.hoistCount} SPK Hoist (${rp(k.hoistNilai)})</span>
+                  <div class="text-[9px] text-gray-500 mt-0.5">Sisa gabungan: <b class="${k.sisaGabungan<0?'text-red-600':'text-emerald-600'}">${rp(k.sisaGabungan)}</b></div></div>`:''}</td>
                 <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(k.nilaiKontrak)}</td>
                 <td class="px-3 py-2.5 text-center text-xs text-gray-500">${k.spkCount}</td>
                 <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(k.nilaiSPK)}</td>
@@ -2436,7 +2439,10 @@ const rSPKR = () => {
         const real=spks.reduce((a,x)=>a+(saBySpk[x.id]||rpN(x.nilaiRealisasi)||0),0);
         const pct=nilaiSPK>0?Math.min(Math.round(real/nilaiSPK*100),100):0;
         const isActive=S.fkontrak===k.id;
-        const hoistCount = k.jenis!=='Rotating' ? S.spk.filter(x=>x.idKontrak===k.id).length : 0;
+        const hoistSpksCard = k.jenis!=='Rotating' ? S.spk.filter(x=>x.idKontrak===k.id) : [];
+        const hoistCount = hoistSpksCard.length;
+        const hoistNilaiCard = hoistSpksCard.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+        const sisaGabunganCard = rpN(k.nilaiKontrak) - (nilaiSPK + hoistNilaiCard);
         return `<div class="bg-white rounded-xl shadow-sm p-3 border-2 cursor-pointer transition ${isActive?'border-emerald-500':'border-transparent hover:border-gray-200'} min-w-[180px]"
           onclick="S.fkontrak=S.fkontrak==='${k.id}'?'':'${k.id}';render()">
           <p class="text-xs font-bold text-emerald-700">${esc(k.nomorSPB||k.customID)}</p>
@@ -2446,7 +2452,8 @@ const rSPKR = () => {
             <span class="text-[10px] font-bold text-gray-600">${pct}%</span>
           </div>
           <p class="text-[10px] text-gray-400 mt-0.5">${spks.length} SPK · Realisasi ${rp(real)}</p>
-          ${hoistCount>0?`<p class="text-[9px] text-blue-600 font-medium mt-1" title="Kontrak ini juga dipakai Hoist">🔗 +${hoistCount} SPK Hoist</p>`:''}
+          ${hoistCount>0?`<p class="text-[9px] text-blue-600 font-medium mt-1" title="Kontrak ini juga dipakai Hoist">🔗 +${hoistCount} SPK Hoist</p>
+          <p class="text-[9px] text-gray-500">Sisa gabungan: <b class="${sisaGabunganCard<0?'text-red-600':'text-emerald-600'}">${rp(sisaGabunganCard)}</b></p>`:''}
         </div>`;}).join('')}
     </div>
 
