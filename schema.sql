@@ -104,8 +104,9 @@ create table if not exists public.penagihan_sa (
 );
 
 -- ============================================================
--- RLS — izinkan semua akses via anon key
--- (tambahkan auth nanti jika perlu)
+-- RLS — HANYA user yang sudah login (authenticated) yang boleh akses
+-- (diperketat setelah schema awal; policy aktif di DB bernama "auth_only",
+--  bukan "allow_all" seperti draft awal file ini — lihat verifikasi 2026-07-12)
 -- ============================================================
 alter table public.spk enable row level security;
 alter table public.direct_charge enable row level security;
@@ -114,9 +115,9 @@ alter table public.coo_spk enable row level security;
 alter table public.purchase_request enable row level security;
 alter table public.penagihan_sa enable row level security;
 
-create policy "allow_all" on public.spk for all using (true) with check (true);
-create policy "allow_all" on public.direct_charge for all using (true) with check (true);
-create policy "allow_all" on public.master_kontrak for all using (true) with check (true);
-create policy "allow_all" on public.coo_spk for all using (true) with check (true);
-create policy "allow_all" on public.purchase_request for all using (true) with check (true);
-create policy "allow_all" on public.penagihan_sa for all using (true) with check (true);
+create policy "auth_only" on public.spk for all using (auth.role()='authenticated') with check (auth.role()='authenticated');
+create policy "auth_only" on public.direct_charge for all using (auth.role()='authenticated') with check (auth.role()='authenticated');
+create policy "auth_only" on public.master_kontrak for all using (auth.role()='authenticated') with check (auth.role()='authenticated');
+create policy "auth_only" on public.coo_spk for all using (auth.role()='authenticated') with check (auth.role()='authenticated');
+create policy "auth_only" on public.purchase_request for all using (auth.role()='authenticated') with check (auth.role()='authenticated');
+create policy "auth_only" on public.penagihan_sa for all using (auth.role()='authenticated') with check (auth.role()='authenticated');
