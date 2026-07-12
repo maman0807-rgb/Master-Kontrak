@@ -3195,24 +3195,34 @@ const mSPKR = (id=null) => {
       ${fld('Nomor PR','nomorPR','text',s?.nomorPR)} ${fld('Nomor PO','nomorPO','text',s?.nomorPO)}
       ${fld('Nomor SA','nomorSA','text',s?.nomorSA)} ${fld('Nilai Realisasi (Rp)','nilaiRealisasi','number',s?.nilaiRealisasi)}
       ${fld('No. WO','noWO','text',s?.noWO)} ${sel('Remarks Invoice','remarksInvoice',['','DITAGIHKAN','CANCEL','PROSES','MENUNGGU'],s?.remarksInvoice||'')}
+      ${(id && s?.jenis!=='Rotating')?`<div class="col-span-2 flex items-center gap-2 mt-1 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+        <input type="checkbox" id="chk-unshare" name="unshareToHoist" class="rounded">
+        <label for="chk-unshare" class="text-xs text-gray-700">Kembalikan SPK ini ke <b>Hoist saja</b> (batalkan status shared, akan hilang dari menu Rotating)</label>
+      </div>`:''}
     </div>${mFoot()}</form></div>`);
 };
 const svSPKR = async (e,id) => {
   e.preventDefault(); const f=e.target;
   const ex=id?S.spkR.find(x=>x.id===id):null;
+  const unshare = f.unshareToHoist?.checked || false;
   const o={id:id||uid(),customID:f.customID.value.trim(),nomorSPK:f.nomorSPK.value.trim(),
     idKontrak:f.idKontrak.value,tglTerbit:f.tglTerbit.value,deskripsi:f.deskripsi.value.trim(),
     nilaiSPK:f.nilaiSPK.value,tglMulai:f.tglMulai.value,tglSelesai:f.tglSelesai.value,
     status:f.status.value,catatan:f.catatan.value.trim(),
-    jenis:S.mkR.find(x=>x.id===f.idKontrak.value&&x.jenis==='Rotating')?'Rotating':'HHE',
-    fungsi:S.mkR.find(x=>x.id===f.idKontrak.value&&x.jenis==='Rotating')?null:'Rotating',
+    jenis:unshare?'HHE':(S.mkR.find(x=>x.id===f.idKontrak.value&&x.jenis==='Rotating')?'Rotating':'HHE'),
+    fungsi:unshare?null:(S.mkR.find(x=>x.id===f.idKontrak.value&&x.jenis==='Rotating')?null:'Rotating'),
     nomorPR:f.nomorPR.value.trim()||null,nomorPO:f.nomorPO.value.trim()||null,
     nomorSA:f.nomorSA.value.trim()||null,nilaiRealisasi:f.nilaiRealisasi.value||null,
     noWO:f.noWO.value.trim()||null,remarksInvoice:f.remarksInvoice.value||null,
     createdBy:ex?.createdBy||S.currentUser,updatedBy:S.currentUser};
   setLoad(true,'Menyimpan...'); const {error}=await sb.from('coo_spk').upsert(F.to.coo(o));
   setLoad(false); if(dbErr(error)) return;
-  if(id){ const idx=S.spkR.findIndex(x=>x.id===id); if(idx>=0) S.spkR[idx]=o; recomputeMKR(); }
+  if(unshare){
+    // Pindah balik dari S.spkR ke S.spk — bukan shared lagi, murni Hoist
+    S.spkR=S.spkR.filter(x=>x.id!==id);
+    S.spk.unshift(o);
+    recomputeMKR();
+  } else if(id){ const idx=S.spkR.findIndex(x=>x.id===id); if(idx>=0) S.spkR[idx]=o; recomputeMKR(); }
   else { S.spkR.unshift(o); recomputeMKR(); }
   closeModal(); render();
 };
