@@ -1317,12 +1317,19 @@ const rMK = () => {
             const spkCount=S.spk.filter(s=>s.idKontrak===k.id).length;
             const pct=spkNilai>0?Math.min(Math.round(saNilai/spkNilai*100),100):0;
             const bar=pct>=100?'bg-emerald-500':pct>=50?'bg-blue-500':'bg-amber-400';
+            // Kontrak yang punya SPK di-share ke Rotating — kasih tau tim Hoist ada aktivitas Rotating juga
+            const rotSpksMK = S.spkR.filter(x=>x.idKontrak===k.id);
+            const rotCountMK = rotSpksMK.length;
+            const rotNilaiMK = rotSpksMK.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+            const sisaGabunganMK = rpN(k.nilaiKontrak) - (spkNilai + rotNilaiMK);
             return `<tr class="${rowCls}">
               <td class="px-3 py-2.5 font-semibold text-blue-700 whitespace-nowrap text-xs">${esc(k.customID)}</td>
               <td class="px-3 py-2.5 text-gray-500 whitespace-nowrap text-xs">${esc(k.nomorSPB||'-')}</td>
               <td class="px-3 py-2.5 max-w-[150px]"><div class="clamp2 text-xs" title="${esc(k.vendor)}">${esc(k.vendor)}</div></td>
               <td class="px-3 py-2.5 text-gray-600 max-w-[180px]">${k.zona&&k.zona!=='Prabumulih Field'?`<span class="inline-block mb-0.5 text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-medium">${esc(k.zona)}</span><br>`:''}
-                <div class="clamp2 text-xs" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak||'-')}</div></td>
+                <div class="clamp2 text-xs" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak||'-')}</div>
+                ${rotCountMK>0?`<div class="mt-0.5"><span class="inline-block text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-medium" title="Kontrak ini juga dipakai Rotating">🔗 +${rotCountMK} SPK Rotating (${rp(rotNilaiMK)})</span>
+                <div class="text-[9px] text-gray-500 mt-0.5">Sisa gabungan: <b class="${sisaGabunganMK<0?'text-red-600':'text-emerald-600'}">${rp(sisaGabunganMK)}</b></div></div>`:''}</td>
               <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs">${rp(k.nilaiKontrak)}</td>
               <td class="px-3 py-2.5 text-center text-gray-500 text-xs">${spkCount}</td>
               <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs">${rp(spkNilai)}</td>
@@ -1389,6 +1396,9 @@ const rSPK = () => {
         const barColor = pct>=90?'bg-green-500':pct>=50?'bg-blue-500':'bg-amber-400';
         const n = daysLeft(k.tglBerakhir);
         const expCls = n!==null&&n<=30?'text-red-600 font-bold':n!==null&&n<=90?'text-amber-600':'text-gray-400';
+        const rotSpksCard = S.spkR.filter(x=>x.idKontrak===k.id);
+        const rotCountCard = rotSpksCard.length;
+        const sisaGabunganSPK = rpN(k.nilaiKontrak) - (k.totalSPK + rotSpksCard.reduce((a,x)=>a+rpN(x.nilaiSPK),0));
         return `<div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500 cursor-pointer hover:shadow-md transition" onclick="S.fkontrak='${k.id}';render()">
           <div class="flex justify-between items-start mb-1">
             <div class="text-xs font-bold text-blue-700 truncate max-w-[60%]">${esc(k.customID)}</div>
@@ -1403,6 +1413,10 @@ const rSPK = () => {
             <span class="text-gray-400">Realisasi SA</span>
             <span class="font-mono font-semibold text-emerald-700">${rp(k.totalSA)}</span>
           </div>
+          ${rotCountCard>0?`<div class="flex justify-between text-[9px] mb-1">
+            <span class="text-emerald-600 font-medium" title="Kontrak ini juga dipakai Rotating">🔗 +${rotCountCard} SPK Rotating</span>
+            <span class="${sisaGabunganSPK<0?'text-red-600':'text-gray-500'}">Sisa gabungan: ${rp(sisaGabunganSPK)}</span>
+          </div>`:''}
           <div class="w-full bg-gray-100 rounded-full h-1.5">
             <div class="${barColor} h-1.5 rounded-full" style="width:${Math.min(pct,100).toFixed(1)}%"></div>
           </div>
