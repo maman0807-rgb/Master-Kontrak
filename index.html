@@ -1288,9 +1288,11 @@ const rDCR = () => rDCFungsi('Rotating');
 const rMK = () => {
   const data = byDateMK(S.mk);
   const totalNilai = data.reduce((a,x) => a+rpN(x.nilaiKontrak), 0);
-  // hitung realisasi SA per kontrak
+  // hitung realisasi SA per kontrak — fallback ke nilaiRealisasi (dari Quick Doc) kalau tidak ada baris penagihan_sa
+  const saBySpkMK = {};
+  S.sa.forEach(a=>{ saBySpkMK[a.idCoO]=(saBySpkMK[a.idCoO]||0)+rpN(a.nilaiSA); });
   const saPerK = {};
-  S.sa.forEach(a=>{ const s=S.spk.find(x=>x.id===a.idCoO); if(s){ saPerK[s.idKontrak]=(saPerK[s.idKontrak]||0)+rpN(a.nilaiSA); } });
+  S.spk.forEach(s=>{ saPerK[s.idKontrak]=(saPerK[s.idKontrak]||0)+(saBySpkMK[s.id]||rpN(s.nilaiRealisasi)||0); });
   const spkPerK = {}, cntPerK = {};
   S.spk.forEach(s=>{ spkPerK[s.idKontrak]=(spkPerK[s.idKontrak]||0)+rpN(s.nilaiSPK); cntPerK[s.idKontrak]=(cntPerK[s.idKontrak]||0)+1; });
   const totalSA = data.reduce((a,k)=>a+(saPerK[k.id]||0),0);
@@ -1365,7 +1367,7 @@ const rSPK = () => {
 
   const totalSPK  = data.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
   const totalSA   = data.reduce((a,s)=>{
-    const sa=saMap[s.id]||[]; return a+sa.reduce((b,x)=>b+rpN(x.nilaiSA),0);
+    const sa=saMap[s.id]||[]; return a+(sa.reduce((b,x)=>b+rpN(x.nilaiSA),0)||rpN(s.nilaiRealisasi)||0);
   },0);
   const pctReal   = totalSPK>0 ? (totalSA/totalSPK*100).toFixed(1) : 0;
 
@@ -1377,7 +1379,7 @@ const rSPK = () => {
     const sa=saMap[s.id]||[];
     mkMap[s.idKontrak].countSPK++;
     mkMap[s.idKontrak].totalSPK += rpN(s.nilaiSPK);
-    mkMap[s.idKontrak].totalSA  += sa.reduce((b,x)=>b+rpN(x.nilaiSA),0);
+    mkMap[s.idKontrak].totalSA  += (sa.reduce((b,x)=>b+rpN(x.nilaiSA),0)||rpN(s.nilaiRealisasi)||0);
   });
 
   const summaryCards = !S.fkontrak ? `
@@ -1436,7 +1438,7 @@ const rSPK = () => {
             const k  = S.mk.find(x=>x.id===s.idKontrak);
             const pr = prMap[s.id];
             const sa = saMap[s.id]||[];
-            const nilaiSA = sa.reduce((a,x)=>a+rpN(x.nilaiSA),0);
+            const nilaiSA = sa.reduce((a,x)=>a+rpN(x.nilaiSA),0)||rpN(s.nilaiRealisasi)||0;
             const pct = rpN(s.nilaiSPK)>0 ? (nilaiSA/rpN(s.nilaiSPK)*100).toFixed(0) : 0;
             const realCls = nilaiSA>=rpN(s.nilaiSPK)?'text-green-600':nilaiSA>0?'text-blue-600':'text-gray-400';
             return `<tr class="hover:bg-gray-50">
@@ -2057,7 +2059,7 @@ const rPLH = () => {
             const k=S.mk.find(x=>x.id===s.idKontrak);
             const prs=prBySpk[s.id]||[], sas=saBySpk[s.id]||[];
             const prVal=s.nomorPR||prs[0]?.nomorPR; const saVal=s.nomorSA||sas[0]?.nomorSA;
-            const real=sas.reduce((a,x)=>a+rpN(x.nilaiSA),0);
+            const real=sas.reduce((a,x)=>a+rpN(x.nilaiSA),0)||rpN(s.nilaiRealisasi)||0;
             return `<tr class="hover:bg-gray-50 ${isLengkap(s)?'':'bg-amber-50/30'}">
               <td class="px-3 py-2.5 font-semibold text-blue-700 whitespace-nowrap text-xs">${esc(s.nomorSPK||s.customID)}</td>
               <td class="px-3 py-2.5 text-xs text-blue-600 whitespace-nowrap">${k?esc(k.nomorSPB||k.customID):'-'}</td>
@@ -2657,7 +2659,8 @@ const rSA = () => {
   const total  = data.reduce((a,x)=>a+rpN(x.nilaiSA),0);
   const spkWithSA     = new Set(S.sa.map(x=>x.idCoO));         // all-time (untuk tab "Belum Ditagih")
   const spkWithSAYear = new Set(allSA.map(x=>x.idCoO));        // filtered (untuk per-kontrak tab)
-  let spkNoSA=S.spk.filter(x=>!spkWithSA.has(x.id)&&x.status!=='Closed');
+  // "Belum Ditagih" harus kecualikan SPK yang realisasinya sudah diisi via Quick Doc (nomorSA/nilaiRealisasi inline)
+  let spkNoSA=S.spk.filter(x=>!x.nomorSA&&!spkWithSA.has(x.id)&&!rpN(x.nilaiRealisasi)&&x.status!=='Closed');
   if(S.fkontrak) spkNoSA=spkNoSA.filter(x=>x.idKontrak===S.fkontrak);
 
   const tabBtn=(t,label)=>{const a=S.saTab===t;return `<button onclick="S.saTab='${t}';render()" class="px-4 py-2 text-sm font-medium border-b-2 transition ${a?'border-emerald-600 text-emerald-700 bg-white font-semibold':'border-transparent text-gray-500 hover:text-gray-700 bg-gray-50'}">${label}</button>`;};
@@ -2667,8 +2670,8 @@ const rSA = () => {
     const spks = S.spk.filter(x=>x.idKontrak===k.id);
     const spkNilai = spks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
     const saList   = allSA.filter(x=>spks.find(s=>s.id===x.idCoO));
-    const saNilai  = saList.reduce((a,x)=>a+rpN(x.nilaiSA),0);
-    const spkOpen  = spks.filter(x=>!spkWithSA.has(x.id)&&x.status!=='Closed').length;
+    const saNilai  = saList.reduce((a,x)=>a+rpN(x.nilaiSA),0) || spks.reduce((a,x)=>a+rpN(x.nilaiRealisasi),0);
+    const spkOpen  = spks.filter(x=>!x.nomorSA&&!spkWithSA.has(x.id)&&!rpN(x.nilaiRealisasi)&&x.status!=='Closed').length;
     const pct = spkNilai>0 ? Math.min(Math.round(saNilai/spkNilai*100),100) : 0;
     const bar = pct>=100?'bg-emerald-500':pct>=50?'bg-blue-500':'bg-amber-400';
     return {k, spkCount:spks.length, spkNilai, saNilai, spkOpen, saCount:saList.length, pct, bar};
