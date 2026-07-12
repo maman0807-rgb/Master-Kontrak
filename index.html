@@ -4,9 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rekap SPK & Kontrak COO — Prabumulih Field</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- xlsx (~880KB) sengaja TIDAK dimuat di sini — cuma dipakai saat Export/Import,
+       lihat ensureXLSX() yang lazy-load on demand -->
   <style>
     @media print { .no-print{display:none!important} body{background:white} }
     .fade-in { animation: fi .15s ease; }
@@ -205,7 +206,10 @@ sb.auth.onAuthStateChange((event, session) => {
     document.getElementById('nav-user').textContent = S.currentUser;
     document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
     applySidebarState();
-    loadAll();
+    // Stale-while-revalidate: kalau ada cache, tampil instan dari situ dulu,
+    // baru refresh diam-diam di background — hindari layar kosong+spinner tiap load
+    if(loadCache()){ applyUserProfile(); render(); loadAll(true); }
+    else { loadAll(); }
   } else {
     showLogin();
     S.currentUser = ''; S.isAdmin = false;
@@ -303,45 +307,74 @@ const recomputeMKR = () => {
   S.mkR = [...S.mk.filter(k=>sharedIds.has(k.id)), ...S.mkR.filter(k=>k.jenis==='Rotating')];
 };
 
-const loadAll = async () => {
-  setLoad(true,'Memuat data dari Supabase...');
-  const [r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13] = await Promise.all([
-    sb.from('spk').select('*').order('tanggal',{ascending:false}),
-    sb.from('direct_charge').select('*').order('tanggal',{ascending:false}),
-    sb.from('master_kontrak').select('*').eq('jenis','HHE').order('custom_id'),
-    sb.from('coo_spk').select('*').eq('jenis','HHE').or('fungsi.is.null,fungsi.eq.Hoist').order('tgl_terbit',{ascending:false}),
-    sb.from('master_kontrak').select('*').eq('jenis','Static').order('custom_id'),
-    sb.from('coo_spk').select('*').eq('jenis','Static').order('tgl_terbit',{ascending:false}),
-    sb.from('purchase_request').select('*').order('tgl_pr',{ascending:false}),
-    sb.from('penagihan_sa').select('*').order('tgl_sa',{ascending:false}),
-    sb.from('user_profiles').select('*').order('email'),
-    sb.from('tvm_coo').select('*').order('tgl_mulai',{ascending:false}),
-    sb.from('coo_spk').select('*').eq('fungsi','Rotating').order('tgl_terbit',{ascending:false}),
-    sb.from('master_kontrak').select('*').eq('jenis','Rotating').order('custom_id'),
-    sb.from('coo_spk').select('*').eq('jenis','Rotating').order('tgl_terbit',{ascending:false}),
-  ]);
-  S.sspk  = (r1.data||[]).map(F.from.spk);
-  S.dc    = (r2.data||[]).map(F.from.dc);
-  S.mk    = (r3.data||[]).map(F.from.mk);
-  S.spk   = (r4.data||[]).map(F.from.coo);
-  S.mkS   = (r5.data||[]).map(F.from.mk);
-  S.spkS  = (r6.data||[]).map(F.from.coo);
-  S.pr    = (r7.data||[]).map(F.from.pr);
-  S.sa    = (r8.data||[]).map(F.from.sa);
-  S.users = (r9.data||[]);
-  S.tvm   = (r10.data||[]).map(F.from.tvm);
-  // Rotating SPK: gabungan HHE-shared (fungsi='Rotating') + Rotating-own (jenis='Rotating')
-  S.spkR  = [...(r11.data||[]).map(F.from.coo), ...(r13.data||[]).map(F.from.coo)];
-  // MK Rotating: HHE yang di-share + Rotating-own contract
-  const sharedIds = new Set((r11.data||[]).map(x=>x.id_kontrak));
-  S.mkR   = [...S.mk.filter(k=>sharedIds.has(k.id)), ...(r12.data||[]).map(F.from.mk)];
+// ===== CACHE (stale-while-revalidate — tampil instan dari cache, refresh diam-diam di background) =====
+const CACHE_KEY = 'rk-cache-v1';
+const CACHE_FIELDS = ['mk','spk','mkS','spkS','mkR','spkR','pr','sa','sspk','dc','tvm','users'];
+const saveCache = () => {
+  try {
+    const c = {}; CACHE_FIELDS.forEach(k=>c[k]=S[k]);
+    localStorage.setItem(CACHE_KEY, JSON.stringify(c));
+  } catch(e) { /* localStorage penuh/disabled — abaikan, bukan fatal */ }
+};
+const loadCache = () => {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if(!raw) return false;
+    const c = JSON.parse(raw);
+    CACHE_FIELDS.forEach(k=>{ S[k] = c[k]||[]; });
+    return true;
+  } catch(e) { return false; }
+};
+const applyUserProfile = () => {
   const myProfile = S.users.find(u=>u.email===S.currentUser);
   S.currentNama = myProfile?.nama || '';
   S.isAdmin = myProfile?.role === 'admin';
   document.getElementById('nav-user').textContent = S.currentNama || S.currentUser;
   document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!S.isAdmin));
-  setLoad(false);
-  render();
+};
+
+const loadAll = async (silent=false) => {
+  if(!silent) setLoad(true,'Memuat data dari Supabase...');
+  try {
+    const [r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13] = await Promise.all([
+      sb.from('spk').select('*').order('tanggal',{ascending:false}),
+      sb.from('direct_charge').select('*').order('tanggal',{ascending:false}),
+      sb.from('master_kontrak').select('*').eq('jenis','HHE').order('custom_id'),
+      sb.from('coo_spk').select('*').eq('jenis','HHE').or('fungsi.is.null,fungsi.eq.Hoist').order('tgl_terbit',{ascending:false}),
+      sb.from('master_kontrak').select('*').eq('jenis','Static').order('custom_id'),
+      sb.from('coo_spk').select('*').eq('jenis','Static').order('tgl_terbit',{ascending:false}),
+      sb.from('purchase_request').select('*').order('tgl_pr',{ascending:false}),
+      sb.from('penagihan_sa').select('*').order('tgl_sa',{ascending:false}),
+      sb.from('user_profiles').select('*').order('email'),
+      sb.from('tvm_coo').select('*').order('tgl_mulai',{ascending:false}),
+      sb.from('coo_spk').select('*').eq('fungsi','Rotating').order('tgl_terbit',{ascending:false}),
+      sb.from('master_kontrak').select('*').eq('jenis','Rotating').order('custom_id'),
+      sb.from('coo_spk').select('*').eq('jenis','Rotating').order('tgl_terbit',{ascending:false}),
+    ]);
+    S.sspk  = (r1.data||[]).map(F.from.spk);
+    S.dc    = (r2.data||[]).map(F.from.dc);
+    S.mk    = (r3.data||[]).map(F.from.mk);
+    S.spk   = (r4.data||[]).map(F.from.coo);
+    S.mkS   = (r5.data||[]).map(F.from.mk);
+    S.spkS  = (r6.data||[]).map(F.from.coo);
+    S.pr    = (r7.data||[]).map(F.from.pr);
+    S.sa    = (r8.data||[]).map(F.from.sa);
+    S.users = (r9.data||[]);
+    S.tvm   = (r10.data||[]).map(F.from.tvm);
+    // Rotating SPK: gabungan HHE-shared (fungsi='Rotating') + Rotating-own (jenis='Rotating')
+    S.spkR  = [...(r11.data||[]).map(F.from.coo), ...(r13.data||[]).map(F.from.coo)];
+    // MK Rotating: HHE yang di-share + Rotating-own contract
+    const sharedIds = new Set((r11.data||[]).map(x=>x.id_kontrak));
+    S.mkR   = [...S.mk.filter(k=>sharedIds.has(k.id)), ...(r12.data||[]).map(F.from.mk)];
+    applyUserProfile();
+    saveCache();
+  } catch(err) {
+    console.error('[loadAll error]', err);
+    if(!silent) alert('Gagal memuat data:\n'+err.message);
+  } finally {
+    if(!silent) setLoad(false);
+    render();
+  }
 };
 
 // ===== FILTERS =====
@@ -3508,8 +3541,27 @@ const dUser = async id => {
   S.users=S.users.filter(x=>x.id!==id); render();
 };
 
+// ===== LAZY-LOAD XLSX (~880KB, cuma dimuat saat Export/Import beneran dipakai) =====
+let xlsxPromise = null;
+const ensureXLSX = () => {
+  if (window.XLSX) return Promise.resolve();
+  if (!xlsxPromise) {
+    xlsxPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = resolve;
+      s.onerror = () => { xlsxPromise = null; reject(new Error('Gagal memuat modul Excel')); };
+      document.head.appendChild(s);
+    });
+  }
+  return xlsxPromise;
+};
+
 // ===== EXPORT SEMUA (multi-sheet) =====
-const exportRekapRes = () => {
+const exportRekapRes = async () => {
+  setLoad(true,'Memuat modul Excel...');
+  try { await ensureXLSX(); } catch(err){ setLoad(false); alert(err.message); return; }
+  setLoad(false);
   const resOnly=byDate(S.dc,'tanggal').filter(x=>x.jenis==='Reservasi');
   const map={};
   resOnly.forEach(d=>{
@@ -3539,7 +3591,10 @@ const exportRekapRes = () => {
   XLSX.writeFile(wb,`Rekap_Reservasi_${S.fy||'Semua'}.xlsx`);
 };
 
-const exportAll = () => {
+const exportAll = async () => {
+  setLoad(true,'Memuat modul Excel...');
+  try { await ensureXLSX(); } catch(err){ setLoad(false); alert(err.message); return; }
+  setLoad(false);
   const wb=XLSX.utils.book_new();
   const add=(name,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),name);
   add('SPK',[['LocalID','NoSPK','Tanggal','Vendor','Uraian','NilaiKontrak','Realisasi','Progress','Status','JenisAnggaran','Keterangan'],...S.sspk.map(s=>[s.id,s.noSPK,s.tanggal,s.vendor,s.uraian,rpN(s.nilaiKontrak),rpN(s.realisasi),+s.progress||0,s.status,s.jenisAnggaran||'',s.keterangan])]);
@@ -3555,8 +3610,11 @@ const exportAll = () => {
 };
 
 // ===== IMPORT EXCEL → SUPABASE =====
-const importExcel = input => {
+const importExcel = async input => {
   const file=input.files[0]; if(!file) return;
+  setLoad(true,'Memuat modul Excel...');
+  try { await ensureXLSX(); } catch(err){ setLoad(false); alert(err.message); return; }
+  setLoad(false);
   const reader=new FileReader();
   reader.onload = async e => {
     try {
