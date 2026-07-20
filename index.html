@@ -1296,6 +1296,11 @@ const rMK = () => {
   const spkPerK = {}, cntPerK = {};
   S.spk.forEach(s=>{ spkPerK[s.idKontrak]=(spkPerK[s.idKontrak]||0)+rpN(s.nilaiSPK); cntPerK[s.idKontrak]=(cntPerK[s.idKontrak]||0)+1; });
   const totalSA = data.reduce((a,k)=>a+(saPerK[k.id]||0),0);
+  // Realisasi Rotating dari kontrak shared, dipakai buat Sisa Nilai Kontrak gabungan (kolom & total)
+  const totalRotReal = data.reduce((a,k)=>{
+    const rotSpks = S.spkR.filter(x=>x.idKontrak===k.id);
+    return a + rotSpks.reduce((b,x)=>b+(saBySpkMK[x.id]||rpN(x.nilaiRealisasi)||0),0);
+  },0);
 
   return `<div class="fade-in">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -1321,7 +1326,10 @@ const rMK = () => {
             const rotSpksMK = S.spkR.filter(x=>x.idKontrak===k.id);
             const rotCountMK = rotSpksMK.length;
             const rotNilaiMK = rotSpksMK.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+            // saBySpkMK dibangun dari SELURUH S.sa (semua fungsi), jadi valid juga dipakai buat SPK Rotating
+            const rotRealMK = rotSpksMK.reduce((a,x)=>a+(saBySpkMK[x.id]||rpN(x.nilaiRealisasi)||0),0);
             const sisaGabunganMK = rpN(k.nilaiKontrak) - (spkNilai + rotNilaiMK);
+            const sisaNilaiKontrakMK = rpN(k.nilaiKontrak) - (saNilai + rotRealMK);
             return `<tr class="${rowCls}">
               <td class="px-3 py-2.5 font-semibold text-blue-700 whitespace-nowrap text-xs">${esc(k.customID)}</td>
               <td class="px-3 py-2.5 text-gray-500 whitespace-nowrap text-xs">${esc(k.nomorSPB||'-')}</td>
@@ -1333,7 +1341,7 @@ const rMK = () => {
               <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs">${rp(k.nilaiKontrak)}</td>
               <td class="px-3 py-2.5 text-center text-gray-500 text-xs">${spkCount}</td>
               <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs text-emerald-700 font-semibold">${saNilai?rp(saNilai):'-'}</td>
-              <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs font-semibold ${(rpN(k.nilaiKontrak)-saNilai)<0?'text-red-600':''}">${rp(rpN(k.nilaiKontrak)-saNilai)}</td>
+              <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs font-semibold ${sisaNilaiKontrakMK<0?'text-red-600':''}" title="${rotCountMK>0?'Sudah dikurangi realisasi Rotating (kontrak shared): '+rp(rotRealMK):''}">${rp(sisaNilaiKontrakMK)}</td>
               <td class="px-3 py-2.5 w-28">
                 ${spkNilai>0?`<div class="flex items-center gap-1">
                   <div class="flex-1 bg-gray-200 rounded-full h-1.5"><div class="${bar} h-1.5 rounded-full" style="width:${pct}%"></div></div>
@@ -1355,7 +1363,7 @@ const rMK = () => {
           <td class="px-3 py-3 text-right font-mono whitespace-nowrap">${rp(totalNilai)}</td>
           <td class="px-3 py-3 text-center">${data.reduce((a,k)=>a+(cntPerK[k.id]||0),0)}</td>
           <td class="px-3 py-3 text-right font-mono text-emerald-700 whitespace-nowrap">${rp(totalSA)}</td>
-          <td class="px-3 py-3 text-right font-mono whitespace-nowrap ${(totalNilai-totalSA)<0?'text-red-600':''}">${rp(totalNilai-totalSA)}</td>
+          <td class="px-3 py-3 text-right font-mono whitespace-nowrap ${(totalNilai-totalSA-totalRotReal)<0?'text-red-600':''}">${rp(totalNilai-totalSA-totalRotReal)}</td>
           <td colspan="4"></td></tr>
         </tfoot>
       </table>
@@ -2332,10 +2340,12 @@ const rMKR = () => {
     const hoistSpks  = k.jenis!=='Rotating' ? S.spk.filter(x=>x.idKontrak===k.id) : [];
     const hoistCount = hoistSpks.length;
     const hoistNilai = hoistSpks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
+    // saBySpkR dibangun dari SELURUH S.sa (semua fungsi), jadi valid juga dipakai buat SPK Hoist
+    const hoistReal  = hoistSpks.reduce((a,x)=>a+(saBySpkR[x.id]||rpN(x.nilaiRealisasi)||0),0);
     // Sisa kontrak gabungan Hoist+Rotating (relevan cuma kalau kontraknya shared)
     const sisaGabungan = rpN(k.nilaiKontrak) - (nilaiSPK + hoistNilai);
-    const sisaNilai = rpN(k.nilaiKontrak) - real;
-    return {...k, spkCount:spks.length, nilaiSPK, real, pct, bar, hoistCount, hoistNilai, sisaGabungan, sisaNilai};
+    const sisaNilai = rpN(k.nilaiKontrak) - (real + hoistReal);
+    return {...k, spkCount:spks.length, nilaiSPK, real, pct, bar, hoistCount, hoistNilai, hoistReal, sisaGabungan, sisaNilai};
   });
   const totReal     = perKR.reduce((a,x)=>a+x.real,0);
 
@@ -2368,7 +2378,7 @@ const rMKR = () => {
                 <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(k.nilaiKontrak)}</td>
                 <td class="px-3 py-2.5 text-center text-xs text-gray-500">${k.spkCount}</td>
                 <td class="px-3 py-2.5 text-right font-mono text-xs font-semibold text-emerald-700 whitespace-nowrap">${k.real?rp(k.real):'-'}</td>
-                <td class="px-3 py-2.5 text-right font-mono text-xs font-semibold whitespace-nowrap ${k.sisaNilai<0?'text-red-600':''}">${rp(k.sisaNilai)}</td>
+                <td class="px-3 py-2.5 text-right font-mono text-xs font-semibold whitespace-nowrap ${k.sisaNilai<0?'text-red-600':''}" title="${k.hoistCount>0?'Sudah dikurangi realisasi Hoist (kontrak shared): '+rp(k.hoistReal):''}">${rp(k.sisaNilai)}</td>
                 <td class="px-3 py-2.5 w-28">
                   ${k.nilaiSPK>0?`<div class="flex items-center gap-1">
                     <div class="flex-1 bg-gray-200 rounded-full h-1.5"><div class="${k.bar} h-1.5 rounded-full" style="width:${k.pct}%"></div></div>
@@ -2389,7 +2399,7 @@ const rMKR = () => {
             <td class="px-3 py-3 text-right font-mono">${rp(dataMKR.reduce((a,x)=>a+rpN(x.nilaiKontrak),0))}</td>
             <td class="px-3 py-3 text-center">${perKR.reduce((a,x)=>a+x.spkCount,0)}</td>
             <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(totReal)}</td>
-            <td class="px-3 py-3 text-right font-mono ${(dataMKR.reduce((a,x)=>a+rpN(x.nilaiKontrak),0)-totReal)<0?'text-red-600':''}">${rp(dataMKR.reduce((a,x)=>a+rpN(x.nilaiKontrak),0)-totReal)}</td>
+            <td class="px-3 py-3 text-right font-mono ${perKR.reduce((a,x)=>a+x.sisaNilai,0)<0?'text-red-600':''}">${rp(perKR.reduce((a,x)=>a+x.sisaNilai,0))}</td>
             <td colspan="4"></td></tr>
           </tfoot>
         </table>
