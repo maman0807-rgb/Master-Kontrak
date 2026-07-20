@@ -1308,7 +1308,7 @@ const rMK = () => {
     </div>
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
-        ${thead([['ID'],['No. SPB'],['Vendor'],['Judul Kontrak'],['Nilai Kontrak','right'],['SPK','center'],['Nilai SPK','right'],['Realisasi SA','right'],['Progress','center'],['Sisa Hari','center'],['Status','center'],['Aksi','center']])}
+        ${thead([['ID'],['No. SPB'],['Vendor'],['Judul Kontrak'],['Nilai Kontrak','right'],['SPK','center'],['Realisasi','right'],['Sisa Nilai Kontrak','right'],['Progress','center'],['Sisa Hari','center'],['Status','center'],['Aksi','center']])}
         <tbody class="divide-y divide-gray-100">
           ${data.length===0?emptyRow('📑','Belum ada Master Kontrak.',12):data.map(k=>{
             const n=daysLeft(k.tglBerakhir);
@@ -1332,8 +1332,8 @@ const rMK = () => {
                 <div class="text-[9px] text-gray-500 mt-0.5">Sisa gabungan: <b class="${sisaGabunganMK<0?'text-red-600':'text-emerald-600'}">${rp(sisaGabunganMK)}</b></div></div>`:''}</td>
               <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs">${rp(k.nilaiKontrak)}</td>
               <td class="px-3 py-2.5 text-center text-gray-500 text-xs">${spkCount}</td>
-              <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs">${rp(spkNilai)}</td>
               <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs text-emerald-700 font-semibold">${saNilai?rp(saNilai):'-'}</td>
+              <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs font-semibold ${(rpN(k.nilaiKontrak)-saNilai)<0?'text-red-600':''}">${rp(rpN(k.nilaiKontrak)-saNilai)}</td>
               <td class="px-3 py-2.5 w-28">
                 ${spkNilai>0?`<div class="flex items-center gap-1">
                   <div class="flex-1 bg-gray-200 rounded-full h-1.5"><div class="${bar} h-1.5 rounded-full" style="width:${pct}%"></div></div>
@@ -1354,8 +1354,8 @@ const rMK = () => {
           <tr><td colspan="4" class="px-3 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
           <td class="px-3 py-3 text-right font-mono whitespace-nowrap">${rp(totalNilai)}</td>
           <td class="px-3 py-3 text-center">${data.reduce((a,k)=>a+(cntPerK[k.id]||0),0)}</td>
-          <td class="px-3 py-3 text-right font-mono whitespace-nowrap">${rp(data.reduce((a,k)=>a+(spkPerK[k.id]||0),0))}</td>
           <td class="px-3 py-3 text-right font-mono text-emerald-700 whitespace-nowrap">${rp(totalSA)}</td>
+          <td class="px-3 py-3 text-right font-mono whitespace-nowrap ${(totalNilai-totalSA)<0?'text-red-600':''}">${rp(totalNilai-totalSA)}</td>
           <td colspan="4"></td></tr>
         </tfoot>
       </table>
@@ -1521,7 +1521,7 @@ const rMKS = () => {
     </div>
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
-        ${thead([['ID'],['No. Kontrak'],['Vendor'],['Judul Kontrak'],['Nilai Kontrak','right'],['SPK','center'],['Nilai SPK','right'],['Realisasi','right'],['Progress','center'],['Sisa Hari','center'],['Status','center'],['Aksi','center']])}
+        ${thead([['ID'],['No. Kontrak'],['Vendor'],['Judul Kontrak'],['Nilai Kontrak','right'],['SPK','center'],['Realisasi','right'],['Sisa Nilai Kontrak','right'],['Progress','center'],['Sisa Hari','center'],['Status','center'],['Aksi','center']])}
         <tbody class="divide-y divide-gray-100">
           ${data.length===0?emptyRow('📑','Belum ada Master Kontrak Static.',12):data.map(k=>{
             const n=daysLeft(k.tglBerakhir);
@@ -1537,8 +1537,8 @@ const rMKS = () => {
                 <div class="clamp2 text-xs" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak||'-')}</div></td>
               <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs">${rp(k.nilaiKontrak)}</td>
               <td class="px-3 py-2.5 text-center text-gray-500 text-xs">${cnt}</td>
-              <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs">${rp(spkNilai)}</td>
               <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs font-semibold text-teal-700">${realNilai?rp(realNilai):'-'}</td>
+              <td class="px-3 py-2.5 text-right font-mono whitespace-nowrap text-xs font-semibold ${(rpN(k.nilaiKontrak)-realNilai)<0?'text-red-600':''}">${rp(rpN(k.nilaiKontrak)-realNilai)}</td>
               <td class="px-3 py-2.5 w-28">
                 ${spkNilai>0?`<div class="flex items-center gap-1">
                   <div class="flex-1 bg-gray-200 rounded-full h-1.5"><div class="${bar} h-1.5 rounded-full" style="width:${pct}%"></div></div>
@@ -1560,8 +1560,8 @@ const rMKS = () => {
             <td colspan="4" class="px-3 py-3 text-right text-gray-500">TOTAL (${data.length})</td>
             <td class="px-3 py-3 text-right font-mono">${rp(totalNilai)}</td>
             <td class="px-3 py-3 text-center">${data.reduce((a,k)=>a+(cntPerK[k.id]||0),0)}</td>
-            <td class="px-3 py-3 text-right font-mono">${rp(totalSpkNilai)}</td>
             <td class="px-3 py-3 text-right font-mono text-teal-700">${rp(totalReal)}</td>
+            <td class="px-3 py-3 text-right font-mono ${(totalNilai-totalReal)<0?'text-red-600':''}">${rp(totalNilai-totalReal)}</td>
             <td colspan="4"></td>
           </tr>
         </tfoot>
@@ -2334,9 +2334,9 @@ const rMKR = () => {
     const hoistNilai = hoistSpks.reduce((a,x)=>a+rpN(x.nilaiSPK),0);
     // Sisa kontrak gabungan Hoist+Rotating (relevan cuma kalau kontraknya shared)
     const sisaGabungan = rpN(k.nilaiKontrak) - (nilaiSPK + hoistNilai);
-    return {...k, spkCount:spks.length, nilaiSPK, real, pct, bar, hoistCount, hoistNilai, sisaGabungan};
+    const sisaNilai = rpN(k.nilaiKontrak) - real;
+    return {...k, spkCount:spks.length, nilaiSPK, real, pct, bar, hoistCount, hoistNilai, sisaGabungan, sisaNilai};
   });
-  const totNilaiSPK = perKR.reduce((a,x)=>a+x.nilaiSPK,0);
   const totReal     = perKR.reduce((a,x)=>a+x.real,0);
 
   return `<div class="fade-in">
@@ -2352,7 +2352,7 @@ const rMKR = () => {
     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
-          ${thead([['ID'],['No. SPB'],['Vendor'],['Judul Kontrak'],['Nilai Kontrak','right'],['SPK','center'],['Nilai SPK','right'],['Realisasi SA','right'],['Progress','center'],['Sisa Hari','center'],['Status','center'],['Aksi','center']])}
+          ${thead([['ID'],['No. SPB'],['Vendor'],['Judul Kontrak'],['Nilai Kontrak','right'],['SPK','center'],['Realisasi','right'],['Sisa Nilai Kontrak','right'],['Progress','center'],['Sisa Hari','center'],['Status','center'],['Aksi','center']])}
           <tbody class="divide-y divide-gray-100">
             ${perKR.map(k=>{
               const n=daysLeft(k.tglBerakhir);
@@ -2367,8 +2367,8 @@ const rMKR = () => {
                   <div class="text-[9px] text-gray-500 mt-0.5">Sisa gabungan: <b class="${k.sisaGabungan<0?'text-red-600':'text-emerald-600'}">${rp(k.sisaGabungan)}</b></div></div>`:''}</td>
                 <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(k.nilaiKontrak)}</td>
                 <td class="px-3 py-2.5 text-center text-xs text-gray-500">${k.spkCount}</td>
-                <td class="px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(k.nilaiSPK)}</td>
                 <td class="px-3 py-2.5 text-right font-mono text-xs font-semibold text-emerald-700 whitespace-nowrap">${k.real?rp(k.real):'-'}</td>
+                <td class="px-3 py-2.5 text-right font-mono text-xs font-semibold whitespace-nowrap ${k.sisaNilai<0?'text-red-600':''}">${rp(k.sisaNilai)}</td>
                 <td class="px-3 py-2.5 w-28">
                   ${k.nilaiSPK>0?`<div class="flex items-center gap-1">
                     <div class="flex-1 bg-gray-200 rounded-full h-1.5"><div class="${k.bar} h-1.5 rounded-full" style="width:${k.pct}%"></div></div>
@@ -2388,8 +2388,8 @@ const rMKR = () => {
             <tr><td colspan="4" class="px-3 py-3 text-right text-gray-500">TOTAL (${dataMKR.length})</td>
             <td class="px-3 py-3 text-right font-mono">${rp(dataMKR.reduce((a,x)=>a+rpN(x.nilaiKontrak),0))}</td>
             <td class="px-3 py-3 text-center">${perKR.reduce((a,x)=>a+x.spkCount,0)}</td>
-            <td class="px-3 py-3 text-right font-mono">${rp(totNilaiSPK)}</td>
             <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(totReal)}</td>
+            <td class="px-3 py-3 text-right font-mono ${(dataMKR.reduce((a,x)=>a+rpN(x.nilaiKontrak),0)-totReal)<0?'text-red-600':''}">${rp(dataMKR.reduce((a,x)=>a+rpN(x.nilaiKontrak),0)-totReal)}</td>
             <td colspan="4"></td></tr>
           </tfoot>
         </table>
