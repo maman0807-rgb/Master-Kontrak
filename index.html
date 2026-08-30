@@ -1352,6 +1352,7 @@ const rMK = () => {
               <td class="px-3 py-2.5 text-center">${badge(k.status)}</td>
               <td class="px-3 py-2.5 text-center whitespace-nowrap no-print">
                 <button onclick="S.fkontrak='${k.id}';go('spk')" class="text-indigo-600 hover:underline text-xs mr-1">SPK</button>
+                <button onclick="exportKontrakSatu('${k.id}')" class="text-emerald-600 hover:underline text-xs mr-1" title="Export detail kontrak ini ke Excel">⬇</button>
                 <button onclick="mMK('${k.id}')" class="text-blue-600 hover:underline text-xs mr-1">Edit</button>
                 <button onclick="dMK('${k.id}')" class="text-red-500 hover:underline text-xs">Hapus</button>
                 ${byLine(k)}
@@ -1482,6 +1483,7 @@ const rSPK = () => {
               <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(s.tglSelesai,s.status)}</td>
               <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
               <td class="px-3 py-2.5 text-center whitespace-nowrap no-print">
+                <button onclick="exportSPKSatu('${s.id}')" class="text-emerald-600 hover:underline mr-2 text-xs" title="Export detail SPK ini ke Excel">⬇</button>
                 <button onclick="mSPK('${s.id}')" class="text-blue-600 hover:underline mr-2 text-xs">Edit</button>
                 <button onclick="dSPK('${s.id}')" class="text-red-500 hover:underline text-xs">Hapus</button>
                 ${byLine(s)}
@@ -1557,6 +1559,7 @@ const rMKS = () => {
               <td class="px-3 py-2.5 text-center">${badge(k.status)}</td>
               <td class="px-3 py-2.5 text-center whitespace-nowrap no-print">
                 <button onclick="S.fkontrak='${k.id}';go('spks')" class="text-teal-600 hover:underline text-xs mr-1">SPK</button>
+                <button onclick="exportKontrakSatu('${k.id}')" class="text-emerald-600 hover:underline text-xs mr-1" title="Export detail kontrak ini ke Excel">⬇</button>
                 <button onclick="mMK('${k.id}','Static')" class="text-blue-600 hover:underline text-xs mr-1">Edit</button>
                 <button onclick="dMK('${k.id}','Static')" class="text-red-500 hover:underline text-xs">Hapus</button>
                 ${byLine(k)}
@@ -1669,6 +1672,7 @@ const rSPKS = () => {
               <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
               <td class="px-3 py-2.5 text-gray-500 text-[10px] max-w-[120px]"><div class="clamp2">${esc(s.remarksInvoice||'-')}</div></td>
               <td class="px-3 py-2.5 text-center whitespace-nowrap no-print">
+                <button onclick="exportSPKSatu('${s.id}')" class="text-emerald-600 hover:underline text-xs mr-1" title="Export detail SPK ini ke Excel">⬇</button>
                 <button onclick="mSPKS('${s.id}')" class="text-teal-600 hover:underline text-xs mr-1">Edit</button>
                 <button onclick="dSPKS('${s.id}')" class="text-red-500 hover:underline text-xs">Hapus</button>
                 ${byLine(s)}
@@ -2389,6 +2393,7 @@ const rMKR = () => {
                 <td class="px-3 py-2.5 text-center">${badge(k.status)}</td>
                 <td class="px-3 py-2.5 text-center whitespace-nowrap no-print">
                   <button onclick="S.fkontrak='${k.id}';go('spkr')" class="text-emerald-600 hover:underline text-xs mr-1">SPK</button>
+                  <button onclick="exportKontrakSatu('${k.id}')" class="text-emerald-600 hover:underline text-xs mr-1" title="Export detail kontrak ini ke Excel">⬇</button>
                   <button onclick="mMK('${k.id}','${k.jenis}')" class="text-blue-600 hover:underline text-xs mr-1">Edit</button>
                   <button onclick="dMK('${k.id}','${k.jenis}')" class="text-red-500 hover:underline text-xs">Hapus</button>
                 </td>
@@ -2514,6 +2519,7 @@ const rSPKR = () => {
               <td class="px-3 py-2.5 text-center whitespace-nowrap">${sisaHari(s.tglSelesai,s.status)}</td>
               <td class="px-3 py-2.5 text-center">${badge(s.status)}</td>
               <td class="px-3 py-2.5 text-center whitespace-nowrap no-print">
+                <button onclick="exportSPKSatu('${s.id}')" class="text-teal-600 hover:underline text-xs mr-1" title="Export detail SPK ini ke Excel">⬇</button>
                 <button onclick="mSPKR('${s.id}')" class="text-emerald-600 hover:underline text-xs mr-1">Edit</button>
                 <button onclick="dSPKR('${s.id}')" class="text-red-500 hover:underline text-xs">Hapus</button>
                 ${byLine(s)}
@@ -3672,6 +3678,83 @@ const exportAll = async () => {
   add('TVM',[['LocalID','NomorCOO','NomorPR','Fungsi','Deskripsi','Nilai','TglMulai','TglSelesai','Status','Catatan'],...S.tvm.map(t=>[t.id,t.nomorCOO,t.nomorPR,t.fungsi,t.deskripsi,rpN(t.nilai),t.tglMulai,t.tglSelesai,t.status,t.catatan])]);
   XLSX.writeFile(wb,`Backup_RekapKontrak_${new Date().toISOString().slice(0,10)}.xlsx`);
 };
+
+// ===== EXPORT DETAIL PER-KONTRAK / PER-SPK =====
+const findKontrakById = id => S.mk.find(k=>k.id===id) || S.mkS.find(k=>k.id===id) || (S.mkR||[]).find(k=>k.id===id);
+const findSPKById     = id => S.spk.find(s=>s.id===id) || S.spkS.find(s=>s.id===id) || (S.spkR||[]).find(s=>s.id===id);
+
+const exportKontrakSatu = async (id) => {
+  const k = findKontrakById(id);
+  if(!k){ alert('Kontrak tidak ditemukan.'); return; }
+  setLoad(true,'Memuat modul Excel...');
+  try { await ensureXLSX(); } catch(err){ setLoad(false); alert(err.message); return; }
+  setLoad(false);
+  const allSPK = [...S.spk,...S.spkS,...(S.spkR||[])].filter(s=>s.idKontrak===id);
+  const saBySpk = {}; S.sa.forEach(a=>{ saBySpk[a.idCoO]=(saBySpk[a.idCoO]||0)+rpN(a.nilaiSA); });
+  const totalSPK = allSPK.reduce((a,s)=>a+rpN(s.nilaiSPK),0);
+  const totalReal = allSPK.reduce((a,s)=>a+(saBySpk[s.id]||rpN(s.nilaiRealisasi)||0),0);
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['Detail Kontrak — '+(k.customID||k.nomorSPB||k.id)],
+    [],
+    ['Vendor', k.vendor||'-'],
+    ['Judul Kontrak', k.judulKontrak||'-'],
+    ['No. SPB', k.nomorSPB||'-'],
+    ['Nilai Kontrak', rpN(k.nilaiKontrak)],
+    ['Tgl Mulai', k.tglMulai||'-'],
+    ['Tgl Berakhir', k.tglBerakhir||'-'],
+    ['PIC', k.pic||'-'],
+    ['Status', k.status||'-'],
+    ['Zona', k.zona||'Prabumulih Field'],
+    [],
+    ['Daftar SPK/CoO ('+allSPK.length+')'],
+    ['CustomID','NomorSPK','Deskripsi','NilaiSPK','TglTerbit','Status','Realisasi (SA)'],
+    ...allSPK.map(s=>[s.customID,s.nomorSPK,s.deskripsi,rpN(s.nilaiSPK),s.tglTerbit,s.status,saBySpk[s.id]||rpN(s.nilaiRealisasi)||0]),
+    [],
+    ['TOTAL','','','',totalSPK,'',totalReal],
+  ]);
+  ws['!cols']=[{wch:22},{wch:20},{wch:36},{wch:16},{wch:12},{wch:16},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws,'Detail Kontrak');
+  XLSX.writeFile(wb,`Kontrak_${String(k.customID||k.id).replace(/[^\w-]+/g,'_')}.xlsx`);
+};
+window.exportKontrakSatu = exportKontrakSatu;
+
+const exportSPKSatu = async (id) => {
+  const s = findSPKById(id);
+  if(!s){ alert('SPK tidak ditemukan.'); return; }
+  setLoad(true,'Memuat modul Excel...');
+  try { await ensureXLSX(); } catch(err){ setLoad(false); alert(err.message); return; }
+  setLoad(false);
+  const k = findKontrakById(s.idKontrak);
+  const prList = S.pr.filter(p=>p.idCoO===id);
+  const saList = S.sa.filter(a=>a.idCoO===id);
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['Detail SPK — '+(s.customID||s.nomorSPK||s.id)],
+    [],
+    ['Kontrak Induk', k ? (k.customID||k.nomorSPB||'') : '-'],
+    ['Nomor SPK', s.nomorSPK||'-'],
+    ['Deskripsi', s.deskripsi||'-'],
+    ['Nilai SPK', rpN(s.nilaiSPK)],
+    ['Tgl Terbit', s.tglTerbit||'-'],
+    ['Tgl Mulai', s.tglMulai||'-'],
+    ['Tgl Selesai', s.tglSelesai||'-'],
+    ['Status', s.status||'-'],
+    ['Catatan', s.catatan||'-'],
+    [],
+    ['Purchase Request ('+prList.length+')'],
+    ['NomorPR','TglPR','Deskripsi','EstimasiNilai','Catatan'],
+    ...prList.map(p=>[p.nomorPR,p.tglPR,p.deskripsi,rpN(p.estimasiNilai),p.catatan]),
+    [],
+    ['Penagihan SA ('+saList.length+')'],
+    ['NomorSA','TglSA','Deskripsi','NilaiSA','NomorInvoice','Catatan'],
+    ...saList.map(a=>[a.nomorSA,a.tglSA,a.deskripsi,rpN(a.nilaiSA),a.nomorInvoice,a.catatan]),
+  ]);
+  ws['!cols']=[{wch:20},{wch:14},{wch:36},{wch:16},{wch:14},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,ws,'Detail SPK');
+  XLSX.writeFile(wb,`SPK_${String(s.customID||s.id).replace(/[^\w-]+/g,'_')}.xlsx`);
+};
+window.exportSPKSatu = exportSPKSatu;
 
 // ===== IMPORT EXCEL → SUPABASE =====
 const importExcel = async input => {
