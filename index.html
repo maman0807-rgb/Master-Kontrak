@@ -194,7 +194,7 @@ const doLogin = async e => {
 };
 
 const doLogout = async () => {
-  if(!confirm('Keluar dari aplikasi?')) return;
+  if(!(await confirmDialog({message:'Keluar dari aplikasi?'}))) return;
   await sb.auth.signOut();
 };
 
@@ -2840,6 +2840,25 @@ const rSA = () => {
 const showM = html => { document.getElementById('modal-box').innerHTML=html; document.getElementById('modal-overlay').classList.remove('hidden'); };
 const closeModal = () => document.getElementById('modal-overlay').classList.add('hidden');
 
+// Ganti window.confirm() native — browser (terutama Chrome) bisa auto-dismiss confirm()/alert()
+// tanpa nongol apapun kalau checkbox "Prevent this page from creating additional dialogs" sempat
+// kecentang (muncul otomatis kalau dialog native ke-trigger beruntun), bikin tombol yg dijaga
+// confirm() kelihatan gak ada reaksi sama sekali sampai halaman di-reload. Ditemukan Maman
+// 2026-09-04 di tombol Keluar (doLogout). Modal ini pakai #modal-overlay/#modal-box sendiri,
+// gak nyentuh dialog native sama sekali jadi imun dari masalah itu.
+const confirmDialog = ({title='Konfirmasi', message='', confirmText='Ya', cancelText='Batal', danger=false}) => new Promise(resolve => {
+  const id = '__cd_' + Date.now();
+  showM(`<div class="p-5">
+    <h3 class="font-semibold text-gray-800 mb-2">${esc(title)}</h3>
+    <p class="text-sm text-gray-600 whitespace-pre-line mb-5">${esc(message)}</p>
+    <div class="flex justify-end gap-2">
+      <button onclick="closeModal();window['${id}'](false);" class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 text-sm font-medium text-gray-700">${esc(cancelText)}</button>
+      <button onclick="closeModal();window['${id}'](true);" class="px-4 py-2 rounded-lg text-white text-sm font-semibold ${danger?'bg-red-600 hover:bg-red-700':'bg-blue-600 hover:bg-blue-700'}">${esc(confirmText)}</button>
+    </div>
+  </div>`);
+  window[id] = v => { delete window[id]; resolve(v); };
+});
+
 const fld = (label,name,type='text',val='',req=false,extra='') => `
   <div>
     <label class="block text-xs font-medium text-gray-600 mb-1">${label}${req?' <span class="text-red-400">*</span>':''}</label>
@@ -2998,7 +3017,7 @@ const svSSPK = async (e,id) => {
   closeModal(); render();
 };
 const dSSPK = async id => {
-  if(!confirm('Hapus SPK ini?')) return;
+  if(!(await confirmDialog({message:'Hapus SPK ini?', confirmText:'Hapus', danger:true}))) return;
   setLoad(true,'Menghapus...'); const {error}=await sb.from('spk').delete().eq('id',id);
   setLoad(false); if(dbErr(error)) return;
   S.sspk=S.sspk.filter(x=>x.id!==id); render();
@@ -3087,7 +3106,7 @@ const svDC = async (e,id) => {
   closeModal(); render();
 };
 const dDC = async id => {
-  if(!confirm('Hapus item ini?')) return;
+  if(!(await confirmDialog({message:'Hapus item ini?', confirmText:'Hapus', danger:true}))) return;
   setLoad(true,'Menghapus...'); const {error}=await sb.from('direct_charge').delete().eq('id',id);
   setLoad(false); if(dbErr(error)) return;
   S.dc=S.dc.filter(x=>x.id!==id); render();
@@ -3131,7 +3150,7 @@ const svMK = async (e, id, jenis='HHE') => {
 };
 const dMK = async (id, jenis='HHE') => {
   const warnHHE = jenis==='HHE' ? '\n\n⚠ Ini adalah kontrak HHE — SPK Hoist DAN SPK Rotating yang menggunakan kontrak ini ikut terhapus.' : '';
-  if(!confirm('Hapus kontrak ini? Semua SPK terkait ikut terhapus.'+warnHHE)) return;
+  if(!(await confirmDialog({message:'Hapus kontrak ini? Semua SPK terkait ikut terhapus.'+warnHHE, confirmText:'Hapus', danger:true}))) return;
   const spkList = jenis==='Static'?S.spkS:jenis==='Rotating'?S.spkR.filter(x=>x.jenis==='Rotating'):S.spk;
   const spkIds  = spkList.filter(x=>x.idKontrak===id).map(x=>x.id);
   setLoad(true,'Menghapus...');
@@ -3202,7 +3221,7 @@ const svSPKS = async (e,id) => {
   closeModal(); render();
 };
 const dSPKS = async id => {
-  if(!confirm('Hapus SPK Static ini?')) return;
+  if(!(await confirmDialog({message:'Hapus SPK Static ini?', confirmText:'Hapus', danger:true}))) return;
   setLoad(true,'Menghapus...'); const {error}=await sb.from('coo_spk').delete().eq('id',id);
   setLoad(false); if(dbErr(error)) return;
   S.spkS=S.spkS.filter(x=>x.id!==id); render();
@@ -3264,7 +3283,7 @@ const svSPKR = async (e,id) => {
   closeModal(); render();
 };
 const dSPKR = async id => {
-  if(!confirm('Hapus SPK Rotating ini? (SA terkait ikut terhapus)')) return;
+  if(!(await confirmDialog({message:'Hapus SPK Rotating ini? (SA terkait ikut terhapus)', confirmText:'Hapus', danger:true}))) return;
   setLoad(true,'Menghapus...');
   const {error:e1}=await sb.from('penagihan_sa').delete().eq('id_coo',id);
   if(dbErr(e1)){setLoad(false);return;}
@@ -3322,7 +3341,7 @@ const svSPK = async (e,id) => {
   closeModal(); render();
 };
 const dSPK = async id => {
-  if(!confirm('Hapus SPK ini? PR dan SA terkait ikut terhapus.')) return;
+  if(!(await confirmDialog({message:'Hapus SPK ini? PR dan SA terkait ikut terhapus.', confirmText:'Hapus', danger:true}))) return;
   setLoad(true,'Menghapus...');
   const {error:e1}=await sb.from('penagihan_sa').delete().eq('id_coo',id);
   if(dbErr(e1)){setLoad(false);return;}
@@ -3365,7 +3384,7 @@ const svPR = async (e,id) => {
   closeModal(); render();
 };
 const dPR = async id => {
-  if(!confirm('Hapus PR ini?')) return;
+  if(!(await confirmDialog({message:'Hapus PR ini?', confirmText:'Hapus', danger:true}))) return;
   setLoad(true,'Menghapus...'); const {error}=await sb.from('purchase_request').delete().eq('id',id);
   setLoad(false); if(dbErr(error)) return;
   S.pr=S.pr.filter(x=>x.id!==id); render();
@@ -3402,7 +3421,7 @@ const svSA = async (e,id) => {
   closeModal(); render();
 };
 const dSA = async id => {
-  if(!confirm('Hapus SA ini?')) return;
+  if(!(await confirmDialog({message:'Hapus SA ini?', confirmText:'Hapus', danger:true}))) return;
   setLoad(true,'Menghapus...'); const {error}=await sb.from('penagihan_sa').delete().eq('id',id);
   setLoad(false); if(dbErr(error)) return;
   S.sa=S.sa.filter(x=>x.id!==id); render();
@@ -3503,7 +3522,7 @@ const svTVM = async (e,id) => {
 };
 
 const dTVM = async id => {
-  if(!confirm('Hapus CoO TVM ini?')) return;
+  if(!(await confirmDialog({message:'Hapus CoO TVM ini?', confirmText:'Hapus', danger:true}))) return;
   setLoad(true,'Menghapus...'); const {error}=await sb.from('tvm_coo').delete().eq('id',id);
   setLoad(false); if(dbErr(error)) return;
   S.tvm=S.tvm.filter(x=>x.id!==id); render();
@@ -3597,7 +3616,7 @@ const svUser = async (e,id) => {
 };
 
 const resetPw = async email => {
-  if(!confirm(`Kirim email reset password ke:\n${email}?`)) return;
+  if(!(await confirmDialog({message:`Kirim email reset password ke:\n${email}?`, confirmText:'Kirim'}))) return;
   const {error} = await sb.auth.resetPasswordForEmail(email);
   if(error){ alert('Gagal:\n'+error.message); return; }
   alert(`Email reset password terkirim ke ${email}.`);
@@ -3605,7 +3624,7 @@ const resetPw = async email => {
 
 const dUser = async id => {
   const u=S.users.find(x=>x.id===id);
-  if(!confirm(`Hapus profil pengguna ${u?.email}?\n\nCatatan: akun login (Supabase Auth) tidak ikut terhapus. Hapus manual di Supabase Dashboard jika diperlukan.`)) return;
+  if(!(await confirmDialog({message:`Hapus profil pengguna ${u?.email}?\n\nCatatan: akun login (Supabase Auth) tidak ikut terhapus. Hapus manual di Supabase Dashboard jika diperlukan.`, confirmText:'Hapus', danger:true}))) return;
   const {error}=await sb.from('user_profiles').delete().eq('id',id);
   if(dbErr(error)) return;
   S.users=S.users.filter(x=>x.id!==id); render();
@@ -3789,7 +3808,7 @@ const importExcel = async input => {
       const total=sspk.length+dc.length+mk.length+spk.length+pr.length+sa.length+tvm.length;
       if(!total){alert('Tidak ada data terbaca.\nPastikan nama sheet: SPK, Permintaan Part, Master Kontrak, CoO SPK, Purchase Request, Penagihan SA, TVM');return;}
 
-      if(!confirm(`Data ditemukan:\n• ${sspk.length} SPK\n• ${dc.length} Permintaan Part\n• ${mk.length} Master Kontrak\n• ${spk.length} CoO SPK\n• ${pr.length} Purchase Request\n• ${sa.length} Penagihan SA\n• ${tvm.length} TVM\n\nUpload ke Supabase? (Data lama akan di-replace)`)) return;
+      if(!(await confirmDialog({message:`Data ditemukan:\n• ${sspk.length} SPK\n• ${dc.length} Permintaan Part\n• ${mk.length} Master Kontrak\n• ${spk.length} CoO SPK\n• ${pr.length} Purchase Request\n• ${sa.length} Penagihan SA\n• ${tvm.length} TVM\n\nUpload ke Supabase? (Data lama akan di-replace)`, confirmText:'Upload', danger:true}))) return;
 
       setLoad(true,'Mengupload ke Supabase...');
       const ups = async (table, rows, conv) => {
