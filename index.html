@@ -3087,7 +3087,7 @@ const parseReleaseOrderPO = async (arrayBuffer) => {
 const dcParsePDF = async (input) => {
   const file = input.files[0]; if(!file) return;
   const statusEl = document.getElementById('dc-pdf-status');
-  const setStatus = (t) => { if(statusEl) statusEl.textContent = t; };
+  const setStatus = (t, warn=false) => { if(statusEl){ statusEl.textContent = t; statusEl.className = 'text-xs truncate '+(warn?'text-red-600 font-semibold':'text-gray-500'); } };
   setStatus('Memuat modul PDF...');
   try {
     await ensurePDFJS();
@@ -3108,7 +3108,12 @@ const dcParsePDF = async (input) => {
     if(data.nomorPO && form.nomorPO) form.nomorPO.value = data.nomorPO;
     if(data.tanggal && form.tanggal) form.tanggal.value = data.tanggal;
 
-    setStatus(`✓ ${data.items.length} item terbaca — cek angka & lengkapi KIMAP sebelum simpan (part number kadang meleset kalau deskripsinya nyambung ke halaman berikutnya)`);
+    const dup = data.nomorPO ? S.dc.find(x=>(x.jenis||'Direct Charge')==='Direct Charge' && (x.nomorPO||'').trim().toLowerCase()===data.nomorPO.trim().toLowerCase()) : null;
+    if(dup){
+      setStatus(`⚠ PO ${data.nomorPO} SUDAH PERNAH diinput (${dup.fungsi}, ${dup.tanggal||'-'}) — cek dulu sebelum simpan, jangan dobel!`, true);
+    } else {
+      setStatus(`✓ ${data.items.length} item terbaca — cek angka & lengkapi KIMAP sebelum simpan (part number kadang meleset kalau deskripsinya nyambung ke halaman berikutnya)`);
+    }
   } catch(err) {
     setStatus('');
     alert('Gagal baca PDF: ' + err.message);
@@ -3216,6 +3221,16 @@ const svDC = async (e,id) => {
   const jenis=f.jenis.value, isRes=jenis==='Reservasi';
   const items=getDCItemsFromDOM().filter(x=>x.namaPart);
   if(!items.length){alert('Tambahkan minimal 1 item part/material.');return;}
+  if(!isRes){
+    const poVal=f.nomorPO.value.trim();
+    if(poVal){
+      const dup=S.dc.find(x=>x.id!==id && (x.jenis||'Direct Charge')==='Direct Charge' && (x.nomorPO||'').trim().toLowerCase()===poVal.toLowerCase());
+      if(dup){
+        alert(`No. PO/RO "${poVal}" sudah pernah diinput sebelumnya — jangan dobel!\n\nFungsi: ${dup.fungsi}\nTanggal: ${dup.tanggal||'-'}\nJudul: ${dup.keterangan||'-'}\nJumlah item: ${dup.items?.length||1}\n\nEdit data yang sudah ada kalau mau ubah, jangan bikin entri baru.`);
+        return;
+      }
+    }
+  }
   const grandTotal=isRes?0:items.reduce((a,x)=>a+x.total,0);
   const ex=id?S.dc.find(x=>x.id===id):null;
   const o={id:id||uid(),jenis,fungsi:f.fungsi?.value||'Hoist',tanggal:f.tanggal.value,items,
