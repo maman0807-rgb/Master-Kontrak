@@ -2993,6 +2993,45 @@ const getDCItemsFromDOM = () => {
   }));
 };
 
+const fileToBase64 = file => new Promise((resolve,reject)=>{
+  const reader = new FileReader();
+  reader.onload = () => resolve(String(reader.result).split(',')[1]);
+  reader.onerror = () => reject(new Error('Gagal membaca file'));
+  reader.readAsDataURL(file);
+});
+
+const dcParsePDF = async (input) => {
+  const file = input.files[0]; if(!file) return;
+  const statusEl = document.getElementById('dc-pdf-status');
+  const setStatus = (t) => { if(statusEl) statusEl.textContent = t; };
+  setStatus('Membaca PDF...');
+  try {
+    const pdfBase64 = await fileToBase64(file);
+    setStatus('Mengekstrak data via AI, tunggu sebentar...');
+    const r = await fetch('/api/parse-po', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ pdfBase64 }) });
+    const data = await r.json();
+    if(!r.ok) throw new Error(data.error || 'Gagal parsing PDF');
+    if(!data.items?.length) throw new Error('Tidak ada item part terbaca dari PDF ini');
+
+    dcSyncFromDOM();
+    _dcItems = data.items.map(x=>({
+      namaPart: x.namaPart||'', partNumber: x.partNumber||'', jumlah: +x.jumlah||1,
+      satuan: x.satuan||'pcs', kimap:'', hargaSatuan: +x.hargaSatuan||0
+    }));
+    const wrap = document.getElementById('dc-items-wrap');
+    if(wrap) wrap.innerHTML = dcItemsSectionInner();
+
+    const form = input.closest('form');
+    if(data.nomorPO && form.nomorPO) form.nomorPO.value = data.nomorPO;
+    if(data.tanggal && form.tanggal) form.tanggal.value = data.tanggal;
+
+    setStatus(`✓ ${data.items.length} item terbaca${data.vendor?' — '+data.vendor:''} — cek & lengkapi KIMAP/PO sebelum simpan`);
+  } catch(err) {
+    setStatus('');
+    alert('Gagal baca PDF: ' + err.message);
+  }
+};
+
 // ===== SPK STANDALONE CRUD =====
 const mSSPK = (id=null) => {
   const s=id?S.sspk.find(x=>x.id===id):null;
@@ -3061,6 +3100,12 @@ const mDC = (id=null, defaultFungsi='Hoist') => {
       ${sel('Jenis','jenis',['Direct Charge','Reservasi'],jenisVal,true,false)}
       ${sel('Fungsi','fungsi',['Hoist','Static','Rotating'],fungsiVal,true,false)}
       ${fld('Tanggal','tanggal','date',d?.tanggal,true)}
+      <div class="col-span-2 flex items-center gap-2.5 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2">
+        <label class="text-xs font-medium text-indigo-700 flex items-center gap-1.5 cursor-pointer shrink-0">
+          📄 Upload PDF PO/RO <input type="file" accept="application/pdf" class="hidden" onchange="dcParsePDF(this)">
+        </label>
+        <span id="dc-pdf-status" class="text-xs text-gray-500 truncate"></span>
+      </div>
       <div class="col-span-2" id="dc-items-wrap">${dcItemsSectionInner()}</div>
       <div id="dc-fields" class="contents">
         ${fld('No. PO/RO','nomorPO','text',d?.nomorPO)}
