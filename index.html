@@ -225,6 +225,7 @@ const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'x'+Math.random().t
 const debounce = (fn,ms=300)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};};
 const dRender = debounce(()=>render());
 const applyDCFilter = () => {
+  S.fpo   = document.getElementById('inp-fpo')?.value?.trim()||'';
   S.fpart = document.getElementById('inp-fpart')?.value?.trim()||'';
   S.fdesc = document.getElementById('inp-fdesc')?.value?.trim()||'';
   render();
@@ -987,8 +988,8 @@ const rDCFungsi = (fungsiLabel, accentCol, badgeCol, pageKey) => {
   const byJenis = all.filter(x => (x.jenis||'Direct Charge') === jenis);
   // all-time (tidak terfilter tahun) — untuk "Total Semua Tahun" dan Rekap Material
   const byJenisAll = S.dc.filter(x=>x.fungsi===fungsiLabel&&(x.jenis||'Direct Charge')===jenis);
-  const data = isDC ? byJenis.filter(d => {
-    if(S.fpo && d.nomorPO !== S.fpo) return false;
+  const data = isDC ? (S.fpo ? byJenisAll : byJenis).filter(d => {
+    if(S.fpo && !(d.nomorPO||'').toLowerCase().includes(S.fpo.toLowerCase())) return false;
     const items = d.items?.length ? d.items : [{namaPart:d.namaPart,kimap:d.kimap,partNumber:d.partNumber}];
     if(S.fpart && !items.some(x=>(x.partNumber||'').toLowerCase().includes(S.fpart.toLowerCase()))) return false;
     if(S.fdesc && !items.some(x=>(x.namaPart||'').toLowerCase().includes(S.fdesc.toLowerCase()))) return false;
@@ -1206,15 +1207,12 @@ const rDCFungsi = (fungsiLabel, accentCol, badgeCol, pageKey) => {
 
     <!-- DC FILTERS + TABLE -->
     <div class="flex flex-wrap gap-2 items-center py-3 mb-2 border-b border-gray-100 no-print">
-      <select onchange="S.fpo=this.value;render()" class="border rounded-lg px-3 py-1.5 text-xs bg-white">
-        <option value="">Semua No. PO/RO</option>
-        ${[...new Set(byJenis.filter(x=>x.nomorPO).map(x=>x.nomorPO))].sort().map(p=>`<option value="${esc(p)}" ${S.fpo===p?'selected':''}>${esc(p)}</option>`).join('')}
-      </select>
+      <input type="text" id="inp-fpo" placeholder="Cari No. PO/RO..." value="${esc(S.fpo)}" onkeydown="if(event.key==='Enter')applyDCFilter()" class="border rounded-lg px-3 py-1.5 text-xs bg-white w-44">
       <input type="text" id="inp-fpart" placeholder="Part Number..." value="${esc(S.fpart)}" onkeydown="if(event.key==='Enter')applyDCFilter()" class="border rounded-lg px-3 py-1.5 text-xs bg-white w-44">
       <input type="text" id="inp-fdesc" placeholder="Nama Part / Deskripsi..." value="${esc(S.fdesc)}" onkeydown="if(event.key==='Enter')applyDCFilter()" class="border rounded-lg px-3 py-1.5 text-xs bg-white w-52">
       <button onclick="applyDCFilter()" class="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs hover:bg-indigo-700">Cari</button>
       ${S.fy||S.fpo||S.fpart||S.fdesc?`<button onclick="S.fy='';S.fpo='';S.fpart='';S.fdesc='';render()" class="text-xs text-red-400 hover:text-red-600">✕ Reset</button>`:''}
-      ${S.fpart||S.fdesc?`<span class="text-xs text-gray-400">${data.length} hasil</span>`:''}
+      ${S.fpo||S.fpart||S.fdesc?`<span class="text-xs text-gray-400">${data.length} hasil${S.fpo?' (semua tahun)':''}</span>`:''}
     </div>
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
