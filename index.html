@@ -2993,25 +2993,108 @@ const getDCItemsFromDOM = () => {
   }));
 };
 
-const fileToBase64 = file => new Promise((resolve,reject)=>{
-  const reader = new FileReader();
-  reader.onload = () => resolve(String(reader.result).split(',')[1]);
-  reader.onerror = () => reject(new Error('Gagal membaca file'));
-  reader.readAsDataURL(file);
-});
+// ===== PARSER PDF "Release Order Mat." / PO Pertamina EP (client-side, tanpa AI) =====
+// Tabel item di PDF ini digambar terputar (label field jadi baris, tiap item jadi kolom),
+// jadi kita kelompokkan teks per-posisi (x,y) bukan per urutan baca biasa.
+const _pdfNorm = s => (s||'').replace(/\s+/g,' ').trim();
+
+const _pdfExtractPageItems = async (page) => {
+  const content = await page.getTextContent();
+  return content.items.map(it => ({ str: it.str, x: it.transform[4], y: it.transform[5] })).filter(it => _pdfNorm(it.str));
+};
+const _pdfFindLabelY = (items, label) => {
+  const hit = items.find(it => _pdfNorm(it.str).toLowerCase() === label.toLowerCase());
+  return hit ? hit.y : null;
+};
+
+const parseReleaseOrderPO = async (arrayBuffer) => {
+  const doc = await window.pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+  const itemsByNum = {};
+  let headerText = '';
+
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const items = await _pdfExtractPageItems(page);
+    if (p === 1) headerText = items.map(i => _pdfNorm(i.str)).join(' ');
+
+    const itemLabelY = _pdfFindLabelY(items, 'Item');
+    if (itemLabelY == null) continue;
+
+    const numRow = items.filter(it => /^\d{1,3}$/.test(_pdfNorm(it.str)) && Math.abs(it.y - itemLabelY) <= 12);
+    if (!numRow.length) continue;
+    const cols = numRow.map(it => ({ num: parseInt(_pdfNorm(it.str), 10), x: it.x })).sort((a, b) => a.x - b.x);
+    const colFor = (x) => {
+      for (let i = 0; i < cols.length; i++) {
+        const left = cols[i].x - 3;
+        const right = i + 1 < cols.length ? cols[i + 1].x - 3 : Infinity;
+        if (x >= left && x < right) return cols[i].num;
+      }
+      return null;
+    };
+
+    const matNoY = _pdfFindLabelY(items, 'Material No');
+    const unitY = _pdfFindLabelY(items, 'Unit');
+    const descY = _pdfFindLabelY(items, 'Description');
+    const qtyY = unitY != null ? unitY - 18 : null; // nilai qty ada ~10-25pt di atas baris Unit
+
+    items.forEach(it => {
+      const s = _pdfNorm(it.str);
+      if (!s) return;
+      const num = colFor(it.x);
+      if (num == null) return;
+      if (!itemsByNum[num]) itemsByNum[num] = { descParts: [], numTokens: [], priceTokens: [] };
+      const rec = itemsByNum[num];
+
+      if (matNoY != null && Math.abs(it.y - matNoY) <= 6 && /^[A-Z]\d{6,9}$/.test(s)) rec.materialNo = s;
+      else if (unitY != null && Math.abs(it.y - unitY) <= 6 && /^(SET|PCS|UNIT|LOT|EA|MTR|KG|BOX)$/i.test(s)) rec.unit = s.toUpperCase();
+      else if (qtyY != null && Math.abs(it.y - qtyY) <= 8 && /^\d{1,4}$/.test(s)) rec.numTokens.push(s);
+      else if (descY != null && Math.abs(it.y - descY) <= 6) rec.descParts.push({ x: it.x, s });
+      else if (/^[\d.,]+$/.test(s) && s.includes('.')) rec.priceTokens.push(s);
+    });
+  }
+
+  const items = Object.keys(itemsByNum).map(Number).sort((a, b) => a - b).map(num => {
+    const rec = itemsByNum[num];
+    rec.descParts.sort((a, b) => a.x - b.x);
+    const descStrs = rec.descParts.map(d => d.s);
+    let nameParts = [];
+    for (const d of descStrs) {
+      if (/^(P\/?N\s*:|PN\s*:|PART FOR|MODEL\/TYPE|MANUFACTURE|BRAND\s*:|MPN\s*:?)/i.test(d)) break;
+      nameParts.push(d);
+    }
+    const namaPart = nameParts.join(' ').replace(/\s+/g, ' ').trim() || rec.materialNo || `Item ${num}`;
+    const pnMatch = descStrs.join(' ').match(/(?:P\/?N|PN)\s*:\s*([A-Za-z0-9\-\/.]+)/i);
+    const qty = rec.numTokens.length ? parseInt(rec.numTokens[0], 10) : 1;
+    const nums = rec.priceTokens.map(t => parseFloat(t.replace(/\./g, '').replace(',', '.')));
+    let hargaSatuan = 0;
+    if (nums.length === 2) {
+      const [a, b] = nums;
+      if (Math.abs(a * qty - b) < Math.max(1, b * 0.01)) hargaSatuan = a;
+      else if (Math.abs(b * qty - a) < Math.max(1, a * 0.01)) hargaSatuan = b;
+      else hargaSatuan = Math.min(a, b);
+    } else if (nums.length === 1) hargaSatuan = nums[0];
+
+    return { namaPart, partNumber: pnMatch ? pnMatch[1] : (rec.materialNo || ''), jumlah: qty, satuan: rec.unit || 'PCS', hargaSatuan };
+  });
+
+  const roMatch = headerText.match(/RO NUMBER\s*\/\s*DATE:\s*(\d+)\s*\/\s*(\d{1,2})\.(\d{1,2})\.(\d{4})/i);
+  const nomorPO = roMatch ? roMatch[1] : null;
+  const tanggal = roMatch ? `${roMatch[4]}-${roMatch[3]}-${roMatch[2]}` : null;
+
+  return { nomorPO, tanggal, items };
+};
 
 const dcParsePDF = async (input) => {
   const file = input.files[0]; if(!file) return;
   const statusEl = document.getElementById('dc-pdf-status');
   const setStatus = (t) => { if(statusEl) statusEl.textContent = t; };
-  setStatus('Membaca PDF...');
+  setStatus('Memuat modul PDF...');
   try {
-    const pdfBase64 = await fileToBase64(file);
-    setStatus('Mengekstrak data via AI, tunggu sebentar...');
-    const r = await fetch('/api/parse-po', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ pdfBase64 }) });
-    const data = await r.json();
-    if(!r.ok) throw new Error(data.error || 'Gagal parsing PDF');
-    if(!data.items?.length) throw new Error('Tidak ada item part terbaca dari PDF ini');
+    await ensurePDFJS();
+    setStatus('Membaca & mengekstrak tabel PO...');
+    const buf = await file.arrayBuffer();
+    const data = await parseReleaseOrderPO(buf);
+    if(!data.items?.length) throw new Error('Tidak ada item part terbaca — format PDF ini mungkin beda dari template Release Order Mat. Pertamina, isi manual saja.');
 
     dcSyncFromDOM();
     _dcItems = data.items.map(x=>({
@@ -3025,7 +3108,7 @@ const dcParsePDF = async (input) => {
     if(data.nomorPO && form.nomorPO) form.nomorPO.value = data.nomorPO;
     if(data.tanggal && form.tanggal) form.tanggal.value = data.tanggal;
 
-    setStatus(`✓ ${data.items.length} item terbaca${data.vendor?' — '+data.vendor:''} — cek & lengkapi KIMAP/PO sebelum simpan`);
+    setStatus(`✓ ${data.items.length} item terbaca — cek angka & lengkapi KIMAP sebelum simpan (part number kadang meleset kalau deskripsinya nyambung ke halaman berikutnya)`);
   } catch(err) {
     setStatus('');
     alert('Gagal baca PDF: ' + err.message);
@@ -3689,6 +3772,25 @@ const ensureXLSX = () => {
     });
   }
   return xlsxPromise;
+};
+
+// ===== LAZY-LOAD PDF.js (cuma dimuat saat Upload PDF PO/RO di DC & Reservasi beneran dipakai) =====
+let pdfjsPromise = null;
+const ensurePDFJS = () => {
+  if (window.pdfjsLib) return Promise.resolve();
+  if (!pdfjsPromise) {
+    pdfjsPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      s.onload = () => {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        resolve();
+      };
+      s.onerror = () => { pdfjsPromise = null; reject(new Error('Gagal memuat modul PDF')); };
+      document.head.appendChild(s);
+    });
+  }
+  return pdfjsPromise;
 };
 
 // ===== EXPORT SEMUA (multi-sheet) =====
