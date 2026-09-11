@@ -1796,12 +1796,13 @@ const rPLS = () => {
     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
-          ${thead([['No. Kontrak'],['Vendor'],['SPK','center','w-12'],['Pipeline PR → PO → SA → Tagih'],['Pending','center','w-16'],['Nilai SPK','right'],['Tagih','right']])}
+          ${thead([['No. Kontrak'],['Vendor'],['Judul Kontrak'],['SPK','center','w-12'],['Pipeline PR → PO → SA → Tagih'],['Pending','center','w-16'],['Nilai SPK','right'],['Tagih','right']])}
           <tbody class="divide-y divide-gray-100">
-            ${perKRows.length===0?emptyRow('📊','Belum ada data.',7):perKRows.map(({k,n,wPR,wPO,wSA,wReal,nilaiSPK,nilaiReal,pending})=>`
+            ${perKRows.length===0?emptyRow('📊','Belum ada data.',8):perKRows.map(({k,n,wPR,wPO,wSA,wReal,nilaiSPK,nilaiReal,pending})=>`
               <tr class="hover:bg-gray-50 cursor-pointer" onclick="S.fkontrak='${k.id}';S.plsTab='all';render()">
                 <td class="px-3 py-3 font-semibold text-teal-700 whitespace-nowrap text-xs">${esc(k.nomorSPB||k.customID)}</td>
                 <td class="px-3 py-3 max-w-[160px]"><div class="clamp2 text-xs text-gray-600">${esc(k.vendor)}</div></td>
+                <td class="px-3 py-3 max-w-[200px]"><div class="clamp2 text-xs text-gray-500" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak||'-')}</div></td>
                 <td class="px-3 py-3 text-center text-xs text-gray-500">${n}</td>
                 <td class="px-3 py-3">
                   <div class="flex items-center gap-2">
@@ -1825,7 +1826,7 @@ const rPLS = () => {
           </tbody>
           <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
             <tr>
-              <td colspan="6" class="px-3 py-3 text-right text-gray-500">TOTAL</td>
+              <td colspan="7" class="px-3 py-3 text-right text-gray-500">TOTAL</td>
               <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(perKRows.reduce((a,x)=>a+x.nilaiReal,0))}</td>
             </tr>
           </tfoot>
@@ -2005,12 +2006,13 @@ const rPLH = () => {
     ${S.plhTab==='perkontrak'?`
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
-        ${thead([['No. Kontrak'],['Vendor'],['SPK','center','w-12'],['Pipeline PR → PO → SA'],['Pending','center','w-16'],['Nilai SPK','right'],['Realisasi SA','right']])}
+        ${thead([['No. Kontrak'],['Vendor'],['Judul Kontrak'],['SPK','center','w-12'],['Pipeline PR → PO → SA'],['Pending','center','w-16'],['Nilai SPK','right'],['Realisasi SA','right']])}
         <tbody class="divide-y divide-gray-100">
-          ${perKRows.length===0?emptyRow('📊','Belum ada data.',7):perKRows.map(({k,n,wPR,wPO,wSA,nilaiSPK,nilaiReal,pending})=>`
+          ${perKRows.length===0?emptyRow('📊','Belum ada data.',8):perKRows.map(({k,n,wPR,wPO,wSA,nilaiSPK,nilaiReal,pending})=>`
             <tr class="hover:bg-gray-50 cursor-pointer" onclick="S.fkontrak='${k.id}';S.plhTab='all';render()">
               <td class="px-3 py-3 font-semibold text-blue-700 whitespace-nowrap text-xs">${esc(k.nomorSPB||k.customID)}</td>
               <td class="px-3 py-3 max-w-[160px]"><div class="clamp2 text-xs text-gray-600">${esc(k.vendor)}</div></td>
+              <td class="px-3 py-3 max-w-[200px]"><div class="clamp2 text-xs text-gray-500" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak||'-')}</div></td>
               <td class="px-3 py-3 text-center text-xs text-gray-500">${n}</td>
               <td class="px-3 py-3"><div class="flex items-center gap-2">
                 ${stepBar(wPR,n,'PR','text-purple-700','text-gray-300')}
@@ -2027,7 +2029,7 @@ const rPLH = () => {
             </tr>`).join('')}
         </tbody>
         <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
-          <tr><td colspan="6" class="px-3 py-3 text-right text-gray-500">TOTAL</td>
+          <tr><td colspan="7" class="px-3 py-3 text-right text-gray-500">TOTAL</td>
           <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(perKRows.reduce((a,x)=>a+x.nilaiReal,0))}</td></tr>
         </tfoot>
       </table>
@@ -2214,12 +2216,13 @@ const rPLR = () => {
     ${S.plrTab==='perkontrak'?`
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
-        ${thead([['No. Kontrak'],['Vendor'],['SPK','center','w-12'],['Pipeline PR → PO → SA'],['Pending','center','w-16'],['Nilai SPK','right'],['Realisasi SA','right']])}
+        ${thead([['No. Kontrak'],['Vendor'],['Judul Kontrak'],['SPK','center','w-12'],['Pipeline PR → PO → SA'],['Pending','center','w-16'],['Nilai SPK','right'],['Realisasi SA','right']])}
         <tbody class="divide-y divide-gray-100">
-          ${perKRows.length===0?emptyRow('⚙️','Belum ada data.',7):perKRows.map(({k,n,wPR,wPO,wSA,nilaiSPK,nilaiReal,pending})=>`
+          ${perKRows.length===0?emptyRow('⚙️','Belum ada data.',8):perKRows.map(({k,n,wPR,wPO,wSA,nilaiSPK,nilaiReal,pending})=>`
             <tr class="hover:bg-gray-50 cursor-pointer" onclick="S.fkontrak='${k.id}';S.plrTab='all';render()">
               <td class="px-3 py-3 font-semibold text-emerald-700 whitespace-nowrap text-xs">${esc(k.nomorSPB||k.customID)}</td>
               <td class="px-3 py-3 max-w-[160px]"><div class="clamp2 text-xs text-gray-600">${esc(k.vendor)}</div></td>
+              <td class="px-3 py-3 max-w-[200px]"><div class="clamp2 text-xs text-gray-500" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak||'-')}</div></td>
               <td class="px-3 py-3 text-center text-xs text-gray-500">${n}</td>
               <td class="px-3 py-3"><div class="flex items-center gap-2">
                 ${stepBarR(wPR,n,'PR','text-purple-700','text-gray-300')}
@@ -2236,7 +2239,7 @@ const rPLR = () => {
             </tr>`).join('')}
         </tbody>
         <tfoot class="bg-gray-50 text-xs font-semibold border-t-2 border-gray-200">
-          <tr><td colspan="6" class="px-3 py-3 text-right text-gray-500">TOTAL</td>
+          <tr><td colspan="7" class="px-3 py-3 text-right text-gray-500">TOTAL</td>
           <td class="px-3 py-3 text-right font-mono text-emerald-700">${rp(perKRows.reduce((a,x)=>a+x.nilaiReal,0))}</td></tr>
         </tfoot>
       </table>
