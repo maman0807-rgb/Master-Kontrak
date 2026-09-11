@@ -1433,9 +1433,9 @@ const rSPK = () => {
         </div>`;
       }).join('')}
     </div>` : `
-    <div class="mb-4 flex items-center gap-2">
+    <div class="mb-4 flex flex-wrap items-center gap-2">
       <button onclick="S.fkontrak='';render()" class="text-xs text-blue-600 hover:underline no-print">← Semua Kontrak</button>
-      ${(()=>{ const k=S.mk.find(x=>x.id===S.fkontrak); return k?`<span class="text-xs text-gray-500">|</span><span class="text-xs font-semibold text-blue-700">${esc(k.customID)}</span>${k.judulKontrak?`<span class="text-xs text-gray-600 truncate max-w-[280px]" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak)}</span>`:''}<span class="text-xs text-gray-400">— ${esc(k.vendor)}</span>`:''; })()}
+      ${(()=>{ const k=S.mk.find(x=>x.id===S.fkontrak); return k?`<span class="text-xs text-gray-500">|</span><span class="text-xs font-semibold text-blue-700">${esc(k.customID)}</span>${k.judulKontrak?`<span class="text-xs text-gray-600 whitespace-nowrap">${esc(k.judulKontrak)}</span>`:''}<span class="text-xs text-gray-400">— ${esc(k.vendor)}</span>`:''; })()}
     </div>`;
 
   const stepBadge=(has,label,val,colorOn,colorOff)=>`
@@ -1834,7 +1834,7 @@ const rPLS = () => {
     </div>`
 
     :S.plsTab==='pending'?`
-    ${S.fkontrak?`<div class="mb-3 flex items-center gap-2">
+    ${S.fkontrak?`<div class="mb-3 flex flex-wrap items-center gap-2">
       <button onclick="S.fkontrak='';render()" class="text-xs text-blue-600 hover:underline">← Semua</button>
       ${(()=>{ const k=S.mkS.find(x=>x.id===S.fkontrak); return k?`<span class="text-xs text-gray-400">|</span> <span class="text-xs font-semibold text-teal-700">${esc(k.nomorSPB||k.customID)}</span>`:''; })()}
     </div>`:''}
@@ -1872,9 +1872,9 @@ const rPLS = () => {
       </table>
     </div></div>`:`
 
-    ${S.fkontrak?`<div class="mb-3 flex items-center gap-2">
+    ${S.fkontrak?`<div class="mb-3 flex flex-wrap items-center gap-2">
       <button onclick="S.fkontrak='';render()" class="text-xs text-blue-600 hover:underline">← Semua</button>
-      ${(()=>{ const k=S.mkS.find(x=>x.id===S.fkontrak); return k?`<span class="text-xs text-gray-400">|</span> <span class="text-xs font-semibold text-teal-700">${esc(k.nomorSPB||k.customID)}</span>${k.judulKontrak?` <span class="text-xs text-gray-600 truncate max-w-[280px]" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak)}</span>`:''} <span class="text-xs text-gray-400">${esc(k.vendor)}</span>`:''; })()}
+      ${(()=>{ const k=S.mkS.find(x=>x.id===S.fkontrak); return k?`<span class="text-xs text-gray-400">|</span> <span class="text-xs font-semibold text-teal-700">${esc(k.nomorSPB||k.customID)}</span>${k.judulKontrak?` <span class="text-xs text-gray-600 whitespace-nowrap">${esc(k.judulKontrak)}</span>`:''} <span class="text-xs text-gray-400">${esc(k.vendor)}</span>`:''; })()}
     </div>`:''}
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
@@ -2034,9 +2034,9 @@ const rPLH = () => {
     </div></div>
 
     `:S.plhTab==='pending'?`
-    ${S.fkontrak?`<div class="mb-3 flex items-center gap-2">
+    ${S.fkontrak?`<div class="mb-3 flex flex-wrap items-center gap-2">
       <button onclick="S.fkontrak='';render()" class="text-xs text-blue-600 hover:underline">← Semua</button>
-      ${(()=>{const k=S.mk.find(x=>x.id===S.fkontrak);return k?`<span class="text-xs text-gray-400">|</span> <span class="text-xs font-semibold text-blue-700">${esc(k.nomorSPB||k.customID)}</span>${k.judulKontrak?` <span class="text-xs text-gray-600 truncate max-w-[280px]" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak)}</span>`:''} <span class="text-xs text-gray-400">${esc(k.vendor)}</span>`:'';})()}
+      ${(()=>{const k=S.mk.find(x=>x.id===S.fkontrak);return k?`<span class="text-xs text-gray-400">|</span> <span class="text-xs font-semibold text-blue-700">${esc(k.nomorSPB||k.customID)}</span>${k.judulKontrak?` <span class="text-xs text-gray-600 whitespace-nowrap">${esc(k.judulKontrak)}</span>`:''} <span class="text-xs text-gray-400">${esc(k.vendor)}</span>`:'';})()}
     </div>`:''}
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
@@ -2073,9 +2073,9 @@ const rPLH = () => {
     </div></div>
 
     `:`
-    ${S.fkontrak?`<div class="mb-3 flex items-center gap-2">
+    ${S.fkontrak?`<div class="mb-3 flex flex-wrap items-center gap-2">
       <button onclick="S.fkontrak='';render()" class="text-xs text-blue-600 hover:underline">← Semua</button>
-      ${(()=>{const k=S.mk.find(x=>x.id===S.fkontrak);return k?`<span class="text-xs text-gray-400">|</span> <span class="text-xs font-semibold text-blue-700">${esc(k.nomorSPB||k.customID)}</span>${k.judulKontrak?` <span class="text-xs text-gray-600 truncate max-w-[280px]" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak)}</span>`:''} <span class="text-xs text-gray-400">${esc(k.vendor)}</span>`:'';})()}
+      ${(()=>{const k=S.mk.find(x=>x.id===S.fkontrak);return k?`<span class="text-xs text-gray-400">|</span> <span class="text-xs font-semibold text-blue-700">${esc(k.nomorSPB||k.customID)}</span>${k.judulKontrak?` <span class="text-xs text-gray-600 whitespace-nowrap">${esc(k.judulKontrak)}</span>`:''} <span class="text-xs text-gray-400">${esc(k.vendor)}</span>`:'';})()}
     </div>`:''}
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
@@ -2486,7 +2486,7 @@ const rSPKR = () => {
         </div>`;}).join('')}
     </div>
 
-    ${S.fkontrak?`<div class="mb-3 flex items-center gap-2">
+    ${S.fkontrak?`<div class="mb-3 flex flex-wrap items-center gap-2">
       <button onclick="S.fkontrak='';render()" class="text-xs text-blue-600 hover:underline">← Semua Kontrak</button>
     </div>`:''}
 
@@ -2636,9 +2636,9 @@ const rPR = () => {
     </div>`
 
     :S.prTab==='list'?`
-    ${S.fkontrak?`<div class="mb-3 flex items-center gap-2">
+    ${S.fkontrak?`<div class="mb-3 flex flex-wrap items-center gap-2">
       <button onclick="S.fkontrak='';render()" class="text-xs text-blue-600 hover:underline">← Semua Kontrak</button>
-      ${(()=>{ const k=S.mk.find(x=>x.id===S.fkontrak); return k?`<span class="text-xs text-gray-400">|</span> <span class="text-xs font-semibold text-blue-700">${esc(k.customID)}</span>${k.judulKontrak?` <span class="text-xs text-gray-600 truncate max-w-[280px]" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak)}</span>`:''} <span class="text-xs text-gray-400">${esc(k.vendor)}</span>`:''; })()}
+      ${(()=>{ const k=S.mk.find(x=>x.id===S.fkontrak); return k?`<span class="text-xs text-gray-400">|</span> <span class="text-xs font-semibold text-blue-700">${esc(k.customID)}</span>${k.judulKontrak?` <span class="text-xs text-gray-600 whitespace-nowrap">${esc(k.judulKontrak)}</span>`:''} <span class="text-xs text-gray-400">${esc(k.vendor)}</span>`:''; })()}
     </div>`:''}
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
@@ -2779,9 +2779,9 @@ const rSA = () => {
     </div>`
 
     :S.saTab==='list'?`
-    ${S.fkontrak?`<div class="mb-3 flex items-center gap-2">
+    ${S.fkontrak?`<div class="mb-3 flex flex-wrap items-center gap-2">
       <button onclick="S.fkontrak='';render()" class="text-xs text-blue-600 hover:underline">← Semua Kontrak</button>
-      ${(()=>{ const k=S.mk.find(x=>x.id===S.fkontrak); return k?`<span class="text-xs text-gray-400">|</span><span class="text-xs font-semibold text-blue-700">${esc(k.customID)}</span>${k.judulKontrak?` <span class="text-xs text-gray-600 truncate max-w-[280px]" title="${esc(k.judulKontrak)}">${esc(k.judulKontrak)}</span>`:''} <span class="text-xs text-gray-400">${esc(k.vendor)}</span>`:''; })()}
+      ${(()=>{ const k=S.mk.find(x=>x.id===S.fkontrak); return k?`<span class="text-xs text-gray-400">|</span><span class="text-xs font-semibold text-blue-700">${esc(k.customID)}</span>${k.judulKontrak?` <span class="text-xs text-gray-600 whitespace-nowrap">${esc(k.judulKontrak)}</span>`:''} <span class="text-xs text-gray-400">${esc(k.vendor)}</span>`:''; })()}
     </div>`:''}
     <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
       <table class="w-full text-sm">
