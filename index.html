@@ -83,6 +83,9 @@
     <button onclick="go('dc')" id="nav-dc" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
       <span class="text-base">🔧</span> DC & Reservasi
     </button>
+    <button onclick="go('rkm')" id="nav-rkm" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
+      <span class="text-base">🗓️</span> RKM
+    </button>
 
     <p class="text-[10px] font-semibold text-blue-400 uppercase tracking-widest px-2 mt-3 mb-1 flex items-center gap-1.5">
       <span class="flex-1 border-t border-blue-700/40"></span> STATIC <span class="flex-1 border-t border-blue-700/40"></span>
@@ -99,6 +102,9 @@
     <button onclick="go('dcs')" id="nav-dcs" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
       <span class="text-base">🔧</span> DC & Reservasi
     </button>
+    <button onclick="go('rkms')" id="nav-rkms" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
+      <span class="text-base">🗓️</span> RKM
+    </button>
 
     <p class="text-[10px] font-semibold text-blue-400 uppercase tracking-widest px-2 mt-3 mb-1 flex items-center gap-1.5">
       <span class="flex-1 border-t border-blue-700/40"></span> ROTATING <span class="flex-1 border-t border-blue-700/40"></span>
@@ -114,6 +120,9 @@
     </button>
     <button onclick="go('dcr')" id="nav-dcr" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
       <span class="text-base">🔧</span> DC & Reservasi
+    </button>
+    <button onclick="go('rkmr')" id="nav-rkmr" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition w-full text-left">
+      <span class="text-base">🗓️</span> RKM
     </button>
 
     <p class="text-[10px] font-semibold text-blue-400 uppercase tracking-widest px-2 mt-3 mb-1 flex items-center gap-1.5">
@@ -218,7 +227,7 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 // ===== STATE =====
-let S = { page:'dashboard', mk:[], spk:[], mkS:[], spkS:[], mkR:[], spkR:[], pr:[], sa:[], sspk:[], dc:[], tvm:[], users:[], fy:'', fm:'', fkontrak:'', dcTab:'dc', prTab:'perkontrak', saTab:'perkontrak', plsTab:'perkontrak', plhTab:'perkontrak', plrTab:'perkontrak', tvmTab:'hhe', currentUser:'', currentNama:'', isAdmin:false, fpo:'', fpart:'', fdesc:'', resView:'detail' };
+let S = { page:'dashboard', mk:[], spk:[], mkS:[], spkS:[], mkR:[], spkR:[], pr:[], sa:[], sspk:[], dc:[], tvm:[], rkm:[], users:[], fy:'', fm:'', fkontrak:'', dcTab:'dc', prTab:'perkontrak', saTab:'perkontrak', plsTab:'perkontrak', plhTab:'perkontrak', plrTab:'perkontrak', tvmTab:'hhe', currentUser:'', currentNama:'', isAdmin:false, fpo:'', fpart:'', fdesc:'', resView:'detail', rkmYear:'', rkmStatus:'' };
 
 // ===== UTILS =====
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'x'+Math.random().toString(36).slice(2,10)+Date.now().toString(36));
@@ -268,6 +277,10 @@ const BC = {
   // Reservasi flow
   'MR Dibuat':'bg-yellow-100 text-yellow-700',
   'Reservasi Dibuat':'bg-blue-100 text-blue-700',
+  // RKM flow
+  'Draft':'bg-slate-100 text-slate-600',
+  'Diajukan':'bg-blue-100 text-blue-700',
+  'Disetujui':'bg-emerald-100 text-emerald-700',
 };
 const badge = s => `<span class="px-2 py-0.5 rounded-full text-xs font-medium ${BC[s]||'bg-gray-100 text-gray-500'}">${esc(s||'-')}</span>`;
 
@@ -289,6 +302,7 @@ const F = {
     pr:   r => ({id:r.id,idCoO:r.id_coo,customID:r.custom_id,nomorPR:r.nomor_pr,tglPR:r.tgl_pr,deskripsi:r.deskripsi,estimasiNilai:r.estimasi_nilai,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
     sa:   r => ({id:r.id,idCoO:r.id_coo,customID:r.custom_id,nomorSA:r.nomor_sa,tglSA:r.tgl_sa,deskripsi:r.deskripsi,nilaiSA:r.nilai_sa,nomorInvoice:r.nomor_invoice,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
     tvm:  r => ({id:r.id,nomorCOO:r.nomor_coo,nomorPR:r.nomor_pr,tanggal:r.tanggal,fungsi:r.fungsi||'Hoist & Heavy Equipment',deskripsi:r.deskripsi,nilai:r.nilai,tglMulai:r.tgl_mulai,tglSelesai:r.tgl_selesai,status:r.status,catatan:r.catatan,createdBy:r.created_by,updatedBy:r.updated_by}),
+    rkm:  r => ({id:r.id,fungsi:r.fungsi||'Hoist',tahun:r.tahun,partNumber:r.part_number,namaPart:r.nama_part,kategori:r.kategori,satuan:r.satuan,qtyRencana:r.qty_rencana,hargaSatuanEstimasi:r.harga_satuan_estimasi,totalEstimasi:r.total_estimasi,keterangan:r.keterangan,status:r.status||'Draft',createdBy:r.created_by,updatedBy:r.updated_by}),
   },
   // JS → Supabase
   to: {
@@ -299,6 +313,7 @@ const F = {
     pr:   o => ({id:o.id,id_coo:o.idCoO,custom_id:o.customID,nomor_pr:o.nomorPR,tgl_pr:dn(o.tglPR),deskripsi:o.deskripsi,estimasi_nilai:rpN(o.estimasiNilai),catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     sa:   o => ({id:o.id,id_coo:o.idCoO,custom_id:o.customID,nomor_sa:o.nomorSA,tgl_sa:dn(o.tglSA),deskripsi:o.deskripsi,nilai_sa:rpN(o.nilaiSA),nomor_invoice:o.nomorInvoice,catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
     tvm:  o => ({id:o.id,nomor_coo:o.nomorCOO,nomor_pr:o.nomorPR||null,tanggal:dn(o.tanggal),fungsi:o.fungsi,deskripsi:o.deskripsi,nilai:rpN(o.nilai),tgl_mulai:dn(o.tglMulai),tgl_selesai:dn(o.tglSelesai),status:o.status,catatan:o.catatan,created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
+    rkm:  o => ({id:o.id,fungsi:o.fungsi||'Hoist',tahun:o.tahun,part_number:o.partNumber||null,nama_part:o.namaPart,kategori:o.kategori||null,satuan:o.satuan||null,qty_rencana:rpN(o.qtyRencana),harga_satuan_estimasi:rpN(o.hargaSatuanEstimasi),total_estimasi:rpN(o.totalEstimasi),keterangan:o.keterangan||null,status:o.status||'Draft',created_by:o.createdBy||null,updated_by:o.updatedBy||null}),
   }
 };
 
@@ -310,7 +325,7 @@ const recomputeMKR = () => {
 
 // ===== CACHE (stale-while-revalidate — tampil instan dari cache, refresh diam-diam di background) =====
 const CACHE_KEY = 'rk-cache-v1';
-const CACHE_FIELDS = ['mk','spk','mkS','spkS','mkR','spkR','pr','sa','sspk','dc','tvm','users'];
+const CACHE_FIELDS = ['mk','spk','mkS','spkS','mkR','spkR','pr','sa','sspk','dc','tvm','rkm','users'];
 const saveCache = () => {
   try {
     const c = {}; CACHE_FIELDS.forEach(k=>c[k]=S[k]);
@@ -337,7 +352,7 @@ const applyUserProfile = () => {
 const loadAll = async (silent=false) => {
   if(!silent) setLoad(true,'Memuat data dari Supabase...');
   try {
-    const [r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13] = await Promise.all([
+    const [r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13,r14] = await Promise.all([
       sb.from('spk').select('*').order('tanggal',{ascending:false}),
       sb.from('direct_charge').select('*').order('tanggal',{ascending:false}),
       sb.from('master_kontrak').select('*').eq('jenis','HHE').order('custom_id'),
@@ -351,6 +366,7 @@ const loadAll = async (silent=false) => {
       sb.from('coo_spk').select('*').eq('fungsi','Rotating').order('tgl_terbit',{ascending:false}),
       sb.from('master_kontrak').select('*').eq('jenis','Rotating').order('custom_id'),
       sb.from('coo_spk').select('*').eq('jenis','Rotating').order('tgl_terbit',{ascending:false}),
+      sb.from('rkm').select('*').order('tahun',{ascending:false}),
     ]);
     S.sspk  = (r1.data||[]).map(F.from.spk);
     S.dc    = (r2.data||[]).map(F.from.dc);
@@ -367,6 +383,7 @@ const loadAll = async (silent=false) => {
     // MK Rotating: HHE yang di-share + Rotating-own contract
     const sharedIds = new Set((r11.data||[]).map(x=>x.id_kontrak));
     S.mkR   = [...S.mk.filter(k=>sharedIds.has(k.id)), ...(r12.data||[]).map(F.from.mk)];
+    S.rkm   = (r14.data||[]).map(F.from.rkm);
     applyUserProfile();
     saveCache();
   } catch(err) {
@@ -481,7 +498,7 @@ const go = (page, fkontrak=null) => {
 // ===== RENDER =====
 const render = () => {
   try {
-    const pages={dashboard:rDash,sspk:rSSPK,dc:rDC,dcs:rDCS,dcr:rDCR,mk:rMK,spk:rSPK,pr:rPR,sa:rSA,tvm:rTVM,users:rUsers,mks:rMKS,spks:rSPKS,mkr:rMKR,spkr:rSPKR,pls:rPLS,plh:rPLH,plr:rPLR};
+    const pages={dashboard:rDash,sspk:rSSPK,dc:rDC,dcs:rDCS,dcr:rDCR,rkm:rRKM,rkms:rRKMS,rkmr:rRKMR,mk:rMK,spk:rSPK,pr:rPR,sa:rSA,tvm:rTVM,users:rUsers,mks:rMKS,spks:rSPKS,mkr:rMKR,spkr:rSPKR,pls:rPLS,plh:rPLH,plr:rPLR};
     document.getElementById('app').innerHTML=(pages[S.page]||rDash)();
   } catch(err) {
     console.error('[render error]', S.page, err);
@@ -1283,6 +1300,80 @@ const rDCFungsi = (fungsiLabel, accentCol, badgeCol, pageKey) => {
 const rDC  = () => rDCFungsi('Hoist');
 const rDCS = () => rDCFungsi('Static');
 const rDCR = () => rDCFungsi('Rotating');
+
+// ===== RKM (RENCANA KEBUTUHAN MATERIAL TAHUNAN) =====
+const rRKMFungsi = (fungsiLabel) => {
+  const badgeCls = fungsiLabel==='Hoist'?'bg-blue-100 text-blue-700':fungsiLabel==='Static'?'bg-teal-100 text-teal-700':'bg-emerald-100 text-emerald-700';
+  const btnCls   = fungsiLabel==='Hoist'?'bg-blue-800 hover:bg-blue-900':fungsiLabel==='Static'?'bg-teal-700 hover:bg-teal-800':'bg-emerald-700 hover:bg-emerald-800';
+  const all = S.rkm.filter(x=>x.fungsi===fungsiLabel);
+  const curYear = new Date().getFullYear();
+  const yearOpts = [...new Set([...all.map(x=>x.tahun), String(curYear+1), String(curYear), String(curYear-1)])].filter(Boolean).sort().reverse();
+  const data = all.filter(x=>{
+    if(S.rkmYear && String(x.tahun)!==String(S.rkmYear)) return false;
+    if(S.rkmStatus && x.status!==S.rkmStatus) return false;
+    return true;
+  }).sort((a,b)=> String(b.tahun).localeCompare(String(a.tahun)) || (a.namaPart||'').localeCompare(b.namaPart||''));
+  const totalQty = data.reduce((a,x)=>a+(+x.qtyRencana||0),0);
+  const totalEst = data.reduce((a,x)=>a+rpN(x.totalEstimasi),0);
+  const th = [['Tahun','center','w-16'],['Part Number'],['Nama Part'],['Kategori'],['Qty','center'],['Satuan'],['Harga Est.','right'],['Total Est.','right'],['Status','center'],['Keterangan'],['','center']];
+
+  return `<div class="fade-in">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <h1 class="text-lg font-bold text-gray-800">Rencana Kebutuhan Material (RKM) <span class="text-xs font-normal ${badgeCls} px-2 py-0.5 rounded-full ml-1">${fungsiLabel}</span> <span class="text-sm font-normal text-gray-400">(${data.length})</span></h1>
+      <div class="flex gap-2 flex-wrap no-print items-center">
+        <button onclick="window.print()" class="px-3 py-1.5 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600">🖨 Print</button>
+        <button onclick="exportRKM('${fungsiLabel}')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">📥 Export</button>
+        <button onclick="mRKM(null,'${fungsiLabel}')" class="px-3 py-1.5 ${btnCls} text-white rounded-lg text-sm">+ Tambah RKM</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+      <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-indigo-500"><p class="text-xs text-gray-400">Jumlah Item</p><p class="text-xl font-bold text-gray-800">${data.length}</p></div>
+      <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-blue-500"><p class="text-xs text-gray-400">Total Qty Rencana</p><p class="text-xl font-bold text-gray-800">${totalQty.toLocaleString('id-ID')}</p></div>
+      <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-emerald-500"><p class="text-xs text-gray-400">Total Estimasi Biaya</p><p class="text-xl font-bold text-emerald-700">${rp(totalEst)}</p></div>
+    </div>
+
+    <div class="flex flex-wrap gap-2 items-center py-3 mb-2 border-b border-gray-100 no-print">
+      <select onchange="S.rkmYear=this.value;render()" class="border rounded-lg px-3 py-1.5 text-xs bg-white">
+        <option value="">Semua Tahun</option>
+        ${yearOpts.map(y=>`<option value="${esc(y)}" ${String(S.rkmYear)===String(y)?'selected':''}>${esc(y)}</option>`).join('')}
+      </select>
+      <select onchange="S.rkmStatus=this.value;render()" class="border rounded-lg px-3 py-1.5 text-xs bg-white">
+        <option value="">Semua Status</option>
+        ${['Draft','Diajukan','Disetujui','Ditolak'].map(s=>`<option value="${s}" ${S.rkmStatus===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      ${S.rkmYear||S.rkmStatus?`<button onclick="S.rkmYear='';S.rkmStatus='';render()" class="text-xs text-red-400 hover:text-red-600">✕ Reset</button>`:''}
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        ${thead(th)}
+        <tbody class="divide-y divide-gray-100">
+          ${data.length===0?emptyRow('🗓️','Belum ada data RKM.',th.length):data.map(d=>`
+            <tr class="hover:bg-gray-50">
+              <td class="px-4 py-2.5 text-center font-semibold text-gray-600 whitespace-nowrap">${esc(d.tahun)}</td>
+              <td class="px-4 py-2.5 whitespace-nowrap text-xs">${esc(d.partNumber||'-')}</td>
+              <td class="px-4 py-2.5 text-gray-800">${esc(d.namaPart||'-')}</td>
+              <td class="px-4 py-2.5 text-xs text-gray-500 whitespace-nowrap">${esc(d.kategori||'-')}</td>
+              <td class="px-4 py-2.5 text-center">${(+d.qtyRencana||0).toLocaleString('id-ID')}</td>
+              <td class="px-4 py-2.5 text-xs text-gray-500">${esc(d.satuan||'-')}</td>
+              <td class="px-4 py-2.5 text-right font-mono text-xs whitespace-nowrap">${rp(d.hargaSatuanEstimasi)}</td>
+              <td class="px-4 py-2.5 text-right font-mono text-xs font-semibold whitespace-nowrap">${rp(d.totalEstimasi)}</td>
+              <td class="px-4 py-2.5 text-center">${badge(d.status)}</td>
+              <td class="px-4 py-2.5 text-xs text-gray-500 max-w-[180px]"><div class="clamp2" title="${esc(d.keterangan||'')}">${esc(d.keterangan||'-')}</div></td>
+              <td class="px-4 py-2.5 text-center whitespace-nowrap no-print">
+                <button onclick="mRKM('${d.id}','${fungsiLabel}')" class="text-blue-600 hover:underline mr-2 text-xs">Edit</button>
+                <button onclick="dRKM('${d.id}')" class="text-red-500 hover:underline text-xs">Hapus</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div></div>
+  </div>`;
+};
+const rRKM  = () => rRKMFungsi('Hoist');
+const rRKMS = () => rRKMFungsi('Static');
+const rRKMR = () => rRKMFungsi('Rotating');
 
 // ===== MASTER KONTRAK HOIST =====
 const rMK = () => {
@@ -3260,6 +3351,63 @@ const dDC = async id => {
   setLoad(true,'Menghapus...'); const {error}=await sb.from('direct_charge').delete().eq('id',id);
   setLoad(false); if(dbErr(error)) return;
   S.dc=S.dc.filter(x=>x.id!==id); render();
+};
+
+// ===== RKM CRUD =====
+const mRKM = (id=null, defaultFungsi='Hoist') => {
+  const d = id ? S.rkm.find(x=>x.id===id) : null;
+  const fungsi = d?.fungsi || defaultFungsi;
+  const badgeCls = fungsi==='Hoist'?'bg-blue-100 text-blue-700':fungsi==='Static'?'bg-teal-100 text-teal-700':'bg-emerald-100 text-emerald-700';
+  showM(`<div class="p-6"><h2 class="text-base font-bold mb-4">${d?'Edit':'Tambah'} RKM <span class="text-xs font-normal ${badgeCls} px-2 py-0.5 rounded-full ml-1">${fungsi}</span></h2>
+    <form onsubmit="svRKM(event,'${id||''}','${fungsi}')"><div class="grid grid-cols-2 gap-3">
+      ${fld('Tahun','tahun','number',d?.tahun||(new Date().getFullYear()+1),true)}
+      ${sel('Status','status',['Draft','Diajukan','Disetujui','Ditolak'],d?.status||'Draft',true,false)}
+      ${fld('Part Number','partNumber','text',d?.partNumber)}
+      ${fld('Kategori','kategori','text',d?.kategori)}
+      <div class="col-span-2">${fld('Nama Part / Material','namaPart','text',d?.namaPart,true)}</div>
+      ${fld('Qty Rencana','qtyRencana','number',d?.qtyRencana,true)} ${fld('Satuan','satuan','text',d?.satuan||'PCS')}
+      ${fld('Harga Satuan Estimasi (Rp)','hargaSatuanEstimasi','number',d?.hargaSatuanEstimasi)}
+      <div class="col-span-2">${fld('Keterangan / Justifikasi','keterangan','text',d?.keterangan)}</div>
+    </div>${mFoot()}</form></div>`);
+};
+const svRKM = async (e,id,fungsi) => {
+  e.preventDefault(); const f=e.target;
+  const qty = +f.qtyRencana.value||0;
+  const harga = f.hargaSatuanEstimasi.value?rpN(f.hargaSatuanEstimasi.value):0;
+  const ex = id?S.rkm.find(x=>x.id===id):null;
+  const o = {
+    id:id||uid(), fungsi, tahun:f.tahun.value.trim(),
+    partNumber:f.partNumber.value.trim(), namaPart:f.namaPart.value.trim(),
+    kategori:f.kategori.value.trim(), satuan:f.satuan.value.trim()||'PCS',
+    qtyRencana:qty, hargaSatuanEstimasi:harga, totalEstimasi:qty*harga,
+    keterangan:f.keterangan.value.trim(), status:f.status.value,
+    createdBy:ex?.createdBy||S.currentUser, updatedBy:S.currentUser,
+  };
+  setLoad(true,'Menyimpan...'); const {error}=await sb.from('rkm').upsert(F.to.rkm(o));
+  setLoad(false); if(dbErr(error)) return;
+  if(id) S.rkm[S.rkm.findIndex(x=>x.id===id)]=o; else S.rkm.unshift(o);
+  closeModal(); render();
+};
+const dRKM = async id => {
+  if(!(await confirmDialog({message:'Hapus item RKM ini?', confirmText:'Hapus', danger:true}))) return;
+  setLoad(true,'Menghapus...'); const {error}=await sb.from('rkm').delete().eq('id',id);
+  setLoad(false); if(dbErr(error)) return;
+  S.rkm=S.rkm.filter(x=>x.id!==id); render();
+};
+const exportRKM = async (fungsiLabel) => {
+  try { await ensureXLSX(); } catch(err){ alert(err.message); return; }
+  const rows = S.rkm.filter(x=>x.fungsi===fungsiLabel)
+    .filter(x=> !S.rkmYear || String(x.tahun)===String(S.rkmYear))
+    .filter(x=> !S.rkmStatus || x.status===S.rkmStatus)
+    .sort((a,b)=> String(b.tahun).localeCompare(String(a.tahun)));
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['RKM (Rencana Kebutuhan Material) — '+fungsiLabel],
+    ['Tahun','Part Number','Nama Part','Kategori','Qty Rencana','Satuan','Harga Satuan Estimasi','Total Estimasi','Status','Keterangan'],
+    ...rows.map(d=>[d.tahun,d.partNumber||'-',d.namaPart||'-',d.kategori||'-',+d.qtyRencana||0,d.satuan||'-',rpN(d.hargaSatuanEstimasi),rpN(d.totalEstimasi),d.status,d.keterangan||'-']),
+  ]);
+  XLSX.utils.book_append_sheet(wb,ws,'RKM');
+  XLSX.writeFile(wb,`RKM_${fungsiLabel}_${S.rkmYear||'SemuaTahun'}.xlsx`);
 };
 
 // ===== MASTER KONTRAK CRUD =====
